@@ -724,22 +724,20 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
                         ),
                       }
                     : undefined;
+                  const newMarker: MapMarker = {
+                    id: `mkr-burg-${Date.now()}`,
+                    name: burg.name,
+                    icon: burg.isCapital ? 'castle' : burg.port ? 'port' : 'city',
+                    color: parentState?.color || '#f59e0b',
+                    x: burg.x,
+                    y: burg.y,
+                    linkedEntityId: created.id,
+                    notes: `Population: ${burg.population.toLocaleString()}`,
+                  };
                   return {
                     ...m,
                     proceduralData: updatedProc,
-                    markers: [
-                      ...m.markers,
-                      {
-                        id: `mkr-burg-${Date.now()}`,
-                        name: burg.name,
-                        icon: burg.isCapital ? 'castle' : burg.port ? 'port' : 'city',
-                        color: parentState?.color || '#f59e0b',
-                        x: burg.x,
-                        y: burg.y,
-                        linkedEntityId: created.id,
-                        notes: `Population: ${burg.population.toLocaleString()}`,
-                      },
-                    ],
+                    markers: [...m.markers, newMarker],
                   };
                 }),
               }
