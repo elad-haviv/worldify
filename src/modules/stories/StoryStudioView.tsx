@@ -168,7 +168,7 @@ export const StoryStudioView: React.FC = () => {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
             <Feather className="w-4 h-4 text-pink-400" />
-            Story Studio
+            Stories
           </h2>
           <button
             type="button"
@@ -203,7 +203,7 @@ export const StoryStudioView: React.FC = () => {
           <>
             <div className="flex items-center justify-between pt-1">
               <span className="text-xs capitalize text-slate-400 font-semibold">
-                Manuscript Structure
+                Chapters
               </span>
               <button
                 type="button"
@@ -652,7 +652,7 @@ export const StoryStudioView: React.FC = () => {
           <div className="space-y-3">
             <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
-              Scene Spatio-Temporal Anchor
+              When & where
             </div>
 
             <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
@@ -727,7 +727,7 @@ export const StoryStudioView: React.FC = () => {
                 className="w-full py-1.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-medium flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <MapPin className="w-3.5 h-3.5" />
-                Inspect Scene Location on World Map
+                Show on map
               </button>
             )}
           </div>
@@ -736,7 +736,7 @@ export const StoryStudioView: React.FC = () => {
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
             <div className="text-sm font-semibold text-slate-300 flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              Cast, Relics & Locations in Scene
+              In this scene
             </div>
 
             <div className="space-y-1.5">
@@ -815,7 +815,7 @@ export const StoryStudioView: React.FC = () => {
           {/* Live Spatio-Temporal Continuity Auditor */}
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
             <div className="text-sm font-semibold text-slate-300 flex items-center justify-between">
-              <span>Spatio-Temporal Continuity</span>
+              <span>Continuity check</span>
               {continuityIssues.length === 0 ? (
                 <span className="text-emerald-400 flex items-center gap-1 text-xs">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Passed

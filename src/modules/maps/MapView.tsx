@@ -234,7 +234,7 @@ export const MapView: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
               <MapIcon className="w-4 h-4 text-emerald-400" />
-              Cartography Studio
+              Maps
             </h2>
             <button
               type="button"
@@ -264,7 +264,7 @@ export const MapView: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-slate-300 flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              Spatio-Temporal Map State
+              Jump to an event
             </span>
           </div>
           <div className="text-xs text-slate-300 font-medium">
@@ -295,7 +295,7 @@ export const MapView: React.FC = () => {
         <div className="space-y-2 pt-2 border-t border-slate-800">
           <div className="text-sm font-semibold text-slate-300 flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-emerald-400" />
-            Map Layers
+            Layers
           </div>
 
           <div className="grid grid-cols-1 gap-1.5">
@@ -337,7 +337,7 @@ export const MapView: React.FC = () => {
           <div className="space-y-2.5 pt-3 border-t border-slate-800">
             <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
-              Azgaar-Style Map Generator
+              Generate terrain
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -464,9 +464,9 @@ export const MapView: React.FC = () => {
                     setDraftPoints([]);
                     setPendingCoord(null);
                   }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${
                     isActive
-                      ? 'bg-amber-500 text-slate-950 font-semibold'
+                      ? 'bg-amber-500/10 text-amber-300 border border-amber-500/40'
                       : 'bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800'
                   }`}
                 >
@@ -1259,7 +1259,7 @@ export const MapView: React.FC = () => {
         {/* Live Entities on Map at Current Tick */}
         <div className="space-y-2">
           <div className="text-xs font-semibold text-slate-300">
-            Entities on Map at Current Tick ({liveEntityPositions.length})
+            On the map right now ({liveEntityPositions.length})
           </div>
           {liveEntityPositions.map((pos) => (
             <div
@@ -1499,7 +1499,7 @@ export const MapView: React.FC = () => {
                 className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-slate-100"
               >
                 <option value="procedural">
-                  Azgaar-Style Procedural Generator (Voronoi + Biomes + Realms)
+                  Procedural (generated terrain)
                 </option>
                 <option value="raster">
                   Raster / Tactical Image Map (Upload Image or Blueprint)

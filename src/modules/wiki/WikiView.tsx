@@ -231,7 +231,7 @@ export const WikiView: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              Lore Encyclopedia
+              Entries
             </h2>
             <button
               type="button"
@@ -904,7 +904,7 @@ export const WikiView: React.FC = () => {
                           className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-xs cursor-pointer"
                           title="Jump to Map & Time"
                         >
-                          View on Map
+                          Map
                         </button>
                         <button
                           type="button"

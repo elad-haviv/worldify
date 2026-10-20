@@ -89,7 +89,7 @@ export const AICopilotDrawer: React.FC = () => {
               AI Lore Copilot
             </h3>
             <p className="text-xs text-slate-400">
-              Graph + Spatio-Temporal Grounded Assistant
+              Knows your wiki, map and timeline
             </p>
           </div>
         </div>

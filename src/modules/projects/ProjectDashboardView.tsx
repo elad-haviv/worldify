@@ -36,6 +36,7 @@ export const ProjectDashboardView: React.FC = () => {
   } = useWorldifyStore();
 
   const [showNewProjModal, setShowNewProjModal] = useState(false);
+  const [showVaultMenu, setShowVaultMenu] = useState(false);
   const [newProjName, setNewProjName] = useState('');
   const [newProjGenre, setNewProjGenre] = useState('High Fantasy / Planar Cosmology');
   const [newProjTagline, setNewProjTagline] = useState('');
@@ -131,95 +132,92 @@ export const ProjectDashboardView: React.FC = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6 bg-slate-950">
-      {/* Top Hero Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 border border-slate-800 p-6 shadow-xl overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
-          <div className="space-y-2 max-w-3xl">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                {project.genre}
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs bg-slate-800 text-slate-300 border border-slate-700">
-                {project.worlds.length} Connected Worlds
-              </span>
-              {formattedDate && (
-                <span className="px-2.5 py-0.5 rounded-full text-xs bg-sky-500/15 text-sky-300 border border-sky-500/30">
-                  World Clock: {formattedDate.displayShort}
-                </span>
-              )}
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-display font-bold text-slate-100 tracking-tight">
-              {project.name}
-            </h1>
-            <p className="text-sm text-amber-200/80 font-medium">{project.tagline}</p>
-            <p className="text-xs text-slate-400 leading-relaxed">{project.description}</p>
+    <div className="h-full overflow-y-auto bg-slate-950">
+     <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
+      {/* Project header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
+        <div className="space-y-3 max-w-3xl">
+          <div className="text-sm text-slate-400">
+            {project.genre} · {project.worlds.length} worlds
           </div>
+          <h1 className="text-3xl sm:text-4xl font-display font-bold text-slate-50">{project.name}</h1>
+          <p className="text-lg text-amber-200/90">{project.tagline}</p>
+          <p className="text-base text-slate-400 leading-relaxed">{project.description}</p>
+        </div>
 
-          {/* Project Switcher & Vault Controls */}
-          <div className="flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0">
-            <div className="flex items-center gap-2">
-              <select
-                value={project.id}
-                onChange={(e) => setActiveProject(e.target.value)}
-                className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-medium focus:outline-none focus:border-amber-500 cursor-pointer"
-              >
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    Project: {p.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setShowNewProjModal(true)}
-                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                New Project
-              </button>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleExportVault}
-                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer"
-                title="Export full JSON Vault"
-              >
-                <Download className="w-3 h-3 text-amber-400" />
-                JSON Vault
-              </button>
-              <button
-                type="button"
-                onClick={handleExportMarkdownBundle}
-                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer"
-                title="Export all Wiki entries with YAML frontmatter as Markdown"
-              >
-                <Download className="w-3 h-3 text-sky-400" />
-                Markdown
-              </button>
-              <label className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer">
-                <Upload className="w-3 h-3 text-emerald-400" />
-                Import
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportVaultFile}
-                  className="hidden"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={resetVaultToDemo}
-                className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs border border-slate-800 flex items-center gap-1 cursor-pointer"
-                title="Reset to default sample worlds"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Reset Demo
-              </button>
-            </div>
+        {/* Project actions */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowNewProjModal(true)}
+            className="h-9 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-sm flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            New project
+          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowVaultMenu(!showVaultMenu)}
+              className="h-9 px-3 rounded-lg border border-slate-800 hover:bg-slate-800 text-slate-300 text-sm flex items-center gap-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              Import / export
+            </button>
+            {showVaultMenu && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setShowVaultMenu(false)} />
+                <div className="absolute right-0 mt-1 w-60 z-40 rounded-lg border border-slate-700 bg-slate-900 shadow-xl p-1 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowVaultMenu(false);
+                      handleExportVault();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800 flex items-center gap-3 text-slate-200 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-slate-400" />
+                    Export everything (JSON)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowVaultMenu(false);
+                      handleExportMarkdownBundle();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800 flex items-center gap-3 text-slate-200 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-slate-400" />
+                    Export wiki as Markdown
+                  </button>
+                  <label className="w-full px-3 py-2 rounded-md hover:bg-slate-800 flex items-center gap-3 text-slate-200 cursor-pointer">
+                    <Upload className="w-4 h-4 text-slate-400" />
+                    Import JSON…
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={(e) => {
+                        setShowVaultMenu(false);
+                        handleImportVaultFile(e);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                  <div className="my-1 border-t border-slate-800" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowVaultMenu(false);
+                      resetVaultToDemo();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-rose-500/10 flex items-center gap-3 text-rose-300 cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset to demo data
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -232,8 +230,8 @@ export const ProjectDashboardView: React.FC = () => {
           className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 text-left transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-2">
-            <BookOpen className="w-4 h-4 text-amber-400" />
-            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-amber-400" />
+            <BookOpen className="w-4 h-4 text-slate-400" />
+            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-300" />
           </div>
           <div className="text-xl font-bold text-slate-100">{project.entities.length}</div>
           <div className="text-xs text-slate-400">Wiki Entries & Entities</div>
@@ -245,8 +243,8 @@ export const ProjectDashboardView: React.FC = () => {
           className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 text-left transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-2">
-            <Network className="w-4 h-4 text-sky-400" />
-            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-sky-400" />
+            <Network className="w-4 h-4 text-slate-400" />
+            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-300" />
           </div>
           <div className="text-xl font-bold text-slate-100">{allRelations.length}</div>
           <div className="text-xs text-slate-400">Graph Connections</div>
@@ -258,8 +256,8 @@ export const ProjectDashboardView: React.FC = () => {
           className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 text-left transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-2">
-            <MapIcon className="w-4 h-4 text-emerald-400" />
-            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-emerald-400" />
+            <MapIcon className="w-4 h-4 text-slate-400" />
+            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-300" />
           </div>
           <div className="text-xl font-bold text-slate-100">{project.maps.length}</div>
           <div className="text-xs text-slate-400">Interactive Maps</div>
@@ -271,8 +269,8 @@ export const ProjectDashboardView: React.FC = () => {
           className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-purple-500/50 text-left transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-2">
-            <Clock className="w-4 h-4 text-purple-400" />
-            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-purple-400" />
+            <Clock className="w-4 h-4 text-slate-400" />
+            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-300" />
           </div>
           <div className="text-xl font-bold text-slate-100">{project.timelineEvents.length}</div>
           <div className="text-xs text-slate-400">Timeline Events</div>
@@ -284,8 +282,8 @@ export const ProjectDashboardView: React.FC = () => {
           className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 text-left transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-2">
-            <Globe2 className="w-4 h-4 text-cyan-400" />
-            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-cyan-400" />
+            <Globe2 className="w-4 h-4 text-slate-400" />
+            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-300" />
           </div>
           <div className="text-xl font-bold text-slate-100">{project.worlds.length}</div>
           <div className="text-xs text-slate-400">Connected Worlds</div>
@@ -297,8 +295,8 @@ export const ProjectDashboardView: React.FC = () => {
           className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-pink-500/50 text-left transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-2">
-            <Feather className="w-4 h-4 text-pink-400" />
-            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-pink-400" />
+            <Feather className="w-4 h-4 text-slate-400" />
+            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-300" />
           </div>
           <div className="text-xl font-bold text-slate-100">
             {project.stories.reduce(
@@ -316,8 +314,8 @@ export const ProjectDashboardView: React.FC = () => {
         <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-              <Globe2 className="w-4 h-4 text-cyan-400" />
-              Connected Worlds & Planes
+              <Globe2 className="w-4 h-4 text-slate-400" />
+              Worlds & planes
             </h2>
             <button
               type="button"
@@ -364,8 +362,8 @@ export const ProjectDashboardView: React.FC = () => {
         <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-amber-400" />
-              Canonical Wiki Entries
+              <BookOpen className="w-4 h-4 text-slate-400" />
+              Wiki entries
             </h2>
             <button
               type="button"
@@ -402,8 +400,8 @@ export const ProjectDashboardView: React.FC = () => {
         <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-              <Compass className="w-4 h-4 text-emerald-400" />
-              Maps, Stories & AI Studio
+              <Compass className="w-4 h-4 text-slate-400" />
+              Maps & stories
             </h2>
             <button
               type="button"
@@ -424,11 +422,11 @@ export const ProjectDashboardView: React.FC = () => {
                 className="w-full p-3 rounded-lg bg-slate-950/60 hover:bg-slate-800/90 border border-slate-800 text-left transition-colors cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-emerald-300 flex items-center gap-1.5">
+                  <span className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
                     <MapIcon className="w-3.5 h-3.5" />
                     {m.name}
                   </span>
-                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                     {m.mode}
                   </span>
                 </div>
@@ -449,11 +447,11 @@ export const ProjectDashboardView: React.FC = () => {
                 className="w-full p-3 rounded-lg bg-slate-950/60 hover:bg-slate-800/90 border border-slate-800 text-left transition-colors cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-pink-300 flex items-center gap-1.5">
+                  <span className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
                     <Feather className="w-3.5 h-3.5" />
                     Story: {st.title}
                   </span>
-                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-pink-500/15 text-pink-300 border border-pink-500/30">
+                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                     {st.chapters.length} Chapters
                   </span>
                 </div>
@@ -477,6 +475,7 @@ export const ProjectDashboardView: React.FC = () => {
       </div>
 
       {/* Create New Project Modal */}
+     </div>
       {showNewProjModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <form

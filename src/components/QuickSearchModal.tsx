@@ -155,7 +155,7 @@ export const QuickSearchModal: React.FC = () => {
                         <div className="text-xs text-slate-400">{m.summary}</div>
                       </div>
                     </div>
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 capitalize">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 capitalize">
                       {m.mode}
                     </span>
                   </button>
@@ -202,7 +202,7 @@ export const QuickSearchModal: React.FC = () => {
           {matchedWorlds.length > 0 && (
             <div>
               <div className="text-sm font-semibold text-slate-300 px-2 mb-1.5">
-                Connected Worlds & Planes ({matchedWorlds.length})
+                Worlds & planes ({matchedWorlds.length})
               </div>
               <div className="space-y-1">
                 {matchedWorlds.map((w) => (

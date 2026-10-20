@@ -356,7 +356,7 @@ export const KnowledgeGraphView: React.FC = () => {
         <div className="space-y-2.5 pt-3 border-t border-slate-800">
           <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
             <Route className="w-3.5 h-3.5" />
-            Degrees of Lore Pathfiding
+            Find a connection
           </div>
           <p className="text-xs text-slate-400">
             Discover how any two entities in your project are connected across the wiki graph.
@@ -618,7 +618,7 @@ export const KnowledgeGraphView: React.FC = () => {
             className="w-full py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5" />
-            Open Full Entry in Wiki
+            Open in Wiki
           </button>
 
           {/* Quick Connect Form */}
@@ -641,7 +641,7 @@ export const KnowledgeGraphView: React.FC = () => {
           >
             <div className="text-xs font-semibold text-slate-200 flex items-center gap-1">
               <Plus className="w-3.5 h-3.5 text-amber-400" />
-              Quick Link to Entity
+              Link to another entry
             </div>
             <select
               value={
@@ -678,7 +678,7 @@ export const KnowledgeGraphView: React.FC = () => {
           {/* Direct Neighbors List */}
           <div className="pt-2 border-t border-slate-800 space-y-2">
             <div className="text-sm font-semibold text-slate-300">
-              Direct Graph Edges (
+              Connections (
               {
                 visibleEdges.filter(
                   (e) =>

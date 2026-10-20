@@ -103,14 +103,14 @@ export const CosmologyWorldsView: React.FC = () => {
       {/* Left / Center: Interactive Planar & Orbital Cosmology Orrery Canvas */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
         {/* Top Toolbar */}
-        <div className="px-4 py-3 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-10">
+        <div className="px-6 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-10">
           <div className="flex items-center gap-2">
-            <Orbit className="w-4 h-4 text-cyan-400" />
+            <Orbit className="w-4 h-4 text-slate-400" />
             <h2 className="text-base font-semibold text-slate-100">
-              Cosmological Orrery & Connected Worlds
+              Orrery
             </h2>
             <span className="text-xs text-slate-400 hidden sm:inline">
-              (Drag worlds to arrange planar geometry • Scrub timeline to test rift openings)
+              Drag worlds to rearrange them
             </span>
           </div>
 
@@ -120,8 +120,8 @@ export const CosmologyWorldsView: React.FC = () => {
               onClick={() => setShowAddConn(true)}
               className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1.5 cursor-pointer"
             >
-              <Link2 className="w-3.5 h-3.5 text-cyan-400" />
-              Connect Worlds
+              <Link2 className="w-4 h-4" />
+              Connect worlds
             </button>
             <button
               type="button"
@@ -129,7 +129,7 @@ export const CosmologyWorldsView: React.FC = () => {
               className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add World / Plane
+              Add world
             </button>
           </div>
         </div>
@@ -569,7 +569,7 @@ export const CosmologyWorldsView: React.FC = () => {
                 type="submit"
                 className="px-4 py-1.5 rounded bg-amber-500 text-slate-950 font-semibold cursor-pointer"
               >
-                Connect Worlds
+                Connect worlds
               </button>
             </div>
           </form>

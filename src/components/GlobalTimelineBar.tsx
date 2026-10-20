@@ -62,7 +62,7 @@ export const GlobalTimelineBar: React.FC = () => {
           type="button"
           onClick={() => setActiveModule('timeline')}
           className="flex items-center gap-2 px-3 h-9 rounded-lg text-amber-200 hover:bg-slate-800 transition-colors cursor-pointer"
-          title="Open Full Traversable Timeline & Custom Calendar Studio"
+          title="Open timeline"
         >
           <Calendar className="w-4 h-4 text-amber-400" />
           <span className="text-sm font-semibold">{formatted.displayShort}</span>

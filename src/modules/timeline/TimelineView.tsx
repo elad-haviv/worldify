@@ -136,26 +136,26 @@ export const TimelineView: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveTab('timeline')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${
                 activeTab === 'timeline'
-                  ? 'bg-amber-500 text-slate-950 font-semibold'
-                  : 'text-slate-300 hover:text-slate-100'
+                  ? 'bg-slate-800 text-amber-300'
+                  : 'text-slate-400 hover:text-slate-100'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              Traversable Chronicle & State Inspector
+              Events
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('calendar_builder')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${
                 activeTab === 'calendar_builder'
-                  ? 'bg-amber-500 text-slate-950 font-semibold'
-                  : 'text-slate-300 hover:text-slate-100'
+                  ? 'bg-slate-800 text-amber-300'
+                  : 'text-slate-400 hover:text-slate-100'
               }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
-              Custom Calendar Designer ({calendar.name})
+              Calendar
             </button>
           </div>
         </div>
@@ -169,7 +169,7 @@ export const TimelineView: React.FC = () => {
               }
               className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200"
             >
-              <option value="all">All Event Categories ({project.timelineEvents.length})</option>
+              <option value="all">All events ({project.timelineEvents.length})</option>
               {Object.entries(EVENT_CATEGORY_STYLES).map(([k, v]) => (
                 <option key={k} value={k}>
                   {v.label}
@@ -188,7 +188,7 @@ export const TimelineView: React.FC = () => {
               className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add Historical Event
+              Add event
             </button>
           </div>
         )}
@@ -219,7 +219,7 @@ export const TimelineView: React.FC = () => {
                       >
                         {era.name} [{era.abbreviation}]
                       </span>
-                      <span className="text-xs font-mono text-slate-400">
+                      <span className="text-sm tabular-nums text-slate-400">
                         Yr {era.startYear} – {era.endYear ?? 'Present'}
                       </span>
                     </div>
@@ -268,7 +268,7 @@ export const TimelineView: React.FC = () => {
 
                     <div className="flex flex-wrap items-start justify-between gap-2 mb-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-mono font-semibold text-amber-300">
+                        <span className="text-sm tabular-nums font-semibold text-amber-300">
                           {evDate.displayShort}
                         </span>
                         <span
@@ -284,7 +284,7 @@ export const TimelineView: React.FC = () => {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-slate-500">
+                        <span className="text-sm tabular-nums text-slate-500">
                           {deltaFromCursor === 0
                             ? 'Active Now'
                             : deltaFromCursor > 0
@@ -302,7 +302,7 @@ export const TimelineView: React.FC = () => {
                             className="px-2 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs flex items-center gap-1 cursor-pointer"
                           >
                             <MapPin className="w-3 h-3" />
-                            View on Map
+                            Map
                           </button>
                         )}
                         <button
@@ -360,9 +360,9 @@ export const TimelineView: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-slate-300 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  World Cursor State
+                  Current date
                 </span>
-                <span className="text-xs font-mono text-slate-500">
+                <span className="text-sm tabular-nums text-slate-500">
                   Tick {project.currentTick}
                 </span>
               </div>
@@ -393,7 +393,7 @@ export const TimelineView: React.FC = () => {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-200">
-                  Entity States at This Date
+                  Who's alive & where
                 </h3>
                 <button
                   type="button"
@@ -622,7 +622,7 @@ export const TimelineView: React.FC = () => {
                       <span className="font-semibold" style={{ color: era.color }}>
                         {era.name} ({era.abbreviation})
                       </span>
-                      <span className="text-xs font-mono text-slate-400">
+                      <span className="text-sm tabular-nums text-slate-400">
                         Start Yr: {era.startYear}
                       </span>
                     </div>
