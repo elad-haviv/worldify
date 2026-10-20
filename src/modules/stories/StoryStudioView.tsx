@@ -231,7 +231,7 @@ export const StoryStudioView: React.FC = () => {
                           title: `Scene ${chap.scenes.length + 1}`,
                         })
                       }
-                      className="text-xs px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 cursor-pointer"
+                      className="text-xs px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 cursor-pointer whitespace-nowrap"
                       title="Add Scene to Chapter"
                     >
                       + Scene
@@ -496,7 +496,7 @@ export const StoryStudioView: React.FC = () => {
                         <p className="text-xs text-slate-300">{scene.summary}</p>
                         <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                           {pov && (
-                            <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
                               POV: {pov.title}
                             </span>
                           )}

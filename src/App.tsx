@@ -69,10 +69,13 @@ const SIDEBAR_KEY = 'worldify_sidebar_collapsed';
 
 function readSidebarPref(): boolean {
   try {
-    return localStorage.getItem(SIDEBAR_KEY) === '1';
+    const stored = localStorage.getItem(SIDEBAR_KEY);
+    if (stored !== null) return stored === '1';
   } catch {
-    return false;
+    // storage unavailable
   }
+  // Default: collapsed on narrow screens so content gets the room.
+  return typeof window !== 'undefined' && window.innerWidth < 1280;
 }
 
 export const App: React.FC = () => {

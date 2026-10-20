@@ -334,7 +334,7 @@ export const WikiView: React.FC = () => {
               >
                 <div className="flex items-center justify-between gap-1 mb-0.5">
                   <span className="text-xs font-semibold truncate">{ent.title}</span>
-                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-950/90 text-slate-400 border border-slate-800 shrink-0">
+                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-950/90 text-slate-400 border border-slate-800 shrink-0 whitespace-nowrap">
                     {ent.category}
                   </span>
                 </div>
@@ -479,7 +479,7 @@ export const WikiView: React.FC = () => {
                     key={peer.id}
                     type="button"
                     onClick={() => insertWikiLinkAtEnd(peer.title)}
-                    className="shrink-0 px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 cursor-pointer"
+                    className="shrink-0 px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 cursor-pointer whitespace-nowrap"
                   >
                     + [[{peer.title}]]
                   </button>
@@ -617,7 +617,7 @@ export const WikiView: React.FC = () => {
               {activeEntity.tags.map((t) => (
                 <span
                   key={t}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-xs text-slate-300"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-xs text-slate-300 whitespace-nowrap"
                 >
                   #{t}
                   <button
@@ -901,7 +901,7 @@ export const WikiView: React.FC = () => {
                             setCurrentTick(kf.tick);
                             selectMap(kf.mapId, true);
                           }}
-                          className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-xs cursor-pointer"
+                          className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-xs cursor-pointer whitespace-nowrap"
                           title="Jump to Map & Time"
                         >
                           Map

@@ -1111,7 +1111,7 @@ export const MapView: React.FC = () => {
         {selectedBurg && (
           <div className="p-3.5 rounded-xl bg-slate-950 border border-amber-500/40 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs capitalize px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">
+              <span className="text-xs capitalize px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 whitespace-nowrap">
                 {selectedBurg.isCapital ? 'Procedural Capital' : 'Procedural Burg'}
               </span>
               {selectedBurg.port && (

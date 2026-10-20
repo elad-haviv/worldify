@@ -283,7 +283,7 @@ export const CosmologyWorldsView: React.FC = () => {
         <SidePanel side="right" panelId="worlds-details" label="World details" width="w-[22rem]" defaultOpen={true} className="p-5 overflow-y-auto space-y-5">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs capitalize px-2 py-0.5 rounded bg-slate-800 text-amber-300 border border-slate-700">
+              <span className="text-xs capitalize px-2 py-0.5 rounded bg-slate-800 text-amber-300 border border-slate-700 whitespace-nowrap">
                 {activeWorld.type.replace('_', ' ')}
               </span>
               <input

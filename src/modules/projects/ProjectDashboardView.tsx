@@ -347,7 +347,7 @@ export const ProjectDashboardView: React.FC = () => {
                       />
                       <span className="text-xs font-semibold text-slate-100">{w.name}</span>
                     </div>
-                    <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+                    <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 whitespace-nowrap">
                       {w.type.replace('_', ' ')}
                     </span>
                   </div>
@@ -388,7 +388,7 @@ export const ProjectDashboardView: React.FC = () => {
                   </div>
                   <div className="text-xs text-slate-400 line-clamp-1">{ent.summary}</div>
                 </div>
-                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-900 text-amber-300/90 border border-slate-800 capitalize shrink-0">
+                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-900 text-amber-300/90 border border-slate-800 capitalize shrink-0 whitespace-nowrap">
                   {ent.category}
                 </span>
               </button>
@@ -426,7 +426,7 @@ export const ProjectDashboardView: React.FC = () => {
                     <MapIcon className="w-3.5 h-3.5" />
                     {m.name}
                   </span>
-                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
                     {m.mode}
                   </span>
                 </div>
@@ -451,7 +451,7 @@ export const ProjectDashboardView: React.FC = () => {
                     <Feather className="w-3.5 h-3.5" />
                     Story: {st.title}
                   </span>
-                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
                     {st.chapters.length} Chapters
                   </span>
                 </div>

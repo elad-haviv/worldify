@@ -525,7 +525,7 @@ export const KnowledgeGraphView: React.FC = () => {
                       y={midY - 6}
                       textAnchor="middle"
                       fill="#cbd5e1"
-                      fontSize={12}
+                      fontSize={13}
                       paintOrder="stroke"
                       stroke="#020617"
                       strokeWidth={4}
@@ -578,7 +578,7 @@ export const KnowledgeGraphView: React.FC = () => {
                     y={radius + 16}
                     textAnchor="middle"
                     fill={isSelected ? '#fbbf24' : '#f1f5f9'}
-                    fontSize={13}
+                    fontSize={15}
                     paintOrder="stroke"
                     stroke="#020617"
                     strokeWidth={4}
@@ -598,7 +598,7 @@ export const KnowledgeGraphView: React.FC = () => {
       {activeEntity && (
         <SidePanel side="right" panelId="graph-details" label="Details" width="w-80" defaultOpen={true} className="p-4 overflow-y-auto space-y-4 text-sm">
           <div>
-            <span className="text-xs capitalize px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <span className="text-xs capitalize px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
               {activeEntity.category}
             </span>
             <h3 className="text-lg font-semibold text-slate-100 mt-1.5">
@@ -715,7 +715,7 @@ export const KnowledgeGraphView: React.FC = () => {
                           {other.title}
                         </div>
                       </div>
-                      <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-900 text-slate-400">
+                      <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 whitespace-nowrap">
                         {rel.type.replace('_', ' ')}
                       </span>
                     </button>

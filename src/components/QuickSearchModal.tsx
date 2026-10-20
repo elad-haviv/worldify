@@ -120,7 +120,7 @@ export const QuickSearchModal: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 capitalize">
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 capitalize whitespace-nowrap">
                         {ent.category}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400" />
@@ -155,7 +155,7 @@ export const QuickSearchModal: React.FC = () => {
                         <div className="text-xs text-slate-400">{m.summary}</div>
                       </div>
                     </div>
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 capitalize">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 capitalize whitespace-nowrap">
                       {m.mode}
                     </span>
                   </button>
@@ -189,8 +189,8 @@ export const QuickSearchModal: React.FC = () => {
                         <div className="text-xs text-slate-400">{ev.summary}</div>
                       </div>
                     </div>
-                    <span className="text-xs font-mono text-sky-300">
-                      Jump to Tick {ev.startTick}
+                    <span className="text-xs text-slate-400 whitespace-nowrap shrink-0">
+                      Jump to date →
                     </span>
                   </button>
                 ))}

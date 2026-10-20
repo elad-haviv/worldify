@@ -299,7 +299,7 @@ export const TimelineView: React.FC = () => {
                               setCurrentTick(ev.startTick);
                               selectMap(ev.mapId!, true);
                             }}
-                            className="px-2 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs flex items-center gap-1 cursor-pointer whitespace-nowrap"
                           >
                             <MapPin className="w-3 h-3" />
                             Map
@@ -339,7 +339,7 @@ export const TimelineView: React.FC = () => {
                                 e.stopPropagation();
                                 selectEntity(ent.id, true);
                               }}
-                              className="px-2 py-0.5 rounded bg-slate-950 hover:bg-slate-800 text-amber-300 border border-slate-800 text-xs flex items-center gap-1 cursor-pointer"
+                              className="px-2 py-0.5 rounded bg-slate-950 hover:bg-slate-800 text-amber-300 border border-slate-800 text-xs flex items-center gap-1 cursor-pointer whitespace-nowrap"
                             >
                               <BookOpen className="w-2.5 h-2.5" />
                               {ent.title}
@@ -510,7 +510,7 @@ export const TimelineView: React.FC = () => {
                       <div className="font-semibold text-slate-200">
                         {idx + 1}. {m.name}{' '}
                         {m.intercalary && (
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 ml-1">
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 ml-1 whitespace-nowrap">
                             Intercalary
                           </span>
                         )}

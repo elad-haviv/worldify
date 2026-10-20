@@ -89,7 +89,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         return (
           <code
             key={`${keyPrefix}-${idx}`}
-            className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 font-mono text-[0.9em]"
+            className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 font-mono text-[0.9em] whitespace-nowrap"
           >
             {part.slice(1, -1)}
           </code>

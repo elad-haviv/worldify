@@ -77,7 +77,7 @@ export const AICopilotDrawer: React.FC = () => {
   };
 
   return (
-    <aside className="w-[410px] max-w-full bg-slate-900 border-l border-slate-800 flex flex-col h-full shadow-2xl z-40">
+    <aside className="absolute right-0 top-0 bottom-0 w-[420px] max-w-full bg-slate-900 border-l border-slate-800 flex flex-col shadow-2xl shadow-black/60 z-40">
       {/* Header */}
       <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
         <div className="flex items-center gap-2">
@@ -328,7 +328,7 @@ export const AICopilotDrawer: React.FC = () => {
                 {msg.contextSummary.map((badge, i) => (
                   <span
                     key={i}
-                    className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-xs text-slate-400"
+                    className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-xs text-slate-400 whitespace-nowrap"
                   >
                     {badge}
                   </span>
@@ -360,7 +360,7 @@ export const AICopilotDrawer: React.FC = () => {
                       <span className="font-semibold text-slate-100 text-xs">
                         {prop.title}
                       </span>
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 shrink-0">
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 shrink-0 whitespace-nowrap">
                         {prop.type.replace(/_/g, ' ')}
                       </span>
                     </div>

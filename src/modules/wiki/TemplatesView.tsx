@@ -187,7 +187,7 @@ export const TemplatesView: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-slate-200">{field.label}</span>
                     <span className="font-mono text-xs text-slate-500">({field.key})</span>
-                    <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs capitalize">
+                    <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs capitalize whitespace-nowrap">
                       {field.type}
                     </span>
                     {field.options && (
