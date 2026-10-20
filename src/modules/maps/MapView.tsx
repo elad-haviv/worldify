@@ -482,7 +482,7 @@ export const MapView: React.FC = () => {
           <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-1">
             <button
               type="button"
-              onClick={() => setZoom((z) => Math.min(3.0, z + 0.25))}
+              onClick={() => setZoom((z) => Math.min(4, z * 1.25))}
               className="p-1 text-slate-300 hover:text-amber-400 cursor-pointer"
             >
               <ZoomIn className="w-4 h-4" />
@@ -492,7 +492,7 @@ export const MapView: React.FC = () => {
             </span>
             <button
               type="button"
-              onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}
+              onClick={() => setZoom((z) => Math.max(0.5, z / 1.25))}
               className="p-1 text-slate-300 hover:text-amber-400 cursor-pointer"
             >
               <ZoomOut className="w-4 h-4" />
@@ -606,7 +606,7 @@ export const MapView: React.FC = () => {
         )}
 
         {/* Main SVG Map Canvas */}
-        <div className="flex-1 relative overflow-hidden bg-[#081b33]">
+        <div className="flex-1 min-h-0 relative overflow-hidden bg-[#081b33]">
           <svg
             viewBox="0 0 1000 1000"
             className={`w-full h-full select-none ${
@@ -623,10 +623,29 @@ export const MapView: React.FC = () => {
             }}
             onMouseMove={(e) => {
               if (!isPanning) return;
-              const dx = e.clientX - panStartRef.current.x;
-              const dy = e.clientY - panStartRef.current.y;
+              // Convert screen pixels to map units so the map follows the cursor exactly.
+              const ctm = e.currentTarget.getScreenCTM();
+              const unit = ctm ? 1 / ctm.a : 1;
+              const dx = (e.clientX - panStartRef.current.x) * unit;
+              const dy = (e.clientY - panStartRef.current.y) * unit;
               panStartRef.current = { x: e.clientX, y: e.clientY };
               setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+            }}
+            onWheel={(e) => {
+              // Zoom around the cursor.
+              const svg = e.currentTarget;
+              const ctm = svg.getScreenCTM();
+              if (!ctm) return;
+              const pt = svg.createSVGPoint();
+              pt.x = e.clientX;
+              pt.y = e.clientY;
+              const v = pt.matrixTransform(ctm.inverse());
+              const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+              const next = Math.min(4, Math.max(0.5, zoom * factor));
+              const wx = (v.x - 500 - pan.x) / zoom + 500;
+              const wy = (v.y - 500 - pan.y) / zoom + 500;
+              setZoom(next);
+              setPan({ x: v.x - 500 - (wx - 500) * next, y: v.y - 500 - (wy - 500) * next });
             }}
             onMouseUp={() => setIsPanning(false)}
             onMouseLeave={() => setIsPanning(false)}

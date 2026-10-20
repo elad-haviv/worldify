@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useWorldifyStore } from '../../store/useWorldifyStore';
 import { World, WorldConnection, WorldType } from '../../types/worldify';
 import {
@@ -12,6 +12,7 @@ import {
   Orbit,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
 export const CosmologyWorldsView: React.FC = () => {
@@ -29,6 +30,10 @@ export const CosmologyWorldsView: React.FC = () => {
 
   const project = projects.find((p) => p.id === activeProjectId);
   const [draggingWorldId, setDraggingWorldId] = useState<string | null>(null);
+  // View transform: content is drawn in 0–1000 space, then translated and scaled.
+  const [view, setView] = useState<{ zoom: number; x: number; y: number }>({ zoom: 1, x: 0, y: 0 });
+  const panRef = useRef<{ startX: number; startY: number; viewX: number; viewY: number } | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const [showAddWorld, setShowAddWorld] = useState(false);
   const [showAddConn, setShowAddConn] = useState(false);
 
@@ -50,15 +55,43 @@ export const CosmologyWorldsView: React.FC = () => {
   const activeWorld =
     project.worlds.find((w) => w.id === project.activeWorldId) || project.worlds[0];
 
-  const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!draggingWorldId) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.round(((e.clientX - rect.left) / rect.width) * 1000);
-    const y = Math.round(((e.clientY - rect.top) / rect.height) * 1000);
-    updateWorld(draggingWorldId, {
-      cosmologyX: Math.max(60, Math.min(940, x)),
-      cosmologyY: Math.max(60, Math.min(940, y)),
+  /** Screen point → SVG viewBox units (accounts for letterboxing). */
+  const toViewBox = (clientX: number, clientY: number) => {
+    const svg = svgRef.current;
+    const ctm = svg?.getScreenCTM();
+    if (!svg || !ctm) return { x: 0, y: 0 };
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  };
+
+  const zoomAt = (factor: number, cx = 500, cy = 500) =>
+    setView((v) => {
+      const zoom = Math.min(4, Math.max(0.3, v.zoom * factor));
+      const k = zoom / v.zoom;
+      return { zoom, x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k };
     });
+
+  const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const p = toViewBox(e.clientX, e.clientY);
+    if (draggingWorldId) {
+      updateWorld(draggingWorldId, {
+        cosmologyX: Math.round((p.x - view.x) / view.zoom),
+        cosmologyY: Math.round((p.y - view.y) / view.zoom),
+      });
+      return;
+    }
+    if (panRef.current) {
+      const pan = panRef.current;
+      setView((v) => ({ ...v, x: pan.viewX + (p.x - pan.startX), y: pan.viewY + (p.y - pan.startY) }));
+    }
+  };
+
+  const stopDragging = () => {
+    setDraggingWorldId(null);
+    panRef.current = null;
   };
 
   const handleCreateWorld = (e: React.FormEvent) => {
@@ -136,13 +169,53 @@ export const CosmologyWorldsView: React.FC = () => {
         </div>
 
         {/* Interactive SVG Orrery */}
-        <div className="flex-1 relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+        <div className="flex-1 min-h-0 relative overflow-hidden bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+          {/* Zoom controls */}
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-slate-900/90 border border-slate-800 rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => zoomAt(1.25)}
+              className="p-1.5 rounded hover:bg-slate-800 text-slate-300 cursor-pointer"
+              title="Zoom in"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <span className="text-xs text-slate-400 tabular-nums w-11 text-center">{Math.round(view.zoom * 100)}%</span>
+            <button
+              type="button"
+              onClick={() => zoomAt(1 / 1.25)}
+              className="p-1.5 rounded hover:bg-slate-800 text-slate-300 cursor-pointer"
+              title="Zoom out"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setView({ zoom: 1, x: 0, y: 0 })}
+              className="p-1.5 rounded hover:bg-slate-800 text-slate-300 cursor-pointer"
+              title="Fit to screen"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="absolute bottom-3 left-3 z-10 text-xs text-slate-500 pointer-events-none">
+            Scroll to zoom · drag the background to pan · drag a world to move it
+          </div>
           <svg
+            ref={svgRef}
             viewBox="0 0 1000 1000"
-            className="w-full h-full select-none"
+            className={`absolute inset-0 w-full h-full select-none ${draggingWorldId ? '' : 'cursor-grab active:cursor-grabbing'}`}
+            onWheel={(e) => {
+              const p = toViewBox(e.clientX, e.clientY);
+              zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, p.x, p.y);
+            }}
+            onMouseDown={(e) => {
+              const p = toViewBox(e.clientX, e.clientY);
+              panRef.current = { startX: p.x, startY: p.y, viewX: view.x, viewY: view.y };
+            }}
             onMouseMove={handleSvgMouseMove}
-            onMouseUp={() => setDraggingWorldId(null)}
-            onMouseLeave={() => setDraggingWorldId(null)}
+            onMouseUp={stopDragging}
+            onMouseLeave={stopDragging}
           >
             <defs>
               <radialGradient id="cosmosGlow" cx="50%" cy="50%" r="50%">
@@ -152,6 +225,7 @@ export const CosmologyWorldsView: React.FC = () => {
               </radialGradient>
             </defs>
 
+            <g transform={`translate(${view.x} ${view.y}) scale(${view.zoom})`}>
             {/* Background Astral Grid & Concentric Orbital Rings */}
             <circle cx={500} cy={500} r={420} fill="url(#cosmosGlow)" />
             {[160, 280, 390].map((r) => (
@@ -179,6 +253,8 @@ export const CosmologyWorldsView: React.FC = () => {
 
               const midX = (s.cosmologyX + t.cosmologyX) / 2;
               const midY = (s.cosmologyY + t.cosmologyY) / 2;
+              const labelText = `${conn.label}${!isTemporallyActive ? ' (dormant now)' : ''}`;
+              const labelW = Math.max(110, labelText.length * 6.8 + 24);
 
               return (
                 <g key={conn.id} opacity={isTemporallyActive ? 1 : 0.25}>
@@ -192,9 +268,9 @@ export const CosmologyWorldsView: React.FC = () => {
                     strokeDasharray={conn.type === 'planar_rift' ? '8 5' : undefined}
                   />
                   <rect
-                    x={midX - 95}
+                    x={midX - labelW / 2}
                     y={midY - 13}
-                    width={190}
+                    width={labelW}
                     height={24}
                     rx={6}
                     fill="#0f172a"
@@ -209,7 +285,7 @@ export const CosmologyWorldsView: React.FC = () => {
                     fontSize={11}
                     fontWeight={500}
                   >
-                    {conn.label} {!isTemporallyActive ? '(Dormant at Tick)' : ''}
+                    {labelText}
                   </text>
                 </g>
               );
@@ -275,6 +351,7 @@ export const CosmologyWorldsView: React.FC = () => {
                 </g>
               );
             })}
+            </g>
           </svg>
         </div>
       </div>
