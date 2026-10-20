@@ -31,6 +31,7 @@ import {
 import { SidePanel } from '../../components/SidePanel';
 import { MarkdownToolbar, MarkdownToolbarHandle } from '../../components/MarkdownToolbar';
 import { MarkdownEditor, MarkdownEditorHandle } from '../../components/MarkdownEditor';
+import { collectProjectImages, saveImageAsset } from '../../utils/assetStore';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
@@ -480,6 +481,8 @@ export const WikiView: React.FC = () => {
                   editorRef={editorRef}
                   entities={project.entities.filter((e) => e.id !== activeEntity.id)}
                   status={`${activeEntity.contentMd.trim().split(/\s+/).filter(Boolean).length} words`}
+                  getImages={() => collectProjectImages(project)}
+                  onUploadImage={(file) => saveImageAsset(file, file.name, project.id)}
                 />
                 <div className="flex-1 min-h-0">
                   <MarkdownEditor
@@ -490,6 +493,8 @@ export const WikiView: React.FC = () => {
                     entities={project.entities}
                     placeholder="Write your wiki entry… type [[ to link another entry"
                     onRequestLink={() => toolbarRef.current?.openLinkPicker()}
+                    getImages={() => collectProjectImages(project)}
+                    onUploadImage={(file) => saveImageAsset(file, file.name, project.id)}
                   />
                 </div>
               </div>

@@ -1,11 +1,12 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { EditorState, Prec, RangeSetBuilder, StateEffect } from '@codemirror/state';
+import { EditorState, Prec, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state';
 import {
   Decoration,
   DecorationSet,
   EditorView,
   ViewPlugin,
   ViewUpdate,
+  WidgetType,
   keymap,
   placeholder as placeholderExt,
 } from '@codemirror/view';
@@ -22,6 +23,7 @@ import {
 import { tags as t } from '@lezer/highlight';
 import { Entity } from '../types/worldify';
 import { categoryLabel } from '../utils/categories';
+import { ImageOption, isImageFile, resolveImageSrc } from '../utils/assetStore';
 
 /**
  * Markdown editor built on CodeMirror 6 (MIT) — the same editor engine Obsidian uses.
@@ -44,6 +46,10 @@ interface MarkdownEditorProps {
   placeholder?: string;
   /** Ctrl+K inside the editor. */
   onRequestLink?: () => void;
+  /** Images offered after typing ![[ */
+  getImages?: () => Promise<ImageOption[]>;
+  /** Store a pasted / dropped image and return how to reference it. */
+  onUploadImage?: (file: File) => Promise<ImageOption>;
 }
 
 // ───────────────────────── link / image index ─────────────────────────
@@ -89,7 +95,10 @@ function linkHighlighter(index: LinkIndex) {
       index.images.set(url, 'missing');
       refresh();
     };
-    img.src = url;
+    resolveImageSrc(url).then((real) => {
+      if (real) img.src = real;
+      else img.onerror?.(new Event('error'));
+    });
   };
 
   const build = (view: EditorView): DecorationSet => {
@@ -174,6 +183,7 @@ function wikiCompletions(getEntities: () => Entity[]) {
   return (ctx: CompletionContext): CompletionResult | null => {
     const m = ctx.matchBefore(/\[\[[^[\]|#\n]*$/);
     if (!m) return null;
+    if (ctx.state.sliceDoc(m.from - 1, m.from) === '!') return null; // ![[ → image suggestions
     const from = m.from + 2;
 
     const insert = (title: string, alias?: string) => (view: EditorView, _c: Completion, f: number, to: number) => {
@@ -198,6 +208,119 @@ function wikiCompletions(getEntities: () => Entity[]) {
     }
     return { from, options, validFor: /^[^[\]|#\n]*$/ };
   };
+}
+
+// ───────────────────────── "![[" image suggestions ─────────────────────────
+
+export const imageMarkdown = (img: ImageOption) => `![${img.name.replace(/[[\]]/g, '')}](${img.src})`;
+
+function imageCompletions(getImages: () => Promise<ImageOption[]> | undefined) {
+  return async (ctx: CompletionContext): Promise<CompletionResult | null> => {
+    const m = ctx.matchBefore(/!\[\[[^\]\n]*$/);
+    if (!m) return null;
+    const images = (await getImages()) ?? [];
+    const options: Completion[] = images.map((img) => ({
+      label: img.name,
+      detail: img.src.startsWith('asset:') ? 'uploaded' : 'image',
+      type: 'text',
+      apply: (view: EditorView, _c: Completion, _f: number, to: number) => {
+        const end = view.state.sliceDoc(to, to + 2) === ']]' ? to + 2 : to;
+        const text = imageMarkdown(img);
+        view.dispatch({
+          changes: { from: m.from, to: end, insert: text },
+          selection: { anchor: m.from + text.length },
+          userEvent: 'input.complete',
+        });
+      },
+    }));
+    if (!options.length) {
+      options.push({ label: 'No images yet — use the image button, paste or drop a picture', apply: () => {}, type: 'text' });
+    }
+    return { from: m.from + 3, options, validFor: /^[^\]\n]*$/ };
+  };
+}
+
+// ───────────────────────── image previews under image lines ─────────────────────────
+
+class ImagePreviewWidget extends WidgetType {
+  constructor(readonly src: string) {
+    super();
+  }
+  eq(other: ImagePreviewWidget) {
+    return other.src === this.src;
+  }
+  toDOM() {
+    const wrap = document.createElement('div');
+    wrap.className = 'cm-image-preview';
+    const img = document.createElement('img');
+    img.alt = '';
+    img.onerror = () => wrap.classList.add('cm-image-preview-missing');
+    resolveImageSrc(this.src).then((real) => {
+      if (real) img.src = real;
+      else wrap.classList.add('cm-image-preview-missing');
+    });
+    wrap.appendChild(img);
+    return wrap;
+  }
+  get estimatedHeight() {
+    return 140;
+  }
+  ignoreEvent() {
+    return false;
+  }
+}
+
+const IMG_LINE = /^\s*!\[[^\]\n]*\]\(([^)\s]+)\)\s*$/;
+
+function buildPreviews(state: EditorState): DecorationSet {
+  const builder = new RangeSetBuilder<Decoration>();
+  for (let n = 1; n <= state.doc.lines; n++) {
+    const line = state.doc.line(n);
+    const m = line.text.match(IMG_LINE);
+    if (m) {
+      builder.add(line.to, line.to, Decoration.widget({ widget: new ImagePreviewWidget(m[1]), block: true, side: 1 }));
+    }
+  }
+  return builder.finish();
+}
+
+const imagePreviews = StateField.define<DecorationSet>({
+  create: (state) => buildPreviews(state),
+  update: (deco, tr) => (tr.docChanged ? buildPreviews(tr.state) : deco),
+  provide: (f) => EditorView.decorations.from(f),
+});
+
+// ───────────────────────── paste / drop images ─────────────────────────
+
+function imageDropAndPaste(getUpload: () => ((file: File) => Promise<ImageOption>) | undefined) {
+  const insertFiles = (view: EditorView, files: File[], pos: number) => {
+    const upload = getUpload();
+    if (!upload || !files.length) return false;
+    Promise.all(files.map(upload)).then((imgs) => {
+      const text = imgs.map(imageMarkdown).join('\n');
+      const line = view.state.doc.lineAt(pos);
+      const before = line.text.trim() && pos > line.from ? '\n' : '';
+      const insert = `${before}${text}\n`;
+      view.dispatch({ changes: { from: pos, insert }, selection: { anchor: pos + insert.length } });
+      view.focus();
+    });
+    return true;
+  };
+  return EditorView.domEventHandlers({
+    paste(e, view) {
+      const files = [...(e.clipboardData?.files ?? [])].filter(isImageFile);
+      if (!files.length) return false;
+      e.preventDefault();
+      return insertFiles(view, files, view.state.selection.main.head);
+    },
+    drop(e, view) {
+      const files = [...(e.dataTransfer?.files ?? [])].filter(isImageFile);
+      if (!files.length) return false;
+      e.preventDefault();
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }) ?? view.state.selection.main.head;
+      return insertFiles(view, files, pos);
+    },
+  });
 }
 
 // ───────────────────────── editing commands (used by the toolbar) ─────────────────────────
@@ -266,9 +389,11 @@ export function setHeading(view: EditorView, level: number) {
 export function insertBlock(view: EditorView, block: string, selectFrom?: number, selectTo?: number) {
   const { from, to } = view.state.selection.main;
   const doc = view.state.doc;
-  const lineBefore = doc.lineAt(from);
-  const needsBreak = from > 0 && lineBefore.text.trim() !== '' ? '\n\n' : '';
-  const text = `${needsBreak}${block}\n`;
+  const line = doc.lineAt(from);
+  // Start on its own line, and only add a line break after it if text follows.
+  const needsBreak = line.text.trim() !== '' ? (from === line.to ? '\n\n' : '\n') : '';
+  const followedByText = doc.sliceString(to, doc.lineAt(to).to).trim() !== '' || (to < doc.length && doc.sliceString(to, to + 1) !== '\n');
+  const text = `${needsBreak}${block}${followedByText ? '\n' : ''}`;
   const base = from + needsBreak.length;
   view.dispatch({
     changes: { from, to, insert: text },
@@ -312,6 +437,15 @@ const editorTheme = EditorView.theme(
     '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection':
       { backgroundColor: 'rgba(245, 158, 11, 0.22) !important' },
     '.cm-placeholder': { color: '#64748b' },
+    '.cm-image-preview': { padding: '6px 0 10px' },
+    '.cm-image-preview img': {
+      display: 'block',
+      maxHeight: '160px',
+      maxWidth: '100%',
+      borderRadius: '8px',
+      border: '1px solid #1e293b',
+    },
+    '.cm-image-preview-missing': { display: 'none' },
     '.cm-table-line': { fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: '14px', color: '#cbd5e1' },
     '.cm-wikilink, .cm-wikilink span': { color: `${ACCENT} !important` },
     '.cm-wikilink-missing, .cm-wikilink-missing span': {
@@ -355,7 +489,7 @@ const markdownStyle = HighlightStyle.define([
 // ───────────────────────── component ─────────────────────────
 
 export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor(
-  { docKey, value, onChange, entities, placeholder, onRequestLink },
+  { docKey, value, onChange, entities, placeholder, onRequestLink, getImages, onUploadImage },
   ref
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -364,6 +498,10 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   const entitiesRef = useRef(entities);
   const onChangeRef = useRef(onChange);
   const onRequestLinkRef = useRef(onRequestLink);
+  const getImagesRef = useRef(getImages);
+  const onUploadImageRef = useRef(onUploadImage);
+  getImagesRef.current = getImages;
+  onUploadImageRef.current = onUploadImage;
   entitiesRef.current = entities;
   onChangeRef.current = onChange;
   onRequestLinkRef.current = onRequestLink;
@@ -393,12 +531,14 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
         editorTheme,
         placeholderExt(placeholder ?? 'Start writing… type [[ to link an entry'),
         autocompletion({
-          override: [wikiCompletions(() => entitiesRef.current)],
+          override: [wikiCompletions(() => entitiesRef.current), imageCompletions(() => getImagesRef.current?.())],
           icons: false,
           maxRenderedOptions: 60,
         }),
         linkHighlighter(indexRef.current),
         tableLines,
+        imagePreviews,
+        imageDropAndPaste(() => onUploadImageRef.current),
         EditorView.updateListener.of((u) => {
           if (u.docChanged) onChangeRef.current(u.state.doc.toString());
         }),

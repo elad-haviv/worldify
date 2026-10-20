@@ -26,6 +26,7 @@ import {
 import { SidePanel } from '../../components/SidePanel';
 import { MarkdownToolbar, MarkdownToolbarHandle } from '../../components/MarkdownToolbar';
 import { MarkdownEditor, MarkdownEditorHandle } from '../../components/MarkdownEditor';
+import { collectProjectImages, saveImageAsset } from '../../utils/assetStore';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
@@ -424,7 +425,13 @@ export const StoryStudioView: React.FC = () => {
               <div className="flex-1 flex min-h-0 overflow-hidden">
                 {(editorMode === 'edit' || editorMode === 'split') && (
                   <div className={`flex-1 h-full flex flex-col min-h-0 ${editorMode === 'split' ? 'border-r border-slate-800' : ''}`}>
-                  <MarkdownToolbar ref={sceneToolbarRef} editorRef={sceneEditorRef} entities={project.entities} />
+                  <MarkdownToolbar
+                    ref={sceneToolbarRef}
+                    editorRef={sceneEditorRef}
+                    entities={project.entities}
+                    getImages={() => collectProjectImages(project)}
+                    onUploadImage={(file) => saveImageAsset(file, file.name, project.id)}
+                  />
                   <div className="flex-1 min-h-0">
                   <MarkdownEditor
                     ref={sceneEditorRef}
@@ -436,6 +443,8 @@ export const StoryStudioView: React.FC = () => {
                     entities={project.entities}
                     placeholder="Write your scene… type [[ to link a character, place or relic"
                     onRequestLink={() => sceneToolbarRef.current?.openLinkPicker()}
+                    getImages={() => collectProjectImages(project)}
+                    onUploadImage={(file) => saveImageAsset(file, file.name, project.id)}
                   />
                   </div>
                   </div>

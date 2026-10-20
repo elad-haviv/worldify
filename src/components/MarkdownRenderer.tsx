@@ -1,5 +1,6 @@
 import React from 'react';
 import { Entity, Project } from '../types/worldify';
+import { ResolvedImage } from './ResolvedImage';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../utils/categories';
 
 interface MarkdownRendererProps {
@@ -118,10 +119,9 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     if (img) {
       elements.push(
         <figure key={`img-${i}`} className="my-4">
-          <img
+          <ResolvedImage
             src={img[2]}
             alt={img[1]}
-            loading="lazy"
             className="max-w-full max-h-[28rem] rounded-lg border border-slate-800 bg-slate-900"
           />
         </figure>

@@ -12,12 +12,17 @@ import {
   Link2,
   Search,
   Table,
+  Image as ImageIcon,
+  Upload,
 } from 'lucide-react';
 import type { EditorView } from '@codemirror/view';
 import { Entity } from '../types/worldify';
 import { categoryLabel } from '../utils/categories';
+import { ImageOption } from '../utils/assetStore';
+import { ResolvedImage } from './ResolvedImage';
 import {
   MarkdownEditorHandle,
+  imageMarkdown,
   insertBlock,
   insertLink,
   insertTable,
@@ -36,6 +41,10 @@ interface MarkdownToolbarProps {
   entities: Entity[];
   /** Optional text shown on the right (e.g. word count). */
   status?: React.ReactNode;
+  /** Images to offer in the gallery. */
+  getImages?: () => Promise<ImageOption[]>;
+  /** Store an uploaded image and return how to reference it. */
+  onUploadImage?: (file: File) => Promise<ImageOption>;
 }
 
 const HEADINGS = [
@@ -71,10 +80,14 @@ const ToolButton: React.FC<{ title: string; onClick: () => void; active?: boolea
 const Sep = () => <span className="w-px h-5 bg-slate-800 mx-1" />;
 
 export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbarProps>(function MarkdownToolbar(
-  { editorRef, entities, status },
+  { editorRef, entities, status, getImages, onUploadImage },
   ref
 ) {
-  const [menu, setMenu] = useState<null | 'heading' | 'table' | 'link'>(null);
+  const [menu, setMenu] = useState<null | 'heading' | 'table' | 'link' | 'image'>(null);
+  const [images, setImages] = useState<ImageOption[]>([]);
+  const [imageQuery, setImageQuery] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const [gridHover, setGridHover] = useState<[number, number]>([2, 2]);
@@ -102,7 +115,24 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
 
   useEffect(() => {
     if (menu === 'link') setTimeout(() => searchRef.current?.focus(), 0);
+    if (menu === 'image') {
+      setImageQuery('');
+      setImageUrl('');
+      getImages?.().then(setImages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu]);
+
+  const insertImages = (imgs: ImageOption[]) => {
+    close();
+    run((v) => insertBlock(v, imgs.map(imageMarkdown).join('\n')));
+  };
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || !onUploadImage) return;
+    const picked = [...files].filter((f) => f.type.startsWith('image/'));
+    if (picked.length) insertImages(await Promise.all(picked.map(onUploadImage)));
+  };
+  const shownImages = images.filter((i) => i.name.toLowerCase().includes(imageQuery.trim().toLowerCase()));
 
   const close = () => setMenu(null);
   const pick = (title: string) => {
@@ -139,6 +169,9 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
       </ToolButton>
       <ToolButton title="Table" active={menu === 'table'} onClick={() => setMenu(menu === 'table' ? null : 'table')}>
         <Table className="w-4 h-4" />
+      </ToolButton>
+      <ToolButton title="Image — or type ![[, paste or drop a picture" active={menu === 'image'} onClick={() => setMenu(menu === 'image' ? null : 'image')}>
+        <ImageIcon className="w-4 h-4" />
       </ToolButton>
       <ToolButton title="Divider" onClick={() => run((v) => insertBlock(v, '---'))}>
         <Minus className="w-4 h-4" />
@@ -206,6 +239,81 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
           </div>
           <div className="mt-2 text-xs text-slate-400 text-center tabular-nums">
             {gridHover[0]} rows × {gridHover[1]} columns
+          </div>
+        </div>
+      )}
+
+      {menu === 'image' && (
+        <div className="absolute left-4 sm:left-56 top-full mt-1 w-[26rem] max-w-[calc(100vw-2rem)] z-40 rounded-lg border border-slate-700 bg-slate-900 shadow-xl">
+          <div className="p-3 space-y-2 border-b border-slate-800">
+            {onUploadImage && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="w-full h-9 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload from computer
+                </button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => uploadFiles(e.target.files)}
+                />
+              </>
+            )}
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const url = imageUrl.trim();
+                if (url) insertImages([{ src: url, name: url.split('/').pop()?.replace(/\.[^.]+$/, '') || 'image' }]);
+              }}
+            >
+              <input
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="…or paste an image web address"
+                className="flex-1 h-9 bg-slate-950 border border-slate-700 rounded-lg px-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+              />
+              <button type="submit" className="h-9 px-3 rounded-lg border border-slate-700 text-sm text-slate-200 hover:bg-slate-800 cursor-pointer">
+                Insert
+              </button>
+            </form>
+          </div>
+          <div className="p-3">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <span className="text-xs text-slate-400">Images in this project ({images.length})</span>
+              <input
+                value={imageQuery}
+                onChange={(e) => setImageQuery(e.target.value)}
+                placeholder="Filter…"
+                className="w-36 h-7 bg-slate-950 border border-slate-800 rounded-md px-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+            {shownImages.length === 0 ? (
+              <div className="text-sm text-slate-500 py-6 text-center">No images yet</div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
+                {shownImages.map((img) => (
+                  <button
+                    key={img.src}
+                    type="button"
+                    title={img.name}
+                    onClick={() => insertImages([img])}
+                    className="group text-left rounded-md overflow-hidden border border-slate-800 hover:border-amber-500/60 cursor-pointer"
+                  >
+                    <ResolvedImage src={img.src} alt={img.name} className="w-full h-20 object-cover bg-slate-950" />
+                    <span className="block px-1.5 py-1 text-xs text-slate-400 group-hover:text-slate-100 truncate">{img.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="mt-2 text-xs text-slate-500">Tip: type ![[ in the editor, or paste / drop a picture.</p>
           </div>
         </div>
       )}
