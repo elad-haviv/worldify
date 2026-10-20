@@ -24,7 +24,8 @@ import {
   Map as MapIcon,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
-import { MarkdownToolbar } from '../../components/MarkdownToolbar';
+import { MarkdownToolbar, MarkdownToolbarHandle } from '../../components/MarkdownToolbar';
+import { MarkdownEditor, MarkdownEditorHandle } from '../../components/MarkdownEditor';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
@@ -49,7 +50,8 @@ export const StoryStudioView: React.FC = () => {
 
   const project = projects.find((p) => p.id === activeProjectId);
   const [subView, setSubView] = useState<'manuscript' | 'story_timeline' | 'story_map'>('manuscript');
-  const sceneEditorRef = useRef<HTMLTextAreaElement>(null);
+  const sceneEditorRef = useRef<MarkdownEditorHandle>(null);
+  const sceneToolbarRef = useRef<MarkdownToolbarHandle>(null);
   const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('edit');
   const [isAiBusy, setIsAiBusy] = useState(false);
 
@@ -422,18 +424,18 @@ export const StoryStudioView: React.FC = () => {
               <div className="flex-1 flex min-h-0 overflow-hidden">
                 {(editorMode === 'edit' || editorMode === 'split') && (
                   <div className={`flex-1 h-full flex flex-col min-h-0 ${editorMode === 'split' ? 'border-r border-slate-800' : ''}`}>
-                  <MarkdownToolbar textareaRef={sceneEditorRef} entities={project.entities} />
-                  <div className="flex-1 min-h-0 overflow-y-auto">
-                  <textarea
+                  <MarkdownToolbar ref={sceneToolbarRef} editorRef={sceneEditorRef} entities={project.entities} />
+                  <div className="flex-1 min-h-0">
+                  <MarkdownEditor
                     ref={sceneEditorRef}
+                    docKey={activeScene.id}
                     value={activeScene.contentMd}
-                    onChange={(e) =>
-                      updateStoryScene(activeStory.id, activeChapter.id, activeScene.id, {
-                        contentMd: e.target.value,
-                      })
+                    onChange={(v) =>
+                      updateStoryScene(activeStory.id, activeChapter.id, activeScene.id, { contentMd: v })
                     }
-                    placeholder="Write your scene prose using [[Entity Name]] to link characters, relics, and locations..."
-                    className="block w-full max-w-3xl mx-auto h-full min-h-full bg-transparent px-8 py-4 text-base text-slate-200 leading-8 focus:outline-none resize-none"
+                    entities={project.entities}
+                    placeholder="Write your scene… type [[ to link a character, place or relic"
+                    onRequestLink={() => sceneToolbarRef.current?.openLinkPicker()}
                   />
                   </div>
                   </div>

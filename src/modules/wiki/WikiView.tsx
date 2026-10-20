@@ -29,7 +29,8 @@ import {
   Check,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
-import { MarkdownToolbar } from '../../components/MarkdownToolbar';
+import { MarkdownToolbar, MarkdownToolbarHandle } from '../../components/MarkdownToolbar';
+import { MarkdownEditor, MarkdownEditorHandle } from '../../components/MarkdownEditor';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
@@ -64,7 +65,8 @@ export const WikiView: React.FC = () => {
   const [worldFilter, setWorldFilter] = useState<string>('all');
   const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('preview');
   const [isAiBusy, setIsAiBusy] = useState(false);
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<MarkdownEditorHandle>(null);
+  const toolbarRef = useRef<MarkdownToolbarHandle>(null);
 
   // New Entry Modal
   const [showNewModal, setShowNewModal] = useState(false);
@@ -474,19 +476,22 @@ export const WikiView: React.FC = () => {
                 }`}
               >
                 <MarkdownToolbar
-                  textareaRef={editorRef}
+                  ref={toolbarRef}
+                  editorRef={editorRef}
                   entities={project.entities.filter((e) => e.id !== activeEntity.id)}
                   status={`${activeEntity.contentMd.trim().split(/\s+/).filter(Boolean).length} words`}
                 />
-                <textarea
-                  ref={editorRef}
-                  value={activeEntity.contentMd}
-                  onChange={(e) =>
-                    updateEntity(activeEntity.id, { contentMd: e.target.value })
-                  }
-                  placeholder="Write your wiki entry in Markdown..."
-                  className="flex-1 w-full bg-slate-950 px-8 py-6 text-base text-slate-200 leading-relaxed focus:outline-none resize-none"
-                />
+                <div className="flex-1 min-h-0">
+                  <MarkdownEditor
+                    ref={editorRef}
+                    docKey={activeEntity.id}
+                    value={activeEntity.contentMd}
+                    onChange={(v) => updateEntity(activeEntity.id, { contentMd: v })}
+                    entities={project.entities}
+                    placeholder="Write your wiki entry… type [[ to link another entry"
+                    onRequestLink={() => toolbarRef.current?.openLinkPicker()}
+                  />
+                </div>
               </div>
             )}
 
