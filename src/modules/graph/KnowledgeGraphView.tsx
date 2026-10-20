@@ -18,17 +18,11 @@ import {
   Plus,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
-const CATEGORY_COLORS: Record<string, string> = {
-  character: '#f59e0b',
-  settlement: '#38bdf8',
-  faction: '#10b981',
-  item: '#ec4899',
-  deity: '#a855f7',
-  location: '#6366f1',
-  species: '#14b8a6',
-  magic_tech: '#eab308',
-};
+const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries(CATEGORY_META).map(([k, v]) => [k, v.color])
+);
 
 interface NodeLayout {
   id: string;
@@ -65,6 +59,7 @@ export const KnowledgeGraphView: React.FC = () => {
 
   // Pan / Zoom / Drag
   const [zoom, setZoom] = useState<number>(1);
+  const [fitZoom, setFitZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const [isPanning, setIsPanning] = useState<boolean>(false);
@@ -139,10 +134,14 @@ export const KnowledgeGraphView: React.FC = () => {
     const n = project.entities.length;
     if (n === 0) return;
 
+    // Big projects get a bigger canvas; the view starts zoomed out to fit it.
+    const spread = Math.max(1, Math.sqrt(n / 30));
+    const lo = 500 - 430 * spread;
+    const hi = 500 + 430 * spread;
     const layoutMap: Record<string, NodeLayout> = {};
     project.entities.forEach((ent, idx) => {
       const angle = (idx / n) * Math.PI * 2;
-      const radius = 240 + (idx % 3) * 65;
+      const radius = (240 + (idx % 3) * 65) * spread;
       layoutMap[ent.id] = {
         id: ent.id,
         x: 500 + Math.cos(angle) * radius,
@@ -195,16 +194,19 @@ export const KnowledgeGraphView: React.FC = () => {
       // Center gravity + update
       for (const id of ids) {
         const node = layoutMap[id];
-        node.vx += (500 - node.x) * 0.006;
-        node.vy += (500 - node.y) * 0.006;
-        node.x = Math.max(70, Math.min(930, node.x + node.vx * 0.35));
-        node.y = Math.max(70, Math.min(930, node.y + node.vy * 0.35));
+        node.vx += (500 - node.x) * 0.006 * spread;
+        node.vy += (500 - node.y) * 0.006 * spread;
+        node.x = Math.max(lo, Math.min(hi, node.x + node.vx * 0.35));
+        node.y = Math.max(lo, Math.min(hi, node.y + node.vy * 0.35));
         node.vx *= 0.5;
         node.vy *= 0.5;
       }
     }
 
     setPositions(layoutMap);
+    setFitZoom(1 / spread);
+    setZoom(1 / spread);
+    setPan({ x: 0, y: 0 });
   };
 
   useEffect(() => {
@@ -220,6 +222,13 @@ export const KnowledgeGraphView: React.FC = () => {
   }, [visibleEdges, pathStartId, pathEndId]);
 
   const pathNodeSet = new Set(shortestPath?.entityIds || []);
+  const selectedNeighborIds = new Set<string>();
+  if (selectedEntityId) {
+    for (const e of visibleEdges) {
+      if (e.sourceEntityId === selectedEntityId) selectedNeighborIds.add(e.targetEntityId);
+      if (e.targetEntityId === selectedEntityId) selectedNeighborIds.add(e.sourceEntityId);
+    }
+  }
   const pathEdgeSet = new Set(shortestPath?.relationIds || []);
 
   // Degree count per node
@@ -228,6 +237,14 @@ export const KnowledgeGraphView: React.FC = () => {
     degreeMap.set(e.sourceEntityId, (degreeMap.get(e.sourceEntityId) || 0) + 1);
     degreeMap.set(e.targetEntityId, (degreeMap.get(e.targetEntityId) || 0) + 1);
   });
+
+  // The most-connected entries stay labelled even when zoomed out.
+  const hubIds = new Set(
+    [...visibleNodes]
+      .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0))
+      .slice(0, 12)
+      .map((n) => n.id)
+  );
 
   const activeEntity = project.entities.find((e) => e.id === selectedEntityId);
 
@@ -242,8 +259,8 @@ export const KnowledgeGraphView: React.FC = () => {
         ...prev,
         [draggingNodeId]: {
           ...(prev[draggingNodeId] || { id: draggingNodeId, vx: 0, vy: 0 }),
-          x: Math.max(50, Math.min(950, x)),
-          y: Math.max(50, Math.min(950, y)),
+          x,
+          y,
         },
       }));
     } else if (isPanning) {
@@ -435,7 +452,7 @@ export const KnowledgeGraphView: React.FC = () => {
         <div className="absolute top-4 right-4 z-10 flex items-center gap-1 bg-slate-900/90 border border-slate-800 rounded-lg p-1 shadow-lg">
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.min(2.4, z + 0.2))}
+            onClick={() => setZoom((z) => Math.min(2.4, z * 1.25))}
             className="p-1.5 rounded hover:bg-slate-800 text-slate-300 cursor-pointer"
             title="Zoom In"
           >
@@ -446,7 +463,7 @@ export const KnowledgeGraphView: React.FC = () => {
           </span>
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.max(0.45, z - 0.2))}
+            onClick={() => setZoom((z) => Math.max(fitZoom * 0.6, z / 1.25))}
             className="p-1.5 rounded hover:bg-slate-800 text-slate-300 cursor-pointer"
             title="Zoom Out"
           >
@@ -455,7 +472,7 @@ export const KnowledgeGraphView: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              setZoom(1);
+              setZoom(fitZoom);
               setPan({ x: 0, y: 0 });
             }}
             className="px-2 py-1 rounded hover:bg-slate-800 text-xs text-slate-300 cursor-pointer"
@@ -466,6 +483,10 @@ export const KnowledgeGraphView: React.FC = () => {
 
         <svg
           viewBox="0 0 1000 1000"
+          onWheel={(e) => {
+            const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+            setZoom((z) => Math.min(2.4, Math.max(fitZoom * 0.6, z * factor)));
+          }}
           className="w-full h-full select-none cursor-grab active:cursor-grabbing"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
@@ -540,9 +561,16 @@ export const KnowledgeGraphView: React.FC = () => {
 
             {/* Nodes */}
             {visibleNodes.map((node) => {
+              // When zoomed far out, only label the selection and its neighbours.
+              const showLabel =
+                zoom >= 0.7 ||
+                node.id === selectedEntityId ||
+                pathNodeSet.has(node.id) ||
+                selectedNeighborIds.has(node.id) ||
+                hubIds.has(node.id);
               const pos = positions[node.id] || { x: 500, y: 500 };
               const deg = degreeMap.get(node.id) || 1;
-              const radius = Math.min(30, 14 + deg * 2.2);
+              const radius = Math.min(30, 14 + deg * 2.2) * Math.min(2, 1 / Math.sqrt(Math.max(zoom, 0.25)));
               const color = CATEGORY_COLORS[node.category] || '#f59e0b';
               const isSelected = node.id === selectedEntityId;
               const isOnPath = pathNodeSet.has(node.id);
@@ -575,17 +603,17 @@ export const KnowledgeGraphView: React.FC = () => {
                   />
                   <circle r={radius - 5} fill={color} fillOpacity={0.35} />
                   <text
-                    y={radius + 16}
+                    y={radius + 22 / Math.max(Math.min(zoom, 1), 0.2)}
                     textAnchor="middle"
                     fill={isSelected ? '#fbbf24' : '#f1f5f9'}
-                    fontSize={15}
+                    fontSize={22 / Math.max(Math.min(zoom, 1), 0.2)}
                     paintOrder="stroke"
                     stroke="#020617"
-                    strokeWidth={4}
+                    strokeWidth={5 / Math.max(Math.min(zoom, 1), 0.2)}
                     fontWeight={isSelected ? 700 : 600}
                     className="pointer-events-none"
                   >
-                    {node.title}
+                    {showLabel ? node.title : ''}
                   </text>
                 </g>
               );
@@ -599,7 +627,7 @@ export const KnowledgeGraphView: React.FC = () => {
         <SidePanel side="right" panelId="graph-details" label="Details" width="w-80" defaultOpen={true} className="p-4 overflow-y-auto space-y-4 text-sm">
           <div>
             <span className="text-xs capitalize px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
-              {activeEntity.category}
+              {categoryLabel(activeEntity.category)}
             </span>
             <h3 className="text-lg font-semibold text-slate-100 mt-1.5">
               {activeEntity.title}

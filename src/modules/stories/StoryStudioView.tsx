@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
+import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
 export const StoryStudioView: React.FC = () => {
   const {
@@ -806,7 +807,7 @@ export const StoryStudioView: React.FC = () => {
               <option value="">+ Add Entity to Scene Cast...</option>
               {project.entities.map((en) => (
                 <option key={en.id} value={en.id}>
-                  {en.title} ({en.category})
+                  {en.title} ({categoryLabel(en.category)})
                 </option>
               ))}
             </select>

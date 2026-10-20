@@ -25,12 +25,30 @@ import {
   World,
   WorldConnection,
   WorldMap,
+  BundledVault,
 } from '../types/worldify';
 import { createSeedProjects } from '../data/seedProjects';
 import { generateProceduralMap } from '../utils/proceduralMapGenerator';
 
 const STORAGE_KEY = 'worldify_vault_v1';
 const AI_SETTINGS_KEY = 'worldify_ai_settings_v1';
+const ACTIVE_PROJECT_KEY = 'worldify_active_project_v1';
+
+function readActiveProjectId(): string | null {
+  try {
+    return localStorage.getItem(ACTIVE_PROJECT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function saveActiveProjectId(id: string) {
+  try {
+    localStorage.setItem(ACTIVE_PROJECT_KEY, id);
+  } catch {
+    // ignore
+  }
+}
 
 const DEFAULT_AI_SETTINGS: AISettings = {
   activeProvider: 'local_synthesizer',
@@ -198,13 +216,18 @@ export interface WorldifyStoreState {
   clearAIChat: () => void;
 
   // Vault Import/Export
+  /** Adds the given projects, replacing any with the same id. Other projects are kept. */
   importProjectVault: (projects: Project[]) => void;
+  /** Newer imports of bundled vaults that the user can apply, keyed by project id. */
+  vaultUpdates: Record<string, BundledVault>;
+  setVaultUpdates: (updates: Record<string, BundledVault>) => void;
   resetVaultToDemo: () => void;
 }
 
 export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
   const initialProjects = loadInitialProjects();
-  const firstProj = initialProjects[0];
+  const savedActiveId = readActiveProjectId();
+  const firstProj = initialProjects.find((p) => p.id === savedActiveId) || initialProjects[0];
 
   return {
     projects: initialProjects,
@@ -232,6 +255,7 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
     setActiveProject: (projectId) => {
       const proj = get().projects.find((p) => p.id === projectId);
       if (!proj) return;
+      saveActiveProjectId(projectId);
       set({
         activeProjectId: projectId,
         selectedEntityId: proj.entities[0]?.id || null,
@@ -1327,12 +1351,19 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         ],
       }),
 
-    importProjectVault: (projects) => {
-      if (!Array.isArray(projects) || projects.length === 0) return;
+    importProjectVault: (incoming) => {
+      if (!Array.isArray(incoming) || incoming.length === 0) return;
+      const incomingIds = new Set(incoming.map((p) => p.id));
+      const kept = get().projects.filter((p) => !incomingIds.has(p.id));
+      const projects = [...kept, ...incoming];
       saveProjectsToStorage(projects);
-      const first = projects[0];
+      const first = incoming[0];
+      saveActiveProjectId(first.id);
+      const updates = { ...get().vaultUpdates };
+      incoming.forEach((p) => delete updates[p.id]);
       set({
         projects,
+        vaultUpdates: updates,
         activeProjectId: first.id,
         selectedEntityId: first.entities[0]?.id || null,
         selectedMapId: first.maps[0]?.id || null,
@@ -1341,8 +1372,13 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
       });
     },
 
+    vaultUpdates: {},
+    setVaultUpdates: (updates) => set({ vaultUpdates: updates }),
+
     resetVaultToDemo: () => {
-      const seeded = createSeedProjects();
+      // Keep projects imported from external vaults; only the demo worlds are reset.
+      const imported = get().projects.filter((p) => p.importedFrom);
+      const seeded = [...createSeedProjects(), ...imported];
       saveProjectsToStorage(seeded);
       const first = seeded[0];
       set({

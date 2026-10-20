@@ -35,6 +35,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
 type MapTool = 'select' | 'add_marker' | 'draw_path' | 'draw_zone' | 'add_label' | 'ruler';
 
@@ -781,7 +782,7 @@ export const MapView: React.FC = () => {
                       y={0}
                       width={1000}
                       height={1000}
-                      preserveAspectRatio="xMidYMid slice"
+                      preserveAspectRatio="xMidYMid meet"
                     />
                   ) : (
                     /* Built-in Stylized Citadel & Harbor Blueprint */
@@ -1429,7 +1430,7 @@ export const MapView: React.FC = () => {
                     <option value="">— None —</option>
                     {project.entities.map((en) => (
                       <option key={en.id} value={en.id}>
-                        {en.title} ({en.category})
+                        {en.title} ({categoryLabel(en.category)})
                       </option>
                     ))}
                   </select>

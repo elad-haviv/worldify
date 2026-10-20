@@ -1,5 +1,6 @@
 import React from 'react';
 import { Entity, Project } from '../types/worldify';
+import { CATEGORY_META, categoryLabel, categoryColor } from '../utils/categories';
 
 interface MarkdownRendererProps {
   content: string;
@@ -14,7 +15,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   onSelectEntity,
   onCreateStubEntity,
 }) => {
-  const renderInlineTokens = (line: string, keyPrefix: string) => {
+  const renderInlineTokens = (line: string, keyPrefix: string): React.ReactNode[] => {
     // Tokenize [[WikiLinks]], **bold**, *italic*, `code`
     const tokenRegex = /(\[\[[^\]]+\]\]|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
     const parts = line.split(tokenRegex);
@@ -47,7 +48,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               </button>
               {/* Hover preview card */}
               <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-200 absolute bottom-full left-0 mb-2 w-72 p-3 rounded-lg bg-slate-900 border border-slate-700 shadow-2xl z-50 text-left block">
-                <span className="block text-xs capitalize text-slate-500 mb-0.5">{resolved.category}</span>
+                <span className="block text-xs capitalize text-slate-500 mb-0.5">{categoryLabel(resolved.category)}</span>
                 <span className="block text-sm font-semibold text-slate-100 mb-1">{resolved.title}</span>
                 <span className="block text-sm text-slate-300 line-clamp-3 leading-snug">{resolved.summary}</span>
               </span>
@@ -72,7 +73,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       if (part.startsWith('**') && part.endsWith('**')) {
         return (
           <strong key={`${keyPrefix}-${idx}`} className="font-semibold text-slate-100">
-            {part.slice(2, -2)}
+            {renderInlineTokens(part.slice(2, -2), `${keyPrefix}-${idx}-b`)}
           </strong>
         );
       }
@@ -80,7 +81,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       if (part.startsWith('*') && part.endsWith('*')) {
         return (
           <em key={`${keyPrefix}-${idx}`} className="italic text-slate-200">
-            {part.slice(1, -1)}
+            {renderInlineTokens(part.slice(1, -1), `${keyPrefix}-${idx}-i`)}
           </em>
         );
       }
@@ -109,6 +110,92 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
     if (!trimmed) {
       elements.push(<div key={`sp-${i}`} className="h-3" />);
+      continue;
+    }
+
+    // Standalone image: ![alt](url)
+    const img = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/);
+    if (img) {
+      elements.push(
+        <figure key={`img-${i}`} className="my-4">
+          <img
+            src={img[2]}
+            alt={img[1]}
+            loading="lazy"
+            className="max-w-full max-h-[28rem] rounded-lg border border-slate-800 bg-slate-900"
+          />
+        </figure>
+      );
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      elements.push(<hr key={`hr-${i}`} className="my-6 border-slate-800" />);
+      continue;
+    }
+
+    // Simple pipe table: consume consecutive "|" lines
+    if (trimmed.startsWith('|')) {
+      const rows: string[][] = [];
+      let j = i;
+      while (j < lines.length && lines[j].trim().startsWith('|')) {
+        const cells = lines[j].trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+        if (!cells.every((c) => /^:?-{2,}:?$/.test(c))) rows.push(cells);
+        j++;
+      }
+      i = j - 1;
+      const [head, ...body] = rows;
+      elements.push(
+        <div key={`tbl-${i}`} className="my-4 overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            {head && (
+              <thead>
+                <tr>
+                  {head.map((c, ci) => (
+                    <th key={ci} className="text-left font-semibold text-slate-200 border-b border-slate-700 px-3 py-2">
+                      {renderInlineTokens(c, `th-${i}-${ci}`)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {body.map((r, ri) => (
+                <tr key={ri} className="border-b border-slate-800/70">
+                  {r.map((c, ci) => (
+                    <td key={ci} className="px-3 py-2 text-slate-300 align-top">
+                      {renderInlineTokens(c, `td-${i}-${ri}-${ci}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+
+    // Numbered list item
+    const ol = trimmed.match(/^(\d+)\.\s+(.*)$/);
+    if (ol) {
+      elements.push(
+        <div key={`ol-${i}`} className="flex items-start gap-3 pl-1 my-1.5 text-base text-slate-300">
+          <span className="text-slate-500 tabular-nums min-w-[1.25rem] leading-7">{ol[1]}.</span>
+          <span className="leading-7">{renderInlineTokens(ol[2], `ol-${i}`)}</span>
+        </div>
+      );
+      continue;
+    }
+
+    const h4 = trimmed.match(/^#{4,6}\s+(.*)$/);
+    if (h4) {
+      elements.push(
+        <h4 key={`h4-${i}`} className="text-base font-semibold text-slate-200 mt-4 mb-1">
+          {renderInlineTokens(h4[1], `h4-${i}`)}
+        </h4>
+      );
       continue;
     }
 

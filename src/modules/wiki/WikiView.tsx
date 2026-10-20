@@ -30,17 +30,11 @@ import {
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
+import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
 const CATEGORIES: Array<{ key: EntityCategory | 'all'; label: string }> = [
   { key: 'all', label: 'All Categories' },
-  { key: 'character', label: 'Characters' },
-  { key: 'settlement', label: 'Settlements & Citadels' },
-  { key: 'faction', label: 'Factions & Orders' },
-  { key: 'item', label: 'Relics & Items' },
-  { key: 'deity', label: 'Deities & Cosmic' },
-  { key: 'location', label: 'Locations & Rifts' },
-  { key: 'species', label: 'Species & Lineages' },
-  { key: 'magic_tech', label: 'Magic & Technology' },
+  ...(Object.keys(CATEGORY_META) as EntityCategory[]).map((key) => ({ key, label: CATEGORY_META[key].plural })),
 ];
 
 export const WikiView: React.FC = () => {
@@ -138,9 +132,14 @@ export const WikiView: React.FC = () => {
       )
     : [];
 
-  const temporalStatus = activeEntity
-    ? resolveEntityTemporalStatus(activeEntity, project.currentTick, calendar)
-    : null;
+  // Only show a dated status for entries that actually have dates.
+  const hasTimeline =
+    !!activeEntity &&
+    (activeEntity.lifecycleStartTick !== undefined ||
+      activeEntity.lifecycleEndTick !== undefined ||
+      activeEntity.temporalStates.length > 0);
+  const temporalStatus =
+    activeEntity && hasTimeline ? resolveEntityTemporalStatus(activeEntity, project.currentTick, calendar) : null;
 
   const handleCreateEntity = (e: React.FormEvent) => {
     e.preventDefault();
@@ -335,7 +334,7 @@ export const WikiView: React.FC = () => {
                 <div className="flex items-center justify-between gap-1 mb-0.5">
                   <span className="text-xs font-semibold truncate">{ent.title}</span>
                   <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-950/90 text-slate-400 border border-slate-800 shrink-0 whitespace-nowrap">
-                    {ent.category}
+                    {categoryLabel(ent.category)}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 line-clamp-1">{ent.summary}</p>
@@ -353,7 +352,7 @@ export const WikiView: React.FC = () => {
             <div className="space-y-1 flex-1 min-w-[260px]">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
                 <span className="capitalize font-medium text-amber-300">
-                  {activeEntity.category}
+                  {categoryLabel(activeEntity.category)}
                 </span>
                 {activeTemplate && (
                   <button
@@ -702,7 +701,7 @@ export const WikiView: React.FC = () => {
                             .filter((e) => e.id !== activeEntity.id)
                             .map((peer) => (
                               <option key={peer.id} value={peer.id}>
-                                {peer.title} ({peer.category})
+                                {peer.title} ({categoryLabel(peer.category)})
                               </option>
                             ))}
                         </select>

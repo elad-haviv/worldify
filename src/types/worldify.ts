@@ -154,6 +154,8 @@ export interface CalendarEra {
   abbreviation: string; // e.g., "1A", "BS", "AE"
   startYear: number; // Relative to epoch year 0
   endYear?: number; // Undefined if current/open-ended era
+  /** Years in this era count down towards its end (e.g. "Before Man": the year before the epoch is 1 BM). */
+  countsBackward?: boolean;
   color: string;
   description: string;
 }
@@ -508,7 +510,22 @@ export interface Project {
   timelineEvents: TimelineEvent[];
   maps: WorldMap[];
   stories: Story[];
+  /** Set when the project was generated from an external source (e.g. an Obsidian vault). */
+  importedFrom?: {
+    source: string;
+    importedAt: string;
+    notes: number;
+  };
   updatedAt: string;
+}
+
+/** Entry in public/vaults/index.json, written by scripts/import-obsidian.mjs. */
+export interface BundledVault {
+  slug: string;
+  projectId: string;
+  name: string;
+  url: string;
+  importedAt: string;
 }
 
 export type ActiveModule =

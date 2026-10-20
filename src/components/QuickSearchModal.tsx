@@ -10,6 +10,7 @@ import {
   X,
   ArrowRight,
 } from 'lucide-react';
+import { CATEGORY_META, categoryLabel, categoryColor } from '../utils/categories';
 
 export const QuickSearchModal: React.FC = () => {
   const {
@@ -121,7 +122,7 @@ export const QuickSearchModal: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 ml-2">
                       <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 capitalize whitespace-nowrap">
-                        {ent.category}
+                        {categoryLabel(ent.category)}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400" />
                     </div>

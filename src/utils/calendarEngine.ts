@@ -27,7 +27,8 @@ export function resolveEraForYear(calendar: CustomCalendar, year: number): { era
   for (let i = sortedEras.length - 1; i >= 0; i--) {
     const era = sortedEras[i];
     if (year >= era.startYear && (era.endYear === undefined || year <= era.endYear)) {
-      const eraYear = year - era.startYear + 1;
+      const eraYear =
+        era.countsBackward && era.endYear !== undefined ? era.endYear - year + 1 : year - era.startYear + 1;
       return { era, eraYear };
     }
   }
@@ -99,9 +100,11 @@ export function formatTickToDate(calendar: CustomCalendar, tick: number): Format
   }
 
   const dayOfMonth = dayOfYear + 1;
-  const weekdays = calendar.weekdays.length > 0 ? calendar.weekdays : ['Firstday'];
-  const weekdayIndex = ((wholeTick % weekdays.length) + weekdays.length) % weekdays.length;
-  const weekdayName = selectedMonth.intercalary ? 'Festival Day' : weekdays[weekdayIndex];
+  // Calendars without a week simply show no weekday.
+  const weekdays = calendar.weekdays;
+  const weekdayIndex =
+    weekdays.length > 0 ? ((wholeTick % weekdays.length) + weekdays.length) % weekdays.length : 0;
+  const weekdayName = selectedMonth.intercalary ? 'Festival Day' : weekdays[weekdayIndex] ?? '';
 
   const { era, eraYear } = resolveEraForYear(calendar, year);
 
@@ -119,7 +122,7 @@ export function formatTickToDate(calendar: CustomCalendar, tick: number): Format
 
   const yearLabel = eraYear >= 0 ? `Year ${eraYear} ${era.abbreviation}` : `${Math.abs(eraYear)} Before ${era.abbreviation}`;
   const displayShort = `${dayOfMonth} ${selectedMonth.name}, ${eraYear} ${era.abbreviation}`;
-  const displayFull = `${weekdayName}, ${dayOfMonth} ${selectedMonth.name} (${selectedMonth.season}) — ${yearLabel}`;
+  const displayFull = `${weekdayName ? `${weekdayName}, ` : ''}${dayOfMonth} ${selectedMonth.name} (${selectedMonth.season}) — ${yearLabel}`;
 
   return {
     tick,

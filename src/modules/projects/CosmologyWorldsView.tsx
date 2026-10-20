@@ -12,6 +12,7 @@ import {
   Orbit,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
 export const CosmologyWorldsView: React.FC = () => {
   const {
@@ -371,7 +372,7 @@ export const CosmologyWorldsView: React.FC = () => {
                   className="w-full px-2.5 py-1.5 rounded bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-left flex items-center justify-between text-xs text-slate-300 cursor-pointer"
                 >
                   <span className="truncate">{ent.title}</span>
-                  <span className="text-xs text-slate-500 capitalize">{ent.category}</span>
+                  <span className="text-xs text-slate-500 capitalize">{categoryLabel(ent.category)}</span>
                 </button>
               ))}
             </div>

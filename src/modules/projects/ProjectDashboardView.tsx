@@ -18,6 +18,8 @@ import {
   ArrowRight,
   Compass,
 } from 'lucide-react';
+import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
+import { fetchBundledProject } from '../../utils/bundledVaults';
 
 export const ProjectDashboardView: React.FC = () => {
   const {
@@ -33,6 +35,7 @@ export const ProjectDashboardView: React.FC = () => {
     toggleAICopilot,
     importProjectVault,
     resetVaultToDemo,
+    vaultUpdates,
   } = useWorldifyStore();
 
   const [showNewProjModal, setShowNewProjModal] = useState(false);
@@ -106,9 +109,8 @@ export const ProjectDashboardView: React.FC = () => {
     reader.onload = (ev) => {
       try {
         const parsed = JSON.parse(String(ev.target?.result));
-        if (Array.isArray(parsed)) {
-          importProjectVault(parsed);
-        }
+        if (Array.isArray(parsed)) importProjectVault(parsed);
+        else if (parsed && typeof parsed === 'object' && 'entities' in parsed) importProjectVault([parsed]);
       } catch (err) {
         alert('Invalid Worldify JSON Vault file: ' + String(err));
       }
@@ -143,6 +145,33 @@ export const ProjectDashboardView: React.FC = () => {
           <h1 className="text-3xl sm:text-4xl font-display font-bold text-slate-50">{project.name}</h1>
           <p className="text-lg text-amber-200/90">{project.tagline}</p>
           <p className="text-base text-slate-400 leading-relaxed">{project.description}</p>
+          {project.importedFrom && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-400 pt-1">
+              <span className="flex items-center gap-2">
+                <Download className="w-4 h-4 text-slate-500" />
+                Imported from {project.importedFrom.source} on{' '}
+                {new Date(project.importedFrom.importedAt).toLocaleDateString()}. Edits made here are not written back.
+              </span>
+              {vaultUpdates[project.id] && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (
+                      !window.confirm(
+                        'Replace this project with the latest import from the vault? Changes you made to it inside Worldify will be lost.'
+                      )
+                    )
+                      return;
+                    const fresh = await fetchBundledProject(vaultUpdates[project.id]);
+                    if (fresh) importProjectVault([fresh]);
+                  }}
+                  className="h-8 px-3 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/40 hover:bg-amber-500/25 text-sm cursor-pointer"
+                >
+                  Newer import available — update
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Project actions */}
@@ -389,7 +418,7 @@ export const ProjectDashboardView: React.FC = () => {
                   <div className="text-xs text-slate-400 line-clamp-1">{ent.summary}</div>
                 </div>
                 <span className="text-xs px-1.5 py-0.5 rounded bg-slate-900 text-amber-300/90 border border-slate-800 capitalize shrink-0 whitespace-nowrap">
-                  {ent.category}
+                  {categoryLabel(ent.category)}
                 </span>
               </button>
             ))}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useWorldifyStore } from './store/useWorldifyStore';
 import { ActiveModule } from './types/worldify';
 import { formatTickToDate } from './utils/calendarEngine';
+import { syncBundledVaults } from './utils/bundledVaults';
 import { ProjectDashboardView } from './modules/projects/ProjectDashboardView';
 import { CosmologyWorldsView } from './modules/projects/CosmologyWorldsView';
 import { WikiView } from './modules/wiki/WikiView';
@@ -95,6 +96,10 @@ export const App: React.FC = () => {
   const [collapsed, setCollapsed] = useState<boolean>(readSidebarPref);
   // null = follow the screen's default; true/false = user choice for this screen
   const [timelineOverride, setTimelineOverride] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    syncBundledVaults();
+  }, []);
 
   useEffect(() => {
     setTimelineOverride(null);
