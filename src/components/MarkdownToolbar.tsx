@@ -14,6 +14,11 @@ import {
   Table,
   Image as ImageIcon,
   Upload,
+  Maximize2,
+  Minimize2,
+  X,
+  Globe,
+  Loader2,
 } from 'lucide-react';
 import type { EditorView } from '@codemirror/view';
 import { Entity } from '../types/worldify';
@@ -87,6 +92,9 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
   const [images, setImages] = useState<ImageOption[]>([]);
   const [imageQuery, setImageQuery] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageWide, setImageWide] = useState(false);
+  const [urlBusy, setUrlBusy] = useState(false);
+  const [urlNote, setUrlNote] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -118,6 +126,7 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
     if (menu === 'image') {
       setImageQuery('');
       setImageUrl('');
+      setUrlNote('');
       getImages?.().then(setImages);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,6 +141,35 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
     const picked = [...files].filter((f) => f.type.startsWith('image/'));
     if (picked.length) insertImages(await Promise.all(picked.map(onUploadImage)));
   };
+  /** Download the picture and keep a copy in the gallery; fall back to linking it. */
+  const addFromUrl = async () => {
+    const url = imageUrl.trim();
+    if (!url) return;
+    const name = decodeURIComponent(url.split(/[?#]/)[0].split('/').pop() || 'image').replace(/\.[^.]+$/, '') || 'image';
+    if (!onUploadImage) {
+      insertImages([{ src: url, name }]);
+      return;
+    }
+    setUrlBusy(true);
+    setUrlNote('');
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      if (!blob.type.startsWith('image/')) throw new Error('not an image');
+      const ext = blob.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+      const saved = await onUploadImage(new File([blob], `${name}.${ext}`, { type: blob.type }));
+      insertImages([saved]);
+    } catch {
+      // Many sites block downloads from other pages; link to the picture instead.
+      setUrlNote("That site doesn't allow saving a copy, so the image was inserted as a link instead.");
+      run((v) => insertBlock(v, imageMarkdown({ src: url, name })));
+      setImageUrl('');
+    } finally {
+      setUrlBusy(false);
+    }
+  };
+
   const shownImages = images.filter((i) => i.name.toLowerCase().includes(imageQuery.trim().toLowerCase()));
 
   const close = () => setMenu(null);
@@ -190,7 +228,12 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
 
       {status && <div className="ml-auto text-xs text-slate-500 tabular-nums">{status}</div>}
 
-      {menu && <div className="fixed inset-0 z-30" onClick={close} />}
+      {menu && (
+        <div
+          className={`fixed inset-0 z-30 ${menu === 'image' && imageWide ? 'bg-slate-950/70 backdrop-blur-sm' : ''}`}
+          onClick={close}
+        />
+      )}
 
       {menu === 'heading' && (
         <div className="absolute left-4 top-full mt-1 w-52 z-40 rounded-lg border border-slate-700 bg-slate-900 shadow-xl p-1">
@@ -244,14 +287,43 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
       )}
 
       {menu === 'image' && (
-        <div className="absolute left-4 sm:left-56 top-full mt-1 w-[26rem] max-w-[calc(100vw-2rem)] z-40 rounded-lg border border-slate-700 bg-slate-900 shadow-xl">
-          <div className="p-3 space-y-2 border-b border-slate-800">
+        <div
+          className={
+            imageWide
+              ? 'fixed inset-6 sm:inset-10 z-40 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col'
+              : 'absolute left-4 sm:left-56 top-full mt-1 w-[26rem] max-w-[calc(100vw-2rem)] z-40 rounded-lg border border-slate-700 bg-slate-900 shadow-xl flex flex-col'
+          }
+        >
+          <div className="flex items-center justify-between px-3 pt-2.5">
+            <span className="text-sm font-semibold text-slate-200">Insert image</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setImageWide(!imageWide)}
+                title={imageWide ? 'Make smaller' : 'Enlarge'}
+                aria-label={imageWide ? 'Make smaller' : 'Enlarge'}
+                className="w-7 h-7 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800 cursor-pointer"
+              >
+                {imageWide ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={close}
+                title="Close"
+                aria-label="Close"
+                className="w-7 h-7 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div className={`p-3 border-b border-slate-800 ${imageWide ? 'flex flex-wrap items-center gap-2' : 'space-y-2'}`}>
             {onUploadImage && (
               <>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="w-full h-9 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto sm:px-4 h-9 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Upload className="w-4 h-4" />
                   Upload from computer
@@ -267,38 +339,52 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
               </>
             )}
             <form
-              className="flex gap-2"
+              className="flex gap-2 flex-1 min-w-[16rem]"
               onSubmit={(e) => {
                 e.preventDefault();
-                const url = imageUrl.trim();
-                if (url) insertImages([{ src: url, name: url.split('/').pop()?.replace(/\.[^.]+$/, '') || 'image' }]);
+                addFromUrl();
               }}
             >
-              <input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="…or paste an image web address"
-                className="flex-1 h-9 bg-slate-950 border border-slate-700 rounded-lg px-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
-              />
-              <button type="submit" className="h-9 px-3 rounded-lg border border-slate-700 text-sm text-slate-200 hover:bg-slate-800 cursor-pointer">
-                Insert
+              <div className="flex-1 relative">
+                <Globe className="w-4 h-4 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="Add from URL (saves a copy to the gallery)"
+                  className="w-full h-9 bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={urlBusy || !imageUrl.trim()}
+                className="h-9 px-3 rounded-lg border border-slate-700 text-sm text-slate-200 hover:bg-slate-800 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {urlBusy && <Loader2 className="w-4 h-4 animate-spin" />}
+                Add
               </button>
             </form>
+            {urlNote && <p className="w-full text-xs text-amber-300/90">{urlNote}</p>}
           </div>
-          <div className="p-3">
+          <div className={`p-3 flex flex-col min-h-0 ${imageWide ? 'flex-1' : ''}`}>
             <div className="flex items-center justify-between gap-3 mb-2">
               <span className="text-xs text-slate-400">Images in this project ({images.length})</span>
               <input
                 value={imageQuery}
                 onChange={(e) => setImageQuery(e.target.value)}
                 placeholder="Filter…"
-                className="w-36 h-7 bg-slate-950 border border-slate-800 rounded-md px-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                className={`${imageWide ? 'w-64' : 'w-36'} h-7 bg-slate-950 border border-slate-800 rounded-md px-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500`}
               />
             </div>
             {shownImages.length === 0 ? (
               <div className="text-sm text-slate-500 py-6 text-center">No images yet</div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
+              <div
+                className={
+                  imageWide
+                    ? 'grid gap-3 flex-1 min-h-0 overflow-y-auto pr-1 content-start auto-rows-max grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]'
+                    : 'grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1'
+                }
+              >
                 {shownImages.map((img) => (
                   <button
                     key={img.src}
@@ -307,7 +393,7 @@ export const MarkdownToolbar = forwardRef<MarkdownToolbarHandle, MarkdownToolbar
                     onClick={() => insertImages([img])}
                     className="group text-left rounded-md overflow-hidden border border-slate-800 hover:border-amber-500/60 cursor-pointer"
                   >
-                    <ResolvedImage src={img.src} alt={img.name} className="w-full h-20 object-cover bg-slate-950" />
+                    <ResolvedImage src={img.src} alt={img.name} className={`w-full ${imageWide ? 'h-36' : 'h-20'} object-cover bg-slate-950`} />
                     <span className="block px-1.5 py-1 text-xs text-slate-400 group-hover:text-slate-100 truncate">{img.name}</span>
                   </button>
                 ))}
