@@ -57,7 +57,7 @@ const NEIGHBOR_DIM = 0.22; // connected nodes are only slightly softened
 const HOVER_DELAY_MS = 120; // avoid flicker when sweeping the mouse across nodes
 const FADE_MS = 420; // length of the eased fade
 const LABEL_HIDE_AT = 0.4; // hide unrelated labels once the fade is this far along
-const PARTICLE_SPEED = 70; // px per second along highlighted links
+const PARTICLE_SPEED = 38; // px per second along highlighted links (slow, calm drift)
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -177,7 +177,7 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
             // The node you're on: full colour, slightly larger, on top.
             res.highlighted = true;
             res.forceLabel = true;
-            res.size = data.size * (1 + 0.3 * p);
+            res.size = data.size * (1 + 0.15 * p);
             res.zIndex = 3;
           } else if (focus.has(node)) {
             // Directly connected: a little softer.
@@ -218,7 +218,7 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
             const p = dimRef.current;
             const hoverColor = graph.getNodeAttribute(focus, 'color') as string;
             res.color = p > 0.15 ? fade(hoverColor, 0.35 * (1 - p)) : data.color;
-            res.size = 1 + 2.2 * p;
+            res.size = 1 + 1.4 * p;
             res.zIndex = 1;
             if (p < 0.6) res.label = '';
           } else {
@@ -260,20 +260,20 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
       const src = graph.getNodeAttributes(focus);
       const a = sigma.graphToViewport({ x: src.x, y: src.y });
       octx.save();
-      octx.globalAlpha = alpha * 0.9;
+      octx.globalAlpha = alpha * 0.45;
       octx.fillStyle = src.color;
       octx.shadowColor = src.color;
-      octx.shadowBlur = 8;
+      octx.shadowBlur = 3;
       const travelled = (now / 1000) * PARTICLE_SPEED;
       graph.forEachNeighbor(focus, (_n, attr) => {
         const b = sigma.graphToViewport({ x: attr.x, y: attr.y });
         const len = Math.hypot(b.x - a.x, b.y - a.y);
         if (len < 12) return;
-        const count = Math.min(4, Math.max(1, Math.round(len / 110)));
+        const count = Math.min(2, Math.max(1, Math.round(len / 200)));
         for (let k = 0; k < count; k++) {
           const t = ((travelled / len) + k / count) % 1; // flows outward from the hovered node
           octx.beginPath();
-          octx.arc(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, 2.6, 0, Math.PI * 2);
+          octx.arc(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, 1.7, 0, Math.PI * 2);
           octx.fill();
         }
       });
