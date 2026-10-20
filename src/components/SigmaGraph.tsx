@@ -52,10 +52,14 @@ const PATH_COLOR = '#10b981';
 
 // Hover dimming: gentle, animated, and never all the way to black.
 const BG: [number, number, number] = [11, 17, 32]; // close to the canvas background
-const MAX_DIM = 0.6; // dimmed items keep ~40% of their colour
+const MAX_DIM = 0.62; // unrelated nodes keep ~40% of their colour
+const NEIGHBOR_DIM = 0.22; // connected nodes are only slightly softened
 const HOVER_DELAY_MS = 120; // avoid flicker when sweeping the mouse across nodes
-const FADE_SPEED = 0.16; // fraction of the remaining distance per frame (~250ms)
+const FADE_MS = 420; // length of the eased fade
 const LABEL_HIDE_AT = 0.4; // hide unrelated labels once the fade is this far along
+const PARTICLE_SPEED = 70; // px per second along highlighted links
+
+const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /** Blend a #rrggbb colour towards the background by t (0–1). */
 function fade(hex: string, t: number): string {
@@ -109,6 +113,7 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLCanvasElement>(null);
   const sigmaRef = useRef<Sigma | null>(null);
   const graphRef = useRef<Graph>(new Graph({ multi: true, type: 'mixed' }));
   const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
@@ -116,8 +121,7 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
 
   // Interaction state lives in refs so the reducers always see the latest values.
   const hoveredRef = useRef<string | null>(null);
-  const dimRef = useRef(0); // current fade amount 0–1
-  const dimTargetRef = useRef(0);
+  const dimRef = useRef(0); // current (eased) fade amount 0–1
   const selectedRef = useRef<string | null>(selectedId);
   const pathNodesRef = useRef<Set<string>>(new Set());
   const pathEdgesRef = useRef<Set<string>>(new Set());
@@ -168,10 +172,18 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
           res.zIndex = 2;
         }
         if (focus) {
-          if (focus.has(node)) {
+          const p = dimRef.current;
+          if (node === hoveredRef.current) {
+            // The node you're on: full colour, slightly larger, on top.
+            res.highlighted = true;
             res.forceLabel = true;
-            res.zIndex = 1;
-            if (node === hoveredRef.current) res.highlighted = true;
+            res.size = data.size * (1 + 0.3 * p);
+            res.zIndex = 3;
+          } else if (focus.has(node)) {
+            // Directly connected: a little softer.
+            res.color = fade(data.color, NEIGHBOR_DIM * p);
+            res.forceLabel = p > LABEL_HIDE_AT;
+            res.zIndex = 2;
           } else if (!onPath) {
             res.color = fade(data.color, dimRef.current * MAX_DIM);
             if (dimRef.current > LABEL_HIDE_AT) res.label = '';
@@ -202,9 +214,13 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
         const touches = focus && (s === focus || t === focus);
         if (focus && graph.hasNode(focus)) {
           if (touches) {
-            res.size = 1 + dimRef.current;
+            // Links from the hovered node: thicker and tinted with its colour.
+            const p = dimRef.current;
+            const hoverColor = graph.getNodeAttribute(focus, 'color') as string;
+            res.color = p > 0.15 ? fade(hoverColor, 0.35 * (1 - p)) : data.color;
+            res.size = 1 + 2.2 * p;
             res.zIndex = 1;
-            if (dimRef.current < LABEL_HIDE_AT) res.label = '';
+            if (p < 0.6) res.label = '';
           } else {
             res.color = fade(data.color, dimRef.current * MAX_DIM);
             res.label = '';
@@ -223,23 +239,72 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
     });
     sigmaRef.current = sigma;
 
-    // Hover / click
-    // Smoothly animate the dim amount towards its target.
-    let raf = 0;
-    const animate = () => {
-      const diff = dimTargetRef.current - dimRef.current;
-      if (Math.abs(diff) < 0.01) {
-        dimRef.current = dimTargetRef.current;
-        if (dimRef.current === 0) hoveredRef.current = null; // fade-out finished
-        raf = 0;
-      } else {
-        dimRef.current += diff * FADE_SPEED;
-        raf = requestAnimationFrame(animate);
-      }
-      sigma.refresh({ skipIndexation: true });
+    // ── Hover: eased fade + flowing particles on the hovered node's links ──
+    const overlay = overlayRef.current;
+    const octx = overlay?.getContext('2d') ?? null;
+    const sizeOverlay = () => {
+      if (!overlay) return;
+      const dpr = window.devicePixelRatio || 1;
+      overlay.width = Math.round(container.clientWidth * dpr);
+      overlay.height = Math.round(container.clientHeight * dpr);
+      octx?.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
-    const startAnimation = () => {
-      if (!raf) raf = requestAnimationFrame(animate);
+    sizeOverlay();
+
+    const drawParticles = (now: number) => {
+      if (!octx || !overlay) return;
+      octx.clearRect(0, 0, overlay.width, overlay.height);
+      const focus = hoveredRef.current;
+      const alpha = dimRef.current;
+      if (!focus || !graph.hasNode(focus) || alpha < 0.05) return;
+      const src = graph.getNodeAttributes(focus);
+      const a = sigma.graphToViewport({ x: src.x, y: src.y });
+      octx.save();
+      octx.globalAlpha = alpha * 0.9;
+      octx.fillStyle = src.color;
+      octx.shadowColor = src.color;
+      octx.shadowBlur = 8;
+      const travelled = (now / 1000) * PARTICLE_SPEED;
+      graph.forEachNeighbor(focus, (_n, attr) => {
+        const b = sigma.graphToViewport({ x: attr.x, y: attr.y });
+        const len = Math.hypot(b.x - a.x, b.y - a.y);
+        if (len < 12) return;
+        const count = Math.min(4, Math.max(1, Math.round(len / 110)));
+        for (let k = 0; k < count; k++) {
+          const t = ((travelled / len) + k / count) % 1; // flows outward from the hovered node
+          octx.beginPath();
+          octx.arc(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, 2.6, 0, Math.PI * 2);
+          octx.fill();
+        }
+      });
+      octx.restore();
+    };
+
+    let raf = 0;
+    let fadeFrom = 0;
+    let fadeTo = 0;
+    let fadeStart = 0;
+    let fadeDone = true;
+    const tick = (now: number) => {
+      if (!fadeDone) {
+        const t = Math.min(1, (now - fadeStart) / FADE_MS);
+        dimRef.current = fadeFrom + (fadeTo - fadeFrom) * easeInOutCubic(t);
+        if (t >= 1) {
+          fadeDone = true;
+          if (fadeTo === 0) hoveredRef.current = null; // fade-out finished
+        }
+        sigma.refresh({ skipIndexation: true });
+      }
+      drawParticles(now);
+      // Keep running while fading or while particles are flowing.
+      raf = !fadeDone || hoveredRef.current ? requestAnimationFrame(tick) : 0;
+    };
+    const fadeTowards = (to: number) => {
+      fadeFrom = dimRef.current;
+      fadeTo = to;
+      fadeStart = performance.now();
+      fadeDone = false;
+      if (!raf) raf = requestAnimationFrame(tick);
     };
 
     let hoverTimer: ReturnType<typeof setTimeout> | null = null;
@@ -248,8 +313,7 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
       if (hoverTimer) clearTimeout(hoverTimer);
       const apply = () => {
         hoveredRef.current = node;
-        dimTargetRef.current = 1;
-        startAnimation();
+        fadeTowards(1);
       };
       // Moving straight from one node to another: switch without waiting.
       if (dimRef.current > 0) apply();
@@ -259,8 +323,7 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
       container.style.cursor = '';
       if (hoverTimer) clearTimeout(hoverTimer);
       hoverTimer = null;
-      dimTargetRef.current = 0;
-      startAnimation();
+      if (hoveredRef.current) fadeTowards(0);
     });
     sigma.on('clickNode', ({ node }) => onSelectRef.current(node));
 
@@ -290,7 +353,10 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
     });
 
     // Keep the canvas sized to its container (side panels can fold away).
-    const ro = new ResizeObserver(() => sigma.resize());
+    const ro = new ResizeObserver(() => {
+      sigma.resize();
+      sizeOverlay();
+    });
     ro.observe(container);
 
     return () => {
@@ -377,5 +443,11 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
     },
   }));
 
-  return <div ref={containerRef} className="absolute inset-0" />;
+  return (
+    <>
+      <div ref={containerRef} className="absolute inset-0" />
+      {/* Flowing particles along the hovered node's links */}
+      <canvas ref={overlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+    </>
+  );
 });
