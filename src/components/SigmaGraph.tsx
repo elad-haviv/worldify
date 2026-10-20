@@ -48,9 +48,25 @@ interface SigmaGraphProps {
   onSelect: (id: string) => void;
 }
 
-const DIM_NODE = '#1e293b';
-const DIM_EDGE = '#111827';
 const PATH_COLOR = '#10b981';
+
+// Hover dimming: gentle, animated, and never all the way to black.
+const BG: [number, number, number] = [11, 17, 32]; // close to the canvas background
+const MAX_DIM = 0.6; // dimmed items keep ~40% of their colour
+const HOVER_DELAY_MS = 120; // avoid flicker when sweeping the mouse across nodes
+const FADE_SPEED = 0.16; // fraction of the remaining distance per frame (~250ms)
+const LABEL_HIDE_AT = 0.4; // hide unrelated labels once the fade is this far along
+
+/** Blend a #rrggbb colour towards the background by t (0–1). */
+function fade(hex: string, t: number): string {
+  if (t <= 0 || !hex.startsWith('#') || hex.length !== 7) return hex;
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (c: number, b: number) => Math.round(c + (b - c) * t);
+  const r = ch((n >> 16) & 255, BG[0]);
+  const g = ch((n >> 8) & 255, BG[1]);
+  const b = ch(n & 255, BG[2]);
+  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+}
 
 /** Dark hover label (Sigma's default is a white box, which glares on a dark theme). */
 function drawDarkHover(
@@ -100,6 +116,8 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
 
   // Interaction state lives in refs so the reducers always see the latest values.
   const hoveredRef = useRef<string | null>(null);
+  const dimRef = useRef(0); // current fade amount 0–1
+  const dimTargetRef = useRef(0);
   const selectedRef = useRef<string | null>(selectedId);
   const pathNodesRef = useRef<Set<string>>(new Set());
   const pathEdgesRef = useRef<Set<string>>(new Set());
@@ -155,12 +173,12 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
             res.zIndex = 1;
             if (node === hoveredRef.current) res.highlighted = true;
           } else if (!onPath) {
-            res.color = DIM_NODE;
-            res.label = '';
+            res.color = fade(data.color, dimRef.current * MAX_DIM);
+            if (dimRef.current > LABEL_HIDE_AT) res.label = '';
             res.zIndex = 0;
           }
         } else if (pathNodesRef.current.size > 0 && !onPath) {
-          res.color = DIM_NODE;
+          res.color = fade(data.color, MAX_DIM);
           res.label = '';
         }
         if (node === selectedRef.current) {
@@ -184,10 +202,11 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
         const touches = focus && (s === focus || t === focus);
         if (focus && graph.hasNode(focus)) {
           if (touches) {
-            res.size = 2;
+            res.size = 1 + dimRef.current;
             res.zIndex = 1;
+            if (dimRef.current < LABEL_HIDE_AT) res.label = '';
           } else {
-            res.color = DIM_EDGE;
+            res.color = fade(data.color, dimRef.current * MAX_DIM);
             res.label = '';
           }
         } else if (sel && (s === sel || t === sel)) {
@@ -198,22 +217,50 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
         } else {
           res.label = ''; // edge labels only while hovering a node
         }
-        if (pathNodesRef.current.size > 0 && !touches) res.color = DIM_EDGE;
+        if (pathNodesRef.current.size > 0 && !touches) res.color = fade(data.color, MAX_DIM);
         return res;
       },
     });
     sigmaRef.current = sigma;
 
     // Hover / click
-    sigma.on('enterNode', ({ node }) => {
-      hoveredRef.current = node;
-      container.style.cursor = 'pointer';
+    // Smoothly animate the dim amount towards its target.
+    let raf = 0;
+    const animate = () => {
+      const diff = dimTargetRef.current - dimRef.current;
+      if (Math.abs(diff) < 0.01) {
+        dimRef.current = dimTargetRef.current;
+        if (dimRef.current === 0) hoveredRef.current = null; // fade-out finished
+        raf = 0;
+      } else {
+        dimRef.current += diff * FADE_SPEED;
+        raf = requestAnimationFrame(animate);
+      }
       sigma.refresh({ skipIndexation: true });
+    };
+    const startAnimation = () => {
+      if (!raf) raf = requestAnimationFrame(animate);
+    };
+
+    let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+    sigma.on('enterNode', ({ node }) => {
+      container.style.cursor = 'pointer';
+      if (hoverTimer) clearTimeout(hoverTimer);
+      const apply = () => {
+        hoveredRef.current = node;
+        dimTargetRef.current = 1;
+        startAnimation();
+      };
+      // Moving straight from one node to another: switch without waiting.
+      if (dimRef.current > 0) apply();
+      else hoverTimer = setTimeout(apply, HOVER_DELAY_MS);
     });
     sigma.on('leaveNode', () => {
-      hoveredRef.current = null;
       container.style.cursor = '';
-      sigma.refresh({ skipIndexation: true });
+      if (hoverTimer) clearTimeout(hoverTimer);
+      hoverTimer = null;
+      dimTargetRef.current = 0;
+      startAnimation();
     });
     sigma.on('clickNode', ({ node }) => onSelectRef.current(node));
 
@@ -247,6 +294,8 @@ export const SigmaGraph = forwardRef<SigmaGraphHandle, SigmaGraphProps>(function
     ro.observe(container);
 
     return () => {
+      if (raf) cancelAnimationFrame(raf);
+      if (hoverTimer) clearTimeout(hoverTimer);
       ro.disconnect();
       sigma.kill();
       sigmaRef.current = null;
