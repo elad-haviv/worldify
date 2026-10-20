@@ -23,6 +23,8 @@ import {
   Columns,
   Map as MapIcon,
 } from 'lucide-react';
+import { SidePanel } from '../../components/SidePanel';
+import { AIToolsMenu } from '../../components/AIToolsMenu';
 
 export const StoryStudioView: React.FC = () => {
   const {
@@ -45,7 +47,7 @@ export const StoryStudioView: React.FC = () => {
 
   const project = projects.find((p) => p.id === activeProjectId);
   const [subView, setSubView] = useState<'manuscript' | 'story_timeline' | 'story_map'>('manuscript');
-  const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('split');
+  const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('edit');
   const [isAiBusy, setIsAiBusy] = useState(false);
 
   // Modals
@@ -162,7 +164,7 @@ export const StoryStudioView: React.FC = () => {
   return (
     <div className="h-full flex bg-slate-950 overflow-hidden">
       {/* Left Sidebar: Story Selector, Chapters & Scenes Outliner */}
-      <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-3 shrink-0 text-xs">
+      <SidePanel side="left" panelId="stories-outline" label="Chapters" width="w-72" defaultOpen={true} className="p-4 flex flex-col gap-3 text-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
             <Feather className="w-4 h-4 text-pink-400" />
@@ -275,89 +277,71 @@ export const StoryStudioView: React.FC = () => {
             <p>No stories in this project yet. Click "+ New Story" to begin a manuscript!</p>
           </div>
         )}
-      </aside>
+      </SidePanel>
 
       {/* Center: Manuscript Editor / Dedicated Story Timeline / Dedicated Story Map */}
       {activeStory && activeScene && activeChapter ? (
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Top Sub-Navigation & AI Toolbar */}
-          <div className="px-6 py-3 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="px-6 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-1">
               <button
                 type="button"
                 onClick={() => setSubView('manuscript')}
-                className={`px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 cursor-pointer ${
                   subView === 'manuscript'
-                    ? 'bg-amber-500 text-slate-950 font-semibold'
-                    : 'text-slate-300 hover:text-slate-100'
+                    ? 'bg-slate-800 text-amber-300'
+                    : 'text-slate-400 hover:text-slate-100'
                 }`}
               >
-                <Feather className="w-3.5 h-3.5" />
-                Scene Manuscript
+                <Feather className="w-4 h-4" />
+                Manuscript
               </button>
               <button
                 type="button"
                 onClick={() => setSubView('story_timeline')}
-                className={`px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 cursor-pointer ${
                   subView === 'story_timeline'
-                    ? 'bg-amber-500 text-slate-950 font-semibold'
-                    : 'text-slate-300 hover:text-slate-100'
+                    ? 'bg-slate-800 text-amber-300'
+                    : 'text-slate-400 hover:text-slate-100'
                 }`}
               >
-                <Clock className="w-3.5 h-3.5" />
-                Story Timeline
+                <Clock className="w-4 h-4" />
+                Timeline
               </button>
               <button
                 type="button"
                 onClick={() => setSubView('story_map')}
-                className={`px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 cursor-pointer ${
                   subView === 'story_map'
-                    ? 'bg-amber-500 text-slate-950 font-semibold'
-                    : 'text-slate-300 hover:text-slate-100'
+                    ? 'bg-slate-800 text-amber-300'
+                    : 'text-slate-400 hover:text-slate-100'
                 }`}
               >
-                <MapIcon className="w-3.5 h-3.5" />
-                Story Journey Map
+                <MapIcon className="w-4 h-4" />
+                Journey map
               </button>
             </div>
 
             {subView === 'manuscript' && (
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-1 text-xs">
-                  <button
-                    type="button"
-                    disabled={isAiBusy}
-                    onClick={() => handleSceneAI('continue')}
-                    className="px-2 py-1 rounded text-amber-300 hover:bg-amber-500/15 flex items-center gap-1 cursor-pointer"
-                  >
-                    <Wand2 className="w-3 h-3" />
-                    Continue Scene
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isAiBusy}
-                    onClick={() => handleSceneAI('sensory')}
-                    className="px-2 py-1 rounded text-sky-300 hover:bg-sky-500/15 flex items-center gap-1 cursor-pointer"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    Sensory & Moon Detail
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isAiBusy}
-                    onClick={() => handleSceneAI('advice')}
-                    className="px-2 py-1 rounded text-emerald-300 hover:bg-emerald-500/15 flex items-center gap-1 cursor-pointer"
-                  >
-                    Pacing Advice
-                  </button>
-                </div>
+                <AIToolsMenu
+                  busy={isAiBusy}
+                  onRun={handleSceneAI}
+                  items={[
+                    { action: 'continue', icon: Wand2, title: 'Continue scene', hint: 'Draft the next few paragraphs' },
+                    { action: 'sensory', icon: Sparkles, title: 'Sensory & moon detail', hint: 'Atmosphere for the current date' },
+                    { action: 'advice', icon: Feather, title: 'Pacing advice', hint: 'Feedback on rhythm and tension' },
+                  ]}
+                />
 
                 <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-1">
                   <button
                     type="button"
                     onClick={() => setEditorMode('edit')}
+                    title="Write"
                     className={`p-1.5 rounded cursor-pointer ${
-                      editorMode === 'edit' ? 'bg-slate-800 text-amber-400' : 'text-slate-400'
+                      editorMode === 'edit' ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -365,8 +349,9 @@ export const StoryStudioView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setEditorMode('split')}
+                    title="Write with preview side by side"
                     className={`p-1.5 rounded cursor-pointer ${
-                      editorMode === 'split' ? 'bg-slate-800 text-amber-400' : 'text-slate-400'
+                      editorMode === 'split' ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <Columns className="w-3.5 h-3.5" />
@@ -374,8 +359,9 @@ export const StoryStudioView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setEditorMode('preview')}
+                    title="Read"
                     className={`p-1.5 rounded cursor-pointer ${
-                      editorMode === 'preview' ? 'bg-slate-800 text-amber-400' : 'text-slate-400'
+                      editorMode === 'preview' ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <Eye className="w-3.5 h-3.5" />
@@ -388,7 +374,7 @@ export const StoryStudioView: React.FC = () => {
           {/* SUBVIEW 1: MANUSCRIPT EDITOR */}
           {subView === 'manuscript' && (
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <div className="px-6 py-3 bg-slate-900/40 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+              <div className="px-8 pt-6 pb-3 flex flex-wrap items-center justify-between gap-3">
                 <input
                   type="text"
                   value={activeScene.title}
@@ -397,10 +383,10 @@ export const StoryStudioView: React.FC = () => {
                       title: e.target.value,
                     })
                   }
-                  className="text-xl font-display font-bold text-slate-100 bg-transparent focus:outline-none flex-1"
+                  className="text-2xl font-display font-bold text-slate-50 bg-transparent focus:outline-none flex-1 min-w-[240px]"
                 />
-                <div className="flex items-center gap-3 text-xs text-slate-400">
-                  <span className="font-mono">
+                <div className="flex items-center gap-3 text-sm text-slate-400">
+                  <span className="tabular-nums">
                     {wordCount} / {activeScene.wordCountGoal || 1500} words
                   </span>
                   <select
@@ -410,7 +396,7 @@ export const StoryStudioView: React.FC = () => {
                         status: e.target.value as typeof activeScene.status,
                       })
                     }
-                    className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 capitalize text-xs"
+                    className="bg-slate-950 border border-slate-800 rounded-md px-2 py-1 text-slate-200 text-sm"
                   >
                     <option value="outline">Outline</option>
                     <option value="draft">Draft</option>
@@ -422,15 +408,17 @@ export const StoryStudioView: React.FC = () => {
                     onClick={() =>
                       deleteStoryScene(activeStory.id, activeChapter.id, activeScene.id)
                     }
-                    className="text-slate-500 hover:text-rose-400 cursor-pointer"
+                    className="p-1.5 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                    title="Delete scene"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
               <div className="flex-1 flex min-h-0 overflow-hidden">
                 {(editorMode === 'edit' || editorMode === 'split') && (
+                  <div className={`flex-1 h-full overflow-y-auto ${editorMode === 'split' ? 'border-r border-slate-800' : ''}`}>
                   <textarea
                     value={activeScene.contentMd}
                     onChange={(e) =>
@@ -439,14 +427,14 @@ export const StoryStudioView: React.FC = () => {
                       })
                     }
                     placeholder="Write your scene prose using [[Entity Name]] to link characters, relics, and locations..."
-                    className={`flex-1 h-full bg-slate-950 p-6 text-sm font-mono text-slate-200 leading-relaxed focus:outline-none resize-none ${
-                      editorMode === 'split' ? 'border-r border-slate-800' : ''
-                    }`}
+                    className="block w-full max-w-3xl mx-auto h-full min-h-full bg-transparent px-8 py-4 text-base text-slate-200 leading-8 focus:outline-none resize-none"
                   />
+                  </div>
                 )}
                 {(editorMode === 'preview' || editorMode === 'split') && (
-                  <div className="flex-1 h-full overflow-y-auto p-6 bg-slate-950/50 space-y-4">
-                    <div className="p-3 rounded-lg bg-slate-900/70 border border-slate-800 text-xs text-slate-300 italic">
+                  <div className="flex-1 h-full overflow-y-auto">
+                   <div className="max-w-3xl mx-auto px-8 py-4 space-y-5">
+                    <div className="pl-4 border-l-2 border-amber-500/50 text-base text-slate-400 italic">
                       {activeScene.summary}
                     </div>
                     <MarkdownRenderer
@@ -457,6 +445,7 @@ export const StoryStudioView: React.FC = () => {
                         createEntity({ title, category: 'character' })
                       }
                     />
+                   </div>
                   </div>
                 )}
               </div>
@@ -658,10 +647,10 @@ export const StoryStudioView: React.FC = () => {
 
       {/* Right Sidebar: Scene Metadata Bindings & Live Spatio-Temporal Continuity Auditor */}
       {activeStory && activeScene && activeChapter && (
-        <aside className="w-80 bg-slate-900 border-l border-slate-800 p-4 overflow-y-auto space-y-5 shrink-0 text-xs">
+        <SidePanel side="right" panelId="stories-scene" label="Scene details" width="w-80" defaultOpen={false} className="p-4 overflow-y-auto space-y-5 text-sm">
           {/* Scene Spatio-Temporal Bindings */}
           <div className="space-y-3">
-            <div className="text-xs font-semibold capitalize text-amber-400 flex items-center gap-1.5">
+            <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               Scene Spatio-Temporal Anchor
             </div>
@@ -745,7 +734,7 @@ export const StoryStudioView: React.FC = () => {
 
           {/* Participating Cast & Entities in Scene */}
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
-            <div className="text-xs font-semibold capitalize text-slate-300 flex items-center gap-1.5">
+            <div className="text-sm font-semibold text-slate-300 flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
               Cast, Relics & Locations in Scene
             </div>
@@ -825,7 +814,7 @@ export const StoryStudioView: React.FC = () => {
 
           {/* Live Spatio-Temporal Continuity Auditor */}
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
-            <div className="text-xs font-semibold capitalize text-slate-300 flex items-center justify-between">
+            <div className="text-sm font-semibold text-slate-300 flex items-center justify-between">
               <span>Spatio-Temporal Continuity</span>
               {continuityIssues.length === 0 ? (
                 <span className="text-emerald-400 flex items-center gap-1 text-xs">
@@ -862,7 +851,7 @@ export const StoryStudioView: React.FC = () => {
               </div>
             )}
           </div>
-        </aside>
+        </SidePanel>
       )}
 
       {/* New Story Modal */}

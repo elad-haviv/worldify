@@ -25,6 +25,7 @@ import {
   Sun,
   Compass,
 } from 'lucide-react';
+import { SidePanel } from '../../components/SidePanel';
 
 const EVENT_CATEGORY_STYLES: Record<
   TimelineEventCategory,
@@ -354,10 +355,10 @@ export const TimelineView: React.FC = () => {
           </div>
 
           {/* Right Panel: Live World State at Current Timeline Cursor */}
-          <aside className="w-full lg:w-96 bg-slate-900 border-l border-slate-800 p-5 overflow-y-auto space-y-5 shrink-0">
+          <SidePanel side="right" panelId="timeline-state" label="World state" width="w-[22rem]" defaultOpen={true} className="p-5 overflow-y-auto space-y-5">
             <div className="p-4 rounded-xl bg-slate-950 border border-amber-500/30 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs capitalize font-semibold text-amber-400 flex items-center gap-1">
+                <span className="text-sm font-semibold text-slate-300 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   World Cursor State
                 </span>
@@ -443,7 +444,7 @@ export const TimelineView: React.FC = () => {
                 })}
               </div>
             </div>
-          </aside>
+          </SidePanel>
         </div>
       ) : (
         /* TAB 2: CUSTOM CALENDAR DESIGNER */

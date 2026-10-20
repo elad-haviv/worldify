@@ -17,6 +17,7 @@ import {
   ZoomOut,
   Plus,
 } from 'lucide-react';
+import { SidePanel } from '../../components/SidePanel';
 
 const CATEGORY_COLORS: Record<string, string> = {
   character: '#f59e0b',
@@ -256,7 +257,7 @@ export const KnowledgeGraphView: React.FC = () => {
   return (
     <div className="h-full flex bg-slate-950 overflow-hidden">
       {/* Left Filter & Shortest-Path Panel */}
-      <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 text-xs">
+      <SidePanel side="left" panelId="graph-filters" label="Filters" width="w-72" defaultOpen={true} className="p-4 flex flex-col gap-4 overflow-y-auto text-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
             <Network className="w-4 h-4 text-sky-400" />
@@ -275,7 +276,7 @@ export const KnowledgeGraphView: React.FC = () => {
 
         {/* Graph Filters */}
         <div className="space-y-2.5 pt-2 border-t border-slate-800">
-          <div className="text-xs font-semibold capitalize text-slate-400 flex items-center gap-1.5">
+          <div className="text-sm font-semibold text-slate-300 flex items-center gap-1.5">
             <Filter className="w-3 h-3 text-amber-400" />
             Graph Filters
           </div>
@@ -353,7 +354,7 @@ export const KnowledgeGraphView: React.FC = () => {
 
         {/* Shortest Lore Path Finder */}
         <div className="space-y-2.5 pt-3 border-t border-slate-800">
-          <div className="text-xs font-semibold capitalize text-amber-400 flex items-center gap-1.5">
+          <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
             <Route className="w-3.5 h-3.5" />
             Degrees of Lore Pathfiding
           </div>
@@ -426,7 +427,7 @@ export const KnowledgeGraphView: React.FC = () => {
             ))}
           </div>
         </div>
-      </aside>
+      </SidePanel>
 
       {/* Center: Interactive Force-Directed Graph Canvas */}
       <div className="flex-1 relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black overflow-hidden">
@@ -595,7 +596,7 @@ export const KnowledgeGraphView: React.FC = () => {
 
       {/* Right Selected Node Inspector */}
       {activeEntity && (
-        <aside className="w-80 bg-slate-900 border-l border-slate-800 p-4 overflow-y-auto space-y-4 shrink-0 text-xs">
+        <SidePanel side="right" panelId="graph-details" label="Details" width="w-80" defaultOpen={true} className="p-4 overflow-y-auto space-y-4 text-sm">
           <div>
             <span className="text-xs capitalize px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
               {activeEntity.category}
@@ -676,7 +677,7 @@ export const KnowledgeGraphView: React.FC = () => {
 
           {/* Direct Neighbors List */}
           <div className="pt-2 border-t border-slate-800 space-y-2">
-            <div className="text-xs font-semibold capitalize text-slate-400">
+            <div className="text-sm font-semibold text-slate-300">
               Direct Graph Edges (
               {
                 visibleEdges.filter(
@@ -722,7 +723,7 @@ export const KnowledgeGraphView: React.FC = () => {
                 })}
             </div>
           </div>
-        </aside>
+        </SidePanel>
       )}
     </div>
   );

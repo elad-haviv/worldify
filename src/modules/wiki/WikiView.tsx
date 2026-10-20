@@ -28,6 +28,8 @@ import {
   Layers,
   Check,
 } from 'lucide-react';
+import { SidePanel } from '../../components/SidePanel';
+import { AIToolsMenu } from '../../components/AIToolsMenu';
 
 const CATEGORIES: Array<{ key: EntityCategory | 'all'; label: string }> = [
   { key: 'all', label: 'All Categories' },
@@ -65,7 +67,7 @@ export const WikiView: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<EntityCategory | 'all'>('all');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [worldFilter, setWorldFilter] = useState<string>('all');
-  const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('split');
+  const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('preview');
   const [isAiBusy, setIsAiBusy] = useState(false);
 
   // New Entry Modal
@@ -224,7 +226,7 @@ export const WikiView: React.FC = () => {
   return (
     <div className="h-full flex bg-slate-950 overflow-hidden">
       {/* Left Sidebar: Categories, Tags, Search & Entry List */}
-      <aside className="w-72 bg-slate-900/95 border-r border-slate-800 flex flex-col shrink-0">
+      <SidePanel side="left" panelId="wiki-entries" label="Entries" width="w-72" defaultOpen={true} className="flex flex-col">
         <div className="p-3.5 border-b border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
@@ -341,39 +343,41 @@ export const WikiView: React.FC = () => {
             );
           })}
         </div>
-      </aside>
+      </SidePanel>
 
       {/* Center: Hybrid Markdown Editor, AI Toolbar & Live Preview */}
       {activeEntity ? (
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Entry Header Bar */}
-          <div className="px-6 py-4 bg-slate-900/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
+          <div className="px-8 pt-6 pb-4 border-b border-slate-800 flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1 flex-1 min-w-[260px]">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs capitalize font-semibold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
+                <span className="capitalize font-medium text-amber-300">
                   {activeEntity.category}
                 </span>
                 {activeTemplate && (
                   <button
                     type="button"
                     onClick={() => setActiveModule('templates')}
-                    className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:border-amber-500/40 flex items-center gap-1 cursor-pointer"
+                    className="hover:text-slate-200 flex items-center gap-1.5 cursor-pointer"
+                    title="Edit this template"
                   >
-                    <Layers className="w-3 h-3 text-amber-400" />
-                    Template: {activeTemplate.name}
+                    <Layers className="w-3.5 h-3.5" />
+                    {activeTemplate.name}
                   </button>
                 )}
                 {temporalStatus && (
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded border font-medium ${
-                      temporalStatus.lifecycleState === 'active'
-                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                        : temporalStatus.lifecycleState === 'unborn'
-                          ? 'bg-sky-500/10 text-sky-300 border-sky-500/30'
-                          : 'bg-rose-500/10 text-rose-300 border-rose-500/30'
-                    }`}
-                  >
-                    At Current Date: {temporalStatus.activeStatus}
+                  <span className="flex items-center gap-1.5" title="Status at the current world date">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        temporalStatus.lifecycleState === 'active'
+                          ? 'bg-emerald-400'
+                          : temporalStatus.lifecycleState === 'unborn'
+                            ? 'bg-slate-500'
+                            : 'bg-rose-400'
+                      }`}
+                    />
+                    {temporalStatus.activeStatus}
                     {temporalStatus.ageYears !== undefined
                       ? ` (${temporalStatus.ageYears} yrs old)`
                       : ''}
@@ -385,109 +389,77 @@ export const WikiView: React.FC = () => {
                 type="text"
                 value={activeEntity.title}
                 onChange={(e) => updateEntity(activeEntity.id, { title: e.target.value })}
-                className="w-full text-2xl font-display font-bold text-slate-100 bg-transparent focus:outline-none focus:border-b focus:border-amber-500"
+                className="w-full text-3xl font-display font-bold text-slate-50 bg-transparent focus:outline-none pt-1"
               />
               <input
                 type="text"
                 value={activeEntity.subtitle || ''}
                 onChange={(e) => updateEntity(activeEntity.id, { subtitle: e.target.value })}
                 placeholder="Add subtitle or epithet..."
-                className="w-full text-xs text-amber-200/80 italic bg-transparent focus:outline-none"
+                className="w-full text-base text-slate-400 italic bg-transparent focus:outline-none"
               />
             </div>
 
             {/* Editor Mode & AI Actions */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* Inline AI Buttons */}
-              <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-1">
-                <button
-                  type="button"
-                  disabled={isAiBusy}
-                  onClick={() => handleInlineAI('expand')}
-                  className="px-2 py-1 rounded text-xs text-amber-300 hover:bg-amber-500/15 flex items-center gap-1 cursor-pointer"
-                  title="AI: Expand Lore Section"
-                >
-                  <Wand2 className="w-3 h-3" />
-                  Expand
-                </button>
-                <button
-                  type="button"
-                  disabled={isAiBusy}
-                  onClick={() => handleInlineAI('sensory')}
-                  className="px-2 py-1 rounded text-xs text-sky-300 hover:bg-sky-500/15 flex items-center gap-1 cursor-pointer"
-                  title="AI: Add Sensory Atmosphere"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  Sensory
-                </button>
-                <button
-                  type="button"
-                  disabled={isAiBusy}
-                  onClick={() => handleInlineAI('hooks')}
-                  className="px-2 py-1 rounded text-xs text-emerald-300 hover:bg-emerald-500/15 flex items-center gap-1 cursor-pointer"
-                  title="AI: Generate Plot Hooks"
-                >
-                  + Hooks
-                </button>
-                <button
-                  type="button"
-                  disabled={isAiBusy}
-                  onClick={() => handleInlineAI('autolink')}
-                  className="px-2 py-1 rounded text-xs text-purple-300 hover:bg-purple-500/15 flex items-center gap-1 cursor-pointer"
-                  title="AI: Automatically wrap mentioned entities in [[WikiLinks]]"
-                >
-                  <Link2 className="w-3 h-3" />
-                  Auto-Link
-                </button>
-              </div>
+              <AIToolsMenu
+                busy={isAiBusy}
+                onRun={handleInlineAI}
+                items={[
+                  { action: 'expand', icon: Wand2, title: 'Expand lore', hint: 'Write more detail for this entry' },
+                  { action: 'sensory', icon: Sparkles, title: 'Add atmosphere', hint: 'Sights, sounds and smells' },
+                  { action: 'hooks', icon: Plus, title: 'Plot hooks', hint: 'Story ideas involving this entry' },
+                  { action: 'autolink', icon: Link2, title: 'Auto-link mentions', hint: 'Turn names into wiki links' },
+                ]}
+              />
 
               {/* View Mode Switcher */}
               <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-1">
                 <button
                   type="button"
                   onClick={() => setEditorMode('edit')}
-                  className={`p-1.5 rounded text-xs cursor-pointer ${
+                  className={`p-1.5 rounded-md cursor-pointer ${
                     editorMode === 'edit'
                       ? 'bg-slate-800 text-amber-400'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
-                  title="Markdown Source Editor"
+                  title="Edit"
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
+                  <Edit3 className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditorMode('split')}
-                  className={`p-1.5 rounded text-xs cursor-pointer ${
+                  className={`p-1.5 rounded-md cursor-pointer ${
                     editorMode === 'split'
                       ? 'bg-slate-800 text-amber-400'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
-                  title="Side-by-Side Split View"
+                  title="Edit with preview side by side"
                 >
-                  <Columns className="w-3.5 h-3.5" />
+                  <Columns className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditorMode('preview')}
-                  className={`p-1.5 rounded text-xs cursor-pointer ${
+                  className={`p-1.5 rounded-md cursor-pointer ${
                     editorMode === 'preview'
                       ? 'bg-slate-800 text-amber-400'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
-                  title="Rendered Wiki Reader View"
+                  title="Read"
                 >
-                  <Eye className="w-3.5 h-3.5" />
+                  <Eye className="w-4 h-4" />
                 </button>
               </div>
 
               <button
                 type="button"
                 onClick={() => deleteEntity(activeEntity.id)}
-                className="p-2 rounded-lg bg-slate-900 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-800 cursor-pointer"
-                title="Delete Entry"
+                className="h-9 w-9 flex items-center justify-center rounded-lg text-slate-500 hover:bg-rose-500/15 hover:text-rose-400 cursor-pointer"
+                title="Delete entry"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -524,7 +496,7 @@ export const WikiView: React.FC = () => {
                 }`}
               >
                 <div className="px-4 py-2 bg-slate-900/30 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-                  <span>Markdown Source (Use [[Entity Title]] to link entries)</span>
+                  <span>Markdown · link entries with [[Entry name]]</span>
                   <span className="font-mono">{activeEntity.contentMd.length} chars</span>
                 </div>
                 <textarea
@@ -533,17 +505,18 @@ export const WikiView: React.FC = () => {
                     updateEntity(activeEntity.id, { contentMd: e.target.value })
                   }
                   placeholder="Write your wiki entry in Markdown..."
-                  className="flex-1 w-full bg-slate-950 p-5 text-sm font-mono text-slate-200 leading-relaxed focus:outline-none resize-none"
+                  className="flex-1 w-full bg-slate-950 px-8 py-6 text-base text-slate-200 leading-relaxed focus:outline-none resize-none"
                 />
               </div>
             )}
 
             {(editorMode === 'preview' || editorMode === 'split') && (
-              <div className="flex-1 h-full overflow-y-auto p-6 space-y-6 bg-slate-950/60">
-                {/* Summary Callout */}
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                  <label className="block text-xs capitalize text-slate-400 mb-1">
-                    Canonical Summary
+              <div className="flex-1 h-full overflow-y-auto">
+               <div className="max-w-3xl mx-auto px-8 py-8 space-y-8">
+                {/* Summary */}
+                <div className="pl-4 border-l-2 border-amber-500/50">
+                  <label className="block text-xs text-slate-500 mb-1">
+                    Summary
                   </label>
                   <input
                     type="text"
@@ -551,7 +524,7 @@ export const WikiView: React.FC = () => {
                     onChange={(e) =>
                       updateEntity(activeEntity.id, { summary: e.target.value })
                     }
-                    className="w-full bg-transparent text-xs text-slate-200 focus:outline-none"
+                    className="w-full bg-transparent text-base text-slate-200 focus:outline-none"
                   />
                 </div>
 
@@ -569,15 +542,15 @@ export const WikiView: React.FC = () => {
                 <div className="pt-6 border-t border-slate-800 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-1.5">
-                      <Network className="w-3.5 h-3.5 text-sky-400" />
-                      Connected Lore & Backlinks ({entityRelations.length})
+                      <Network className="w-4 h-4 text-slate-400" />
+                      Connections ({entityRelations.length})
                     </h3>
                     <button
                       type="button"
                       onClick={() => setActiveModule('graph')}
                       className="text-xs text-amber-400 hover:text-amber-300 cursor-pointer"
                     >
-                      Inspect in Knowledge Graph →
+                      Open in graph →
                     </button>
                   </div>
 
@@ -620,6 +593,7 @@ export const WikiView: React.FC = () => {
                     })}
                   </div>
                 </div>
+               </div>
               </div>
             )}
           </div>
@@ -632,10 +606,10 @@ export const WikiView: React.FC = () => {
 
       {/* Right Inspector: Template Fields, Custom Properties, Tags & Spatio-Temporal Keyframes */}
       {activeEntity && (
-        <aside className="w-80 bg-slate-900/95 border-l border-slate-800 overflow-y-auto p-4 space-y-5 shrink-0 text-xs">
+        <SidePanel side="right" panelId="wiki-properties" label="Properties" width="w-80" defaultOpen={false} className="overflow-y-auto p-4 space-y-5 text-sm">
           {/* Tags Section */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold capitalize text-slate-400 flex items-center gap-1.5">
+            <label className="text-sm font-semibold text-slate-300 flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5 text-amber-400" />
               Tags
             </label>
@@ -692,7 +666,7 @@ export const WikiView: React.FC = () => {
           {activeTemplate && (
             <div className="pt-3 border-t border-slate-800 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold capitalize text-amber-400">
+                <span className="text-xs font-semibold text-slate-300">
                   {activeTemplate.name} Fields
                 </span>
                 <button
@@ -789,7 +763,7 @@ export const WikiView: React.FC = () => {
 
           {/* Ad-Hoc Custom Properties */}
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
-            <span className="block text-xs font-semibold capitalize text-slate-400">
+            <span className="block text-sm font-semibold text-slate-300">
               Custom Ad-Hoc Properties
             </span>
 
@@ -863,7 +837,7 @@ export const WikiView: React.FC = () => {
 
           {/* Lifespan & Spatio-Temporal Map Keyframes */}
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
-            <span className="text-xs font-semibold capitalize text-emerald-400 flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5" />
               Map & Timeline Integration
             </span>
@@ -1023,7 +997,7 @@ export const WikiView: React.FC = () => {
 
           {/* Add Explicit Semantic Relationship */}
           <div className="pt-3 border-t border-slate-800 space-y-2">
-            <span className="block text-xs font-semibold capitalize text-sky-400">
+            <span className="block text-xs font-semibold text-slate-300">
               + Add Semantic Graph Edge
             </span>
             <form onSubmit={handleAddRelation} className="space-y-1.5">
@@ -1074,7 +1048,7 @@ export const WikiView: React.FC = () => {
               </button>
             </form>
           </div>
-        </aside>
+        </SidePanel>
       )}
 
       {/* New Wiki Entry Modal */}

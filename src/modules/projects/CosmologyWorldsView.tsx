@@ -11,6 +11,7 @@ import {
   Sparkles,
   Orbit,
 } from 'lucide-react';
+import { SidePanel } from '../../components/SidePanel';
 
 export const CosmologyWorldsView: React.FC = () => {
   const {
@@ -279,7 +280,7 @@ export const CosmologyWorldsView: React.FC = () => {
 
       {/* Right Inspector: Selected World Details, Laws of Magic/Physics, Connections & Surface Maps */}
       {activeWorld && (
-        <aside className="w-full lg:w-96 bg-slate-900 border-l border-slate-800 p-5 overflow-y-auto space-y-5">
+        <SidePanel side="right" panelId="worlds-details" label="World details" width="w-[22rem]" defaultOpen={true} className="p-5 overflow-y-auto space-y-5">
           <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs capitalize px-2 py-0.5 rounded bg-slate-800 text-amber-300 border border-slate-700">
@@ -303,7 +304,7 @@ export const CosmologyWorldsView: React.FC = () => {
 
           <div className="space-y-3 text-xs">
             <div>
-              <label className="block text-xs font-semibold capitalize text-slate-400 mb-1">
+              <label className="block text-sm font-semibold text-slate-300 mb-1">
                 World Summary
               </label>
               <textarea
@@ -315,7 +316,7 @@ export const CosmologyWorldsView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold capitalize text-amber-400/90 mb-1 flex items-center gap-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 Laws of Magic, Resonance & Physics
               </label>
@@ -405,7 +406,7 @@ export const CosmologyWorldsView: React.FC = () => {
               ))}
             </div>
           </div>
-        </aside>
+        </SidePanel>
       )}
 
       {/* Add World Modal */}

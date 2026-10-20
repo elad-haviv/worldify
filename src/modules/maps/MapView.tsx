@@ -34,6 +34,7 @@ import {
   Clock,
   Upload,
 } from 'lucide-react';
+import { SidePanel } from '../../components/SidePanel';
 
 type MapTool = 'select' | 'add_marker' | 'draw_path' | 'draw_zone' | 'add_label' | 'ruler';
 
@@ -228,7 +229,7 @@ export const MapView: React.FC = () => {
   return (
     <div className="h-full flex bg-slate-950 overflow-hidden">
       {/* Left Sidebar: Map Switcher, Layer Stack & Procedural Generator Controls */}
-      <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 text-xs">
+      <SidePanel side="left" panelId="maps-tools" label="Map tools" width="w-72" defaultOpen={true} className="p-4 flex flex-col gap-4 overflow-y-auto text-sm">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
@@ -261,7 +262,7 @@ export const MapView: React.FC = () => {
         {/* Spatio-Temporal Historical Presets */}
         <div className="p-3 rounded-xl bg-slate-950 border border-amber-500/30 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs capitalize font-semibold text-amber-400 flex items-center gap-1">
+            <span className="text-sm font-semibold text-slate-300 flex items-center gap-1">
               <Clock className="w-3 h-3" />
               Spatio-Temporal Map State
             </span>
@@ -292,7 +293,7 @@ export const MapView: React.FC = () => {
 
         {/* Layer Visibility Toggles */}
         <div className="space-y-2 pt-2 border-t border-slate-800">
-          <div className="text-xs font-semibold capitalize text-slate-400 flex items-center gap-1.5">
+          <div className="text-sm font-semibold text-slate-300 flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-emerald-400" />
             Map Layers
           </div>
@@ -334,7 +335,7 @@ export const MapView: React.FC = () => {
         {/* Azgaar-style Procedural Map Generator Controls */}
         {activeMap.mode === 'procedural' && (
           <div className="space-y-2.5 pt-3 border-t border-slate-800">
-            <div className="text-xs font-semibold capitalize text-amber-400 flex items-center gap-1.5">
+            <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
               Azgaar-Style Map Generator
             </div>
@@ -435,7 +436,7 @@ export const MapView: React.FC = () => {
             </div>
           </div>
         )}
-      </aside>
+      </SidePanel>
 
       {/* Center: Interactive Map Viewport + Top Cartography Toolset */}
       <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-950">
@@ -1105,7 +1106,7 @@ export const MapView: React.FC = () => {
       </div>
 
       {/* Right Inspector: Selected Burg / Cell / Marker / Active Entities on Map */}
-      <aside className="w-80 bg-slate-900 border-l border-slate-800 p-4 overflow-y-auto space-y-5 shrink-0 text-xs">
+      <SidePanel side="right" panelId="maps-contents" label="On this map" width="w-80" defaultOpen={false} className="p-4 overflow-y-auto space-y-5 text-sm">
         {/* Selected Procedural Burg Inspector */}
         {selectedBurg && (
           <div className="p-3.5 rounded-xl bg-slate-950 border border-amber-500/40 space-y-3">
@@ -1257,7 +1258,7 @@ export const MapView: React.FC = () => {
 
         {/* Live Entities on Map at Current Tick */}
         <div className="space-y-2">
-          <div className="text-xs font-semibold capitalize text-amber-400">
+          <div className="text-xs font-semibold text-slate-300">
             Entities on Map at Current Tick ({liveEntityPositions.length})
           </div>
           {liveEntityPositions.map((pos) => (
@@ -1281,7 +1282,7 @@ export const MapView: React.FC = () => {
 
         {/* Zones, Paths & Labels List with Delete */}
         <div className="pt-3 border-t border-slate-800 space-y-2">
-          <div className="text-xs font-semibold capitalize text-slate-400">
+          <div className="text-sm font-semibold text-slate-300">
             Zones ({activeMap.zones.length}) & Paths ({activeMap.paths.length})
           </div>
           {activeMap.zones.map((z) => (
@@ -1334,7 +1335,7 @@ export const MapView: React.FC = () => {
             </div>
           ))}
         </div>
-      </aside>
+      </SidePanel>
 
       {/* Modal for Placing Marker or Label */}
       {pendingCoord && (

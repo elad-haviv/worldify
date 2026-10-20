@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useWorldifyStore } from '../store/useWorldifyStore';
 import { formatTickToDate, getTotalDaysPerYear } from '../utils/calendarEngine';
 import {
-  Clock,
   Play,
   Pause,
   SkipBack,
@@ -56,28 +55,22 @@ export const GlobalTimelineBar: React.FC = () => {
   );
 
   return (
-    <div className="h-12 bg-slate-900/95 border-t border-slate-800 px-4 flex items-center justify-between gap-4 select-none z-30">
+    <div className="h-14 shrink-0 bg-slate-900 border-t border-slate-800 px-5 flex items-center justify-between gap-5 select-none z-30">
       {/* Left: Current Custom Calendar Date & Era */}
-      <div className="flex items-center gap-3 min-w-[290px]">
+      <div className="flex items-center gap-3 min-w-0 shrink-0">
         <button
           type="button"
           onClick={() => setActiveModule('timeline')}
-          className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-3 h-9 rounded-lg text-amber-200 hover:bg-slate-800 transition-colors cursor-pointer"
           title="Open Full Traversable Timeline & Custom Calendar Studio"
         >
-          <Calendar className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-xs font-semibold">{formatted.displayShort}</span>
+          <Calendar className="w-4 h-4 text-amber-400" />
+          <span className="text-sm font-semibold">{formatted.displayShort}</span>
         </button>
 
-        <div className="hidden xl:flex items-center gap-1.5 text-xs text-slate-400">
-          <span
-            className="px-1.5 py-0.5 rounded font-medium text-xs"
-            style={{
-              backgroundColor: `${formatted.era.color}22`,
-              color: formatted.era.color,
-              border: `1px solid ${formatted.era.color}55`,
-            }}
-          >
+        <div className="hidden 2xl:flex items-center gap-2 text-sm text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: formatted.era.color }} />
             {formatted.era.name}
           </span>
           <span>•</span>
@@ -86,13 +79,13 @@ export const GlobalTimelineBar: React.FC = () => {
       </div>
 
       {/* Center: Transport Controls + Interactive Scrubber */}
-      <div className="flex-1 max-w-2xl flex items-center gap-2.5">
-        <div className="flex items-center gap-1 bg-slate-950/90 border border-slate-800 rounded-md p-0.5">
+      <div className="flex-1 min-w-[280px] flex items-center gap-3">
+        <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-1">
           <button
             type="button"
             onClick={() => stepCurrentTick(-daysPerYear)}
             title="Step Back 1 Year"
-            className="p-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 text-xs font-mono cursor-pointer"
+            className="px-1.5 py-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 text-xs font-medium cursor-pointer"
           >
             -1Y
           </button>
@@ -100,9 +93,9 @@ export const GlobalTimelineBar: React.FC = () => {
             type="button"
             onClick={() => stepCurrentTick(-10)}
             title="Step Back 10 Days"
-            className="p-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 cursor-pointer"
+            className="px-1.5 py-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 cursor-pointer"
           >
-            <SkipBack className="w-3.5 h-3.5" />
+            <SkipBack className="w-4 h-4" />
           </button>
           <button
             type="button"
@@ -114,21 +107,21 @@ export const GlobalTimelineBar: React.FC = () => {
                 : 'text-amber-400 hover:bg-slate-800'
             }`}
           >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
           <button
             type="button"
             onClick={() => stepCurrentTick(10)}
             title="Step Forward 10 Days"
-            className="p-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 cursor-pointer"
+            className="px-1.5 py-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 cursor-pointer"
           >
-            <SkipForward className="w-3.5 h-3.5" />
+            <SkipForward className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={() => stepCurrentTick(daysPerYear)}
             title="Step Forward 1 Year"
-            className="p-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 text-xs font-mono cursor-pointer"
+            className="px-1.5 py-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 text-xs font-medium cursor-pointer"
           >
             +1Y
           </button>
@@ -153,7 +146,7 @@ export const GlobalTimelineBar: React.FC = () => {
             max={sliderMax}
             value={project.currentTick}
             onChange={(e) => setCurrentTick(Number(e.target.value))}
-            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
           />
           {/* Event markers along slider */}
           <div className="pointer-events-none absolute inset-x-0 -top-1.5 flex items-center">
@@ -164,7 +157,7 @@ export const GlobalTimelineBar: React.FC = () => {
                 <div
                   key={ev.id}
                   style={{ left: `${pct}%` }}
-                  className="absolute w-1.5 h-1.5 rounded-full bg-sky-400 ring-2 ring-slate-950"
+                  className="absolute w-1.5 h-1.5 rounded-full bg-slate-400 ring-2 ring-slate-900"
                   title={ev.title}
                 />
               );
@@ -177,37 +170,33 @@ export const GlobalTimelineBar: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveModule('timeline')}
-            className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/15 border border-sky-500/40 text-sky-300 text-xs truncate max-w-[210px] cursor-pointer hover:bg-sky-500/25"
+            className="hidden xl:flex items-center gap-1.5 px-3 h-8 rounded-lg text-slate-200 text-sm truncate max-w-[260px] cursor-pointer hover:bg-slate-800"
             title={activeEvent.summary}
           >
-            <Sparkles className="w-3 h-3 shrink-0" />
+            <Sparkles className="w-4 h-4 shrink-0 text-amber-400" />
             <span className="truncate">{activeEvent.title}</span>
-            <ChevronRight className="w-3 h-3 shrink-0" />
+            <ChevronRight className="w-4 h-4 shrink-0 text-slate-500" />
           </button>
         )}
       </div>
 
       {/* Right: Celestial Moons & Tick Counter */}
       <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2.5">
+        <div className="hidden 2xl:flex items-center gap-3">
           {formatted.moonPhases.map((mp) => (
             <div
               key={mp.moon.id}
-              className="flex items-center gap-1 text-xs bg-slate-950/80 border border-slate-800 px-2 py-0.5 rounded"
+              className="flex items-center gap-1.5 text-sm"
               title={`${mp.moon.name}: ${mp.phaseName} (${mp.moon.periodDays}-day cycle)`}
             >
               <span>{mp.phaseIcon}</span>
-              <span className="text-xs text-slate-300 font-medium">
+              <span className="text-sm text-slate-400">
                 {mp.moon.name.split(' ')[0]}
               </span>
             </div>
           ))}
         </div>
 
-        <div className="flex items-center gap-1 text-xs font-mono text-slate-500">
-          <Clock className="w-3 h-3 text-slate-500" />
-          <span>T:{project.currentTick}</span>
-        </div>
       </div>
     </div>
   );

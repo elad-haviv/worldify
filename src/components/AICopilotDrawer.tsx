@@ -348,7 +348,7 @@ export const AICopilotDrawer: React.FC = () => {
             {/* Staged Proposals */}
             {msg.proposals && msg.proposals.length > 0 && (
               <div className="mt-3 pt-2.5 border-t border-slate-800 space-y-2">
-                <div className="text-xs capitalize font-semibold text-amber-400">
+                <div className="text-sm font-semibold text-slate-300">
                   Staged Canon Proposals ({msg.proposals.length})
                 </div>
                 {msg.proposals.map((prop) => (

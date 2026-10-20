@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useWorldifyStore } from './store/useWorldifyStore';
 import { ActiveModule } from './types/worldify';
+import { formatTickToDate } from './utils/calendarEngine';
 import { ProjectDashboardView } from './modules/projects/ProjectDashboardView';
 import { CosmologyWorldsView } from './modules/projects/CosmologyWorldsView';
 import { WikiView } from './modules/wiki/WikiView';
@@ -23,22 +24,56 @@ import {
   Layers,
   Search,
   Sparkles,
+  CalendarDays,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChevronDown,
 } from 'lucide-react';
 
-const NAV_ITEMS: Array<{
+type NavItem = {
   id: ActiveModule;
   label: string;
   icon: React.FC<{ className?: string }>;
-}> = [
-  { id: 'dashboard', label: 'Overview', icon: Compass },
-  { id: 'wiki', label: 'Lore Wiki', icon: BookOpen },
-  { id: 'graph', label: 'Graph', icon: Network },
-  { id: 'maps', label: 'Atlas & Maps', icon: MapIcon },
-  { id: 'timeline', label: 'Timelines', icon: Clock },
-  { id: 'stories', label: 'Stories', icon: Feather },
-  { id: 'cosmology', label: 'Worlds', icon: Globe2 },
-  { id: 'templates', label: 'Templates', icon: Layers },
+};
+
+const NAV_GROUPS: Array<{ label: string | null; items: NavItem[] }> = [
+  { label: null, items: [{ id: 'dashboard', label: 'Overview', icon: Compass }] },
+  {
+    label: 'Write',
+    items: [
+      { id: 'wiki', label: 'Wiki', icon: BookOpen },
+      { id: 'stories', label: 'Stories', icon: Feather },
+    ],
+  },
+  {
+    label: 'Explore',
+    items: [
+      { id: 'maps', label: 'Maps', icon: MapIcon },
+      { id: 'timeline', label: 'Timeline', icon: Clock },
+      { id: 'graph', label: 'Graph', icon: Network },
+      { id: 'cosmology', label: 'Worlds', icon: Globe2 },
+    ],
+  },
+  {
+    label: 'Setup',
+    items: [{ id: 'templates', label: 'Templates', icon: Layers }],
+  },
 ];
+
+const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+
+/** Screens where the world clock directly changes what you see. */
+const TIME_AWARE_MODULES = new Set<ActiveModule>(['maps', 'timeline', 'graph', 'cosmology']);
+
+const SIDEBAR_KEY = 'worldify_sidebar_collapsed';
+
+function readSidebarPref(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 export const App: React.FC = () => {
   const {
@@ -54,41 +89,60 @@ export const App: React.FC = () => {
   } = useWorldifyStore();
 
   const project = projects.find((p) => p.id === activeProjectId) || projects[0];
+  const [collapsed, setCollapsed] = useState<boolean>(readSidebarPref);
+  // null = follow the screen's default; true/false = user choice for this screen
+  const [timelineOverride, setTimelineOverride] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setTimelineOverride(null);
+  }, [activeModule]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0');
+    } catch {
+      // storage unavailable – ignore
+    }
+  }, [collapsed]);
+
+  const showTimeline = timelineOverride ?? TIME_AWARE_MODULES.has(activeModule);
+  const calendar = project?.calendars.find((c) => c.id === project.activeCalendarId) || project?.calendars[0];
+  const dateLabel = project && calendar ? formatTickToDate(calendar, project.currentTick).displayShort : null;
+  const activeLabel = ALL_ITEMS.find((i) => i.id === activeModule)?.label ?? '';
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
-      {/* Top Global Workspace Header */}
-      <header className="h-13 bg-slate-900/95 border-b border-slate-800 px-4 flex items-center justify-between gap-3 shrink-0 z-30">
-        {/* Brand & Project / World Selectors */}
-        <div className="flex items-center gap-3">
+    <div className="h-screen w-screen flex bg-slate-950 text-slate-100 overflow-hidden">
+      {/* ── Sidebar ─────────────────────────────────────────── */}
+      <aside
+        className={`${
+          collapsed ? 'w-[68px]' : 'w-60'
+        } shrink-0 h-full bg-slate-900 border-r border-slate-800 flex flex-col transition-[width] duration-200 z-30`}
+      >
+        {/* Brand */}
+        <div className={`h-16 flex items-center gap-3 ${collapsed ? 'justify-center px-0' : 'px-5'}`}>
           <button
             type="button"
             onClick={() => setActiveModule('dashboard')}
-            className="flex items-center gap-2 text-left group cursor-pointer"
+            className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 font-display font-bold text-lg shrink-0 cursor-pointer"
+            title="Overview"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-slate-950 font-display font-bold text-base shadow-md">
-              W
-            </div>
-            <div className="hidden sm:block">
-              <div className="text-base font-semibold text-slate-100 group-hover:text-amber-300 transition-colors">
-                WORLDIFY
-              </div>
-              <div className="text-xs text-slate-400 -mt-0.5">
-                Spatio-Temporal Lore Studio
-              </div>
-            </div>
+            W
           </button>
+          {!collapsed && (
+            <span className="font-display font-bold text-lg text-slate-100 tracking-wide">Worldify</span>
+          )}
+        </div>
 
-          <div className="h-5 w-px bg-slate-800 hidden sm:block" />
-
-          {/* Project Selector */}
-          {project && (
-            <div className="flex items-center gap-2">
+        {/* Project switcher */}
+        {project && !collapsed && (
+          <div className="px-3 pb-3">
+            <label className="block px-2 pb-1 text-xs text-slate-500">Project</label>
+            <div className="relative">
               <select
                 value={project.id}
                 onChange={(e) => setActiveProject(e.target.value)}
-                className="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-200 focus:outline-none focus:border-amber-500 cursor-pointer max-w-[200px] truncate"
-                title="Switch Active Project"
+                className="w-full appearance-none bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm font-medium text-slate-100 focus:outline-none focus:border-amber-500 cursor-pointer truncate"
+                title={project.name}
               >
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -96,58 +150,115 @@ export const App: React.FC = () => {
                   </option>
                 ))}
               </select>
+              <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+        )}
 
-              {/* Active Connected World Selector */}
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-5">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi}>
+              {group.label && !collapsed && (
+                <div className="px-3 pb-1.5 text-xs font-medium text-slate-500">{group.label}</div>
+              )}
+              {group.label && collapsed && <div className="mx-3 mb-2 border-t border-slate-800" />}
+              <ul className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeModule === item.id;
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveModule(item.id)}
+                        title={collapsed ? item.label : undefined}
+                        className={`w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                          collapsed ? 'justify-center h-10' : 'px-3 h-10'
+                        } ${
+                          isActive
+                            ? 'bg-amber-500/15 text-amber-300'
+                            : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/70'
+                        }`}
+                      >
+                        <Icon className="w-[18px] h-[18px] shrink-0" />
+                        {!collapsed && <span>{item.label}</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        {/* Collapse toggle */}
+        <div className="p-3 border-t border-slate-800">
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            className={`w-full h-9 flex items-center gap-3 rounded-lg text-sm text-slate-500 hover:text-slate-200 hover:bg-slate-800/70 cursor-pointer ${
+              collapsed ? 'justify-center' : 'px-3'
+            }`}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <PanelLeftClose className="w-[18px] h-[18px]" />}
+            {!collapsed && <span>Collapse</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main column ─────────────────────────────────────── */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Top bar */}
+        <header className="h-14 shrink-0 border-b border-slate-800 bg-slate-950 px-5 flex items-center gap-4 z-20">
+          <h1 className="text-base font-semibold text-slate-100 shrink-0">{activeLabel}</h1>
+
+          {project && project.worlds.length > 1 && (
+            <div className="relative hidden md:block">
               <select
                 value={project.activeWorldId}
                 onChange={(e) => setActiveWorld(e.target.value)}
-                className="hidden md:block bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-cyan-300 focus:outline-none focus:border-amber-500 cursor-pointer max-w-[180px] truncate"
-                title="Switch Active Connected World / Plane"
+                className="appearance-none bg-transparent hover:bg-slate-900 border border-slate-800 rounded-lg pl-3 pr-8 py-1.5 text-sm text-slate-300 focus:outline-none focus:border-amber-500 cursor-pointer max-w-[260px] truncate"
+                title="Active world"
               >
                 {project.worlds.map((w) => (
                   <option key={w.id} value={w.id}>
-                    🌐 {w.name}
+                    {w.name}
                   </option>
                 ))}
               </select>
+              <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           )}
-        </div>
 
-        {/* Center Module Navigation Tabs */}
-        <nav className="flex items-center gap-1 overflow-x-auto py-1">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeModule === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveModule(item.id)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
-                  isActive
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border border-transparent'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+          <div className="flex-1" />
 
-        {/* Right: Quick Search (Ctrl+K) & AI Lore Copilot Toggle */}
-        <div className="flex items-center gap-2 shrink-0">
+          {dateLabel && (
+            <button
+              type="button"
+              onClick={() => setTimelineOverride(!showTimeline)}
+              className={`h-9 px-3 rounded-lg text-sm flex items-center gap-2 border transition-colors cursor-pointer ${
+                showTimeline
+                  ? 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+                  : 'border-slate-800 text-slate-300 hover:bg-slate-900'
+              }`}
+              title={showTimeline ? 'Hide world clock' : 'Show world clock'}
+            >
+              <CalendarDays className="w-4 h-4" />
+              <span className="hidden lg:inline">{dateLabel}</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => toggleQuickSearch(true)}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 text-xs flex items-center gap-2 transition-colors cursor-pointer"
-            title="Search Wiki, Maps, Events & Worlds (Ctrl+K)"
+            className="h-9 px-3 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900 text-sm flex items-center gap-2 transition-colors cursor-pointer"
+            title="Search (Ctrl+K)"
           >
-            <Search className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden lg:inline">Quick Search</span>
-            <kbd className="hidden sm:inline px-1.5 py-0.5 text-xs font-mono bg-slate-900 text-slate-400 rounded border border-slate-800">
+            <Search className="w-4 h-4" />
+            <span className="hidden lg:inline">Search</span>
+            <kbd className="hidden lg:inline px-1.5 text-xs font-mono text-slate-500 rounded border border-slate-800">
               Ctrl K
             </kbd>
           </button>
@@ -155,38 +266,37 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={() => toggleAICopilot()}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`h-9 px-3 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${
               isAICopilotOpen
-                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40'
+                ? 'bg-amber-500 text-slate-950'
+                : 'border border-slate-800 text-amber-300 hover:bg-slate-900'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>AI Copilot</span>
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden sm:inline">AI</span>
           </button>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content Area + Right AI Copilot Drawer */}
-      <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        <div className="flex-1 min-w-0 h-full overflow-hidden">
-          {activeModule === 'dashboard' && <ProjectDashboardView />}
-          {activeModule === 'wiki' && <WikiView />}
-          {activeModule === 'graph' && <KnowledgeGraphView />}
-          {activeModule === 'maps' && <MapView />}
-          {activeModule === 'timeline' && <TimelineView />}
-          {activeModule === 'stories' && <StoryStudioView />}
-          {activeModule === 'cosmology' && <CosmologyWorldsView />}
-          {activeModule === 'templates' && <TemplatesView />}
+        {/* Content + AI drawer */}
+        <div className="flex-1 flex min-h-0 overflow-hidden relative">
+          <main className="flex-1 min-w-0 h-full overflow-hidden">
+            {activeModule === 'dashboard' && <ProjectDashboardView />}
+            {activeModule === 'wiki' && <WikiView />}
+            {activeModule === 'graph' && <KnowledgeGraphView />}
+            {activeModule === 'maps' && <MapView />}
+            {activeModule === 'timeline' && <TimelineView />}
+            {activeModule === 'stories' && <StoryStudioView />}
+            {activeModule === 'cosmology' && <CosmologyWorldsView />}
+            {activeModule === 'templates' && <TemplatesView />}
+          </main>
+
+          <AICopilotDrawer />
         </div>
 
-        <AICopilotDrawer />
+        {/* World clock – only where it matters, or when the user opens it */}
+        {showTimeline && <GlobalTimelineBar />}
       </div>
 
-      {/* Bottom Spatio-Temporal Timeline Scrubber Bar */}
-      <GlobalTimelineBar />
-
-      {/* Ctrl+K Quick Search Modal */}
       <QuickSearchModal />
     </div>
   );

@@ -94,7 +94,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Wiki Entities */}
           {matchedEntities.length > 0 && (
             <div>
-              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
+              <div className="text-sm font-semibold text-slate-300 px-2 mb-1.5">
                 Wiki Entries & Entities ({matchedEntities.length})
               </div>
               <div className="space-y-1">
@@ -134,7 +134,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Maps */}
           {matchedMaps.length > 0 && (
             <div>
-              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
+              <div className="text-sm font-semibold text-slate-300 px-2 mb-1.5">
                 Interactive Maps ({matchedMaps.length})
               </div>
               <div className="space-y-1">
@@ -167,7 +167,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Timeline Events */}
           {matchedEvents.length > 0 && (
             <div>
-              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
+              <div className="text-sm font-semibold text-slate-300 px-2 mb-1.5">
                 Timeline Events ({matchedEvents.length})
               </div>
               <div className="space-y-1">
@@ -201,7 +201,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Worlds */}
           {matchedWorlds.length > 0 && (
             <div>
-              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
+              <div className="text-sm font-semibold text-slate-300 px-2 mb-1.5">
                 Connected Worlds & Planes ({matchedWorlds.length})
               </div>
               <div className="space-y-1">
@@ -233,7 +233,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Stories */}
           {project.stories.length > 0 && (
             <div>
-              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
+              <div className="text-sm font-semibold text-slate-300 px-2 mb-1.5">
                 Stories & Manuscripts
               </div>
               {project.stories.map((st) =>

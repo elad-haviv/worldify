@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useWorldifyStore } from '../../store/useWorldifyStore';
 import { EntityCategory, TemplateField, TemplateFieldType } from '../../types/worldify';
 import { Layers, Plus, Trash2, BookOpen } from 'lucide-react';
+import { SidePanel } from '../../components/SidePanel';
 
 export const TemplatesView: React.FC = () => {
   const { projects, activeProjectId, createTemplate, updateTemplate, setActiveModule } =
@@ -77,7 +78,7 @@ export const TemplatesView: React.FC = () => {
   return (
     <div className="h-full flex bg-slate-950 overflow-hidden">
       {/* Left Sidebar: Templates List */}
-      <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-3">
+      <SidePanel side="left" panelId="templates-list" label="Templates" width="w-72" defaultOpen={true} className="p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
             <Layers className="w-4 h-4 text-amber-400" />
@@ -134,7 +135,7 @@ export const TemplatesView: React.FC = () => {
           <BookOpen className="w-3.5 h-3.5 text-amber-400" />
           Return to Wiki Editor
         </button>
-      </aside>
+      </SidePanel>
 
       {/* Center: Template Schema & Boilerplate Designer */}
       {activeTemplate && (
