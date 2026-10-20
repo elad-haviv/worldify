@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useWorldifyStore } from '../../store/useWorldifyStore';
 import {
   CustomProperty,
@@ -29,6 +29,7 @@ import {
   Check,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { MarkdownToolbar } from '../../components/MarkdownToolbar';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
@@ -63,6 +64,7 @@ export const WikiView: React.FC = () => {
   const [worldFilter, setWorldFilter] = useState<string>('all');
   const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('preview');
   const [isAiBusy, setIsAiBusy] = useState(false);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
 
   // New Entry Modal
   const [showNewModal, setShowNewModal] = useState(false);
@@ -463,29 +465,6 @@ export const WikiView: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick [[WikiLink]] Insertion Bar */}
-          {editorMode !== 'preview' && (
-            <div className="px-6 py-1.5 bg-slate-950 border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto text-xs">
-              <span className="text-slate-400 shrink-0 flex items-center gap-1">
-                <Link2 className="w-3 h-3 text-amber-400" />
-                Insert <code className="text-amber-300">[[WikiLink]]</code>:
-              </span>
-              {project.entities
-                .filter((e) => e.id !== activeEntity.id)
-                .slice(0, 8)
-                .map((peer) => (
-                  <button
-                    key={peer.id}
-                    type="button"
-                    onClick={() => insertWikiLinkAtEnd(peer.title)}
-                    className="shrink-0 px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 cursor-pointer whitespace-nowrap"
-                  >
-                    + [[{peer.title}]]
-                  </button>
-                ))}
-            </div>
-          )}
-
           {/* Main Split / Edit / Preview Area */}
           <div className="flex-1 flex min-h-0 overflow-hidden">
             {(editorMode === 'edit' || editorMode === 'split') && (
@@ -494,11 +473,13 @@ export const WikiView: React.FC = () => {
                   editorMode === 'split' ? 'border-r border-slate-800' : ''
                 }`}
               >
-                <div className="px-4 py-2 bg-slate-900/30 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-                  <span>Markdown · link entries with [[Entry name]]</span>
-                  <span className="font-mono">{activeEntity.contentMd.length} chars</span>
-                </div>
+                <MarkdownToolbar
+                  textareaRef={editorRef}
+                  entities={project.entities.filter((e) => e.id !== activeEntity.id)}
+                  status={`${activeEntity.contentMd.trim().split(/\s+/).filter(Boolean).length} words`}
+                />
                 <textarea
+                  ref={editorRef}
                   value={activeEntity.contentMd}
                   onChange={(e) =>
                     updateEntity(activeEntity.id, { contentMd: e.target.value })

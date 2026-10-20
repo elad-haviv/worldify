@@ -30,7 +30,8 @@ export const QuickSearchModal: React.FC = () => {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      // The Markdown editor uses Ctrl+K for "link entry" and marks the event as handled.
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !e.defaultPrevented) {
         e.preventDefault();
         toggleQuickSearch();
       } else if (e.key === 'Escape' && isQuickSearchOpen) {

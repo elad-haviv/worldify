@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useWorldifyStore } from '../../store/useWorldifyStore';
 import { MarkdownRenderer } from '../../components/MarkdownRenderer';
 import { formatTickToDate } from '../../utils/calendarEngine';
@@ -24,6 +24,7 @@ import {
   Map as MapIcon,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { MarkdownToolbar } from '../../components/MarkdownToolbar';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
@@ -48,6 +49,7 @@ export const StoryStudioView: React.FC = () => {
 
   const project = projects.find((p) => p.id === activeProjectId);
   const [subView, setSubView] = useState<'manuscript' | 'story_timeline' | 'story_map'>('manuscript');
+  const sceneEditorRef = useRef<HTMLTextAreaElement>(null);
   const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('edit');
   const [isAiBusy, setIsAiBusy] = useState(false);
 
@@ -419,8 +421,11 @@ export const StoryStudioView: React.FC = () => {
 
               <div className="flex-1 flex min-h-0 overflow-hidden">
                 {(editorMode === 'edit' || editorMode === 'split') && (
-                  <div className={`flex-1 h-full overflow-y-auto ${editorMode === 'split' ? 'border-r border-slate-800' : ''}`}>
+                  <div className={`flex-1 h-full flex flex-col min-h-0 ${editorMode === 'split' ? 'border-r border-slate-800' : ''}`}>
+                  <MarkdownToolbar textareaRef={sceneEditorRef} entities={project.entities} />
+                  <div className="flex-1 min-h-0 overflow-y-auto">
                   <textarea
+                    ref={sceneEditorRef}
                     value={activeScene.contentMd}
                     onChange={(e) =>
                       updateStoryScene(activeStory.id, activeChapter.id, activeScene.id, {
@@ -430,6 +435,7 @@ export const StoryStudioView: React.FC = () => {
                     placeholder="Write your scene prose using [[Entity Name]] to link characters, relics, and locations..."
                     className="block w-full max-w-3xl mx-auto h-full min-h-full bg-transparent px-8 py-4 text-base text-slate-200 leading-8 focus:outline-none resize-none"
                   />
+                  </div>
                   </div>
                 )}
                 {(editorMode === 'preview' || editorMode === 'split') && (
