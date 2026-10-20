@@ -27,18 +27,18 @@ import {
   Network,
   Layers,
   Check,
+  Globe2,
+  ChevronDown,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { CategoryTree } from '../../components/CategoryTree';
+import { CategoryPicker } from '../../components/CategoryPicker';
+import { CategoryIcon } from '../../components/CategoryBadge';
 import { MarkdownToolbar, MarkdownToolbarHandle } from '../../components/MarkdownToolbar';
 import { MarkdownEditor, MarkdownEditorHandle } from '../../components/MarkdownEditor';
 import { collectProjectImages, saveImageAsset } from '../../utils/assetStore';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
-
-const CATEGORIES: Array<{ key: EntityCategory | 'all'; label: string }> = [
-  { key: 'all', label: 'All Categories' },
-  ...(Object.keys(CATEGORY_META) as EntityCategory[]).map((key) => ({ key, label: CATEGORY_META[key].plural })),
-];
 
 export const WikiView: React.FC = () => {
   const {
@@ -64,6 +64,7 @@ export const WikiView: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<EntityCategory | 'all'>('all');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [worldFilter, setWorldFilter] = useState<string>('all');
+  const [showCatPicker, setShowCatPicker] = useState(false);
   const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('preview');
   const [isAiBusy, setIsAiBusy] = useState(false);
   const editorRef = useRef<MarkdownEditorHandle>(null);
@@ -125,6 +126,9 @@ export const WikiView: React.FC = () => {
 
   const activeEntity =
     project.entities.find((e) => e.id === selectedEntityId) || filteredEntities[0] || null;
+
+  const categoryCounts: Partial<Record<EntityCategory, number>> = {};
+  project.entities.forEach((e) => (categoryCounts[e.category] = (categoryCounts[e.category] ?? 0) + 1));
 
   const activeTemplate = activeEntity
     ? project.templates.find((t) => t.id === activeEntity.templateId)
@@ -259,35 +263,25 @@ export const WikiView: React.FC = () => {
             />
           </div>
 
-          {/* World Filter + Category Filter */}
-          <div className="grid grid-cols-2 gap-1.5">
-            <select
-              value={worldFilter}
-              onChange={(e) => setWorldFilter(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none"
-            >
-              <option value="all">All Worlds</option>
-              {project.worlds.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name.split(' ')[0]}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedCategory}
-              onChange={(e) =>
-                setSelectedCategory(e.target.value as EntityCategory | 'all')
-              }
-              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.key} value={c.key}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* World filter */}
+          {project.worlds.length > 1 && (
+            <div className="relative">
+              <Globe2 className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                value={worldFilter}
+                onChange={(e) => setWorldFilter(e.target.value)}
+                className="w-full appearance-none bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-lg pl-8 pr-7 py-1.5 text-sm text-slate-300 focus:outline-none focus:border-amber-500 cursor-pointer"
+              >
+                <option value="all">All worlds</option>
+                {project.worlds.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          )}
 
           {/* Tag Filter Pills */}
           {allTags.length > 0 && (
@@ -321,31 +315,16 @@ export const WikiView: React.FC = () => {
           )}
         </div>
 
-        {/* Entries List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {filteredEntities.map((ent) => {
-            const isSelected = ent.id === activeEntity?.id;
-            return (
-              <button
-                key={ent.id}
-                type="button"
-                onClick={() => selectEntity(ent.id)}
-                className={`w-full p-2.5 rounded-lg text-left transition-all cursor-pointer border ${
-                  isSelected
-                    ? 'bg-amber-500/15 border-amber-500/40 text-slate-100'
-                    : 'bg-transparent border-transparent hover:bg-slate-800/70 text-slate-300'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-1 mb-0.5">
-                  <span className="text-xs font-semibold truncate">{ent.title}</span>
-                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-950/90 text-slate-400 border border-slate-800 shrink-0 whitespace-nowrap">
-                    {categoryLabel(ent.category)}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 line-clamp-1">{ent.summary}</p>
-              </button>
-            );
-          })}
+        {/* Entries, grouped by category */}
+        <div className="flex-1 overflow-y-auto pt-2">
+          <CategoryTree
+            projectId={project.id}
+            entities={filteredEntities}
+            templates={project.templates}
+            activeId={activeEntity?.id ?? null}
+            onSelect={(id) => selectEntity(id)}
+            forceOpen={!!searchQuery.trim() || !!selectedTag}
+          />
         </div>
       </SidePanel>
 
@@ -356,8 +335,35 @@ export const WikiView: React.FC = () => {
           <div className="px-8 pt-6 pb-4 border-b border-slate-800 flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1 flex-1 min-w-[260px]">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
-                <span className="capitalize font-medium text-amber-300">
-                  {categoryLabel(activeEntity.category)}
+                <span className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowCatPicker(!showCatPicker)}
+                    title="Change category"
+                    className="flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-md hover:bg-slate-800 cursor-pointer"
+                  >
+                    <CategoryIcon category={activeEntity.category} size="sm" />
+                    <span className="font-medium" style={{ color: CATEGORY_META[activeEntity.category]?.color }}>
+                      {categoryLabel(activeEntity.category)}
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                  </button>
+                  {showCatPicker && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setShowCatPicker(false)} />
+                      <div className="absolute left-0 top-full mt-1 z-40 w-[26rem] p-3 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
+                        <div className="text-xs text-slate-400 mb-2">Change category</div>
+                        <CategoryPicker
+                          value={activeEntity.category}
+                          counts={categoryCounts}
+                          onChange={(c) => {
+                            updateEntity(activeEntity.id, { category: c });
+                            setShowCatPicker(false);
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
                 </span>
                 {activeTemplate && (
                   <button
@@ -1063,21 +1069,11 @@ export const WikiView: React.FC = () => {
                 className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-300 mb-1">Category</label>
-                <select
-                  value={newCat}
-                  onChange={(e) => setNewCat(e.target.value as EntityCategory)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-slate-100"
-                >
-                  {CATEGORIES.filter((c) => c.key !== 'all').map((c) => (
-                    <option key={c.key} value={c.key}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="block text-slate-300 mb-1.5">Category</label>
+              <CategoryPicker value={newCat} onChange={setNewCat} counts={categoryCounts} />
+            </div>
+            <div>
               <div>
                 <label className="block text-slate-300 mb-1">Template Schema</label>
                 <select
