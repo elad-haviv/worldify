@@ -18,19 +18,12 @@ import {
   Plus,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { SigmaGraph, SigmaGraphHandle, GraphNodeInput, GraphEdgeInput } from '../../components/SigmaGraph';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 
 const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
   Object.entries(CATEGORY_META).map(([k, v]) => [k, v.color])
 );
-
-interface NodeLayout {
-  id: string;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-}
 
 export const KnowledgeGraphView: React.FC = () => {
   const {
@@ -57,15 +50,8 @@ export const KnowledgeGraphView: React.FC = () => {
   const [newEdgeTargetId, setNewEdgeTargetId] = useState<string>('');
   const [newEdgeLabel, setNewEdgeLabel] = useState<string>('');
 
-  // Pan / Zoom / Drag
-  const [zoom, setZoom] = useState<number>(1);
-  const [fitZoom, setFitZoom] = useState<number>(1);
-  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
-  const [isPanning, setIsPanning] = useState<boolean>(false);
-  const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-
-  const [positions, setPositions] = useState<Record<string, NodeLayout>>({});
+  const [layoutVersion, setLayoutVersion] = useState<number>(0);
+  const graphApi = useRef<SigmaGraphHandle>(null);
 
   const allRelations = useMemo(
     () => (project ? computeAllProjectRelations(project) : []),
@@ -128,91 +114,6 @@ export const KnowledgeGraphView: React.FC = () => {
     selectedEntityId,
   ]);
 
-  // Run Force-Directed Layout whenever project or node list changes
-  const runForceLayout = () => {
-    if (!project) return;
-    const n = project.entities.length;
-    if (n === 0) return;
-
-    // Big projects get a bigger canvas; the view starts zoomed out to fit it.
-    const spread = Math.max(1, Math.sqrt(n / 30));
-    const lo = 500 - 430 * spread;
-    const hi = 500 + 430 * spread;
-    const layoutMap: Record<string, NodeLayout> = {};
-    project.entities.forEach((ent, idx) => {
-      const angle = (idx / n) * Math.PI * 2;
-      const radius = (240 + (idx % 3) * 65) * spread;
-      layoutMap[ent.id] = {
-        id: ent.id,
-        x: 500 + Math.cos(angle) * radius,
-        y: 500 + Math.sin(angle) * radius,
-        vx: 0,
-        vy: 0,
-      };
-    });
-
-    // 90 iterations of Fruchterman-Reingold / spring-repulsion simulation
-    const ids = Object.keys(layoutMap);
-    for (let iter = 0; iter < 220; iter++) {
-      // Repulsion
-      for (let i = 0; i < ids.length; i++) {
-        for (let j = i + 1; j < ids.length; j++) {
-          const a = layoutMap[ids[i]];
-          const b = layoutMap[ids[j]];
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const distSq = Math.max(400, dx * dx + dy * dy);
-          const dist = Math.sqrt(distSq);
-          const force = 140000 / distSq;
-          const fx = (dx / dist) * force;
-          const fy = (dy / dist) * force;
-          a.vx -= fx;
-          a.vy -= fy;
-          b.vx += fx;
-          b.vy += fy;
-        }
-      }
-
-      // Attraction along edges
-      for (const edge of allRelations) {
-        const a = layoutMap[edge.sourceEntityId];
-        const b = layoutMap[edge.targetEntityId];
-        if (!a || !b) continue;
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const dist = Math.max(1, Math.hypot(dx, dy));
-        const desired = 240;
-        const force = (dist - desired) * 0.012;
-        const fx = (dx / dist) * force;
-        const fy = (dy / dist) * force;
-        a.vx += fx;
-        a.vy += fy;
-        b.vx -= fx;
-        b.vy -= fy;
-      }
-
-      // Center gravity + update
-      for (const id of ids) {
-        const node = layoutMap[id];
-        node.vx += (500 - node.x) * 0.006 * spread;
-        node.vy += (500 - node.y) * 0.006 * spread;
-        node.x = Math.max(lo, Math.min(hi, node.x + node.vx * 0.35));
-        node.y = Math.max(lo, Math.min(hi, node.y + node.vy * 0.35));
-        node.vx *= 0.5;
-        node.vy *= 0.5;
-      }
-    }
-
-    setPositions(layoutMap);
-    setFitZoom(1 / spread);
-    setZoom(1 / spread);
-    setPan({ x: 0, y: 0 });
-  };
-
-  useEffect(() => {
-    runForceLayout();
-  }, [activeProjectId, project?.entities.length]);
-
   if (!project) return null;
 
   // Shortest path calculation
@@ -221,15 +122,8 @@ export const KnowledgeGraphView: React.FC = () => {
     return findShortestLorePath(visibleEdges, pathStartId, pathEndId);
   }, [visibleEdges, pathStartId, pathEndId]);
 
-  const pathNodeSet = new Set(shortestPath?.entityIds || []);
-  const selectedNeighborIds = new Set<string>();
-  if (selectedEntityId) {
-    for (const e of visibleEdges) {
-      if (e.sourceEntityId === selectedEntityId) selectedNeighborIds.add(e.targetEntityId);
-      if (e.targetEntityId === selectedEntityId) selectedNeighborIds.add(e.sourceEntityId);
-    }
-  }
-  const pathEdgeSet = new Set(shortestPath?.relationIds || []);
+  const pathNodeSet = useMemo(() => new Set(shortestPath?.entityIds || []), [shortestPath]);
+  const pathEdgeSet = useMemo(() => new Set(shortestPath?.relationIds || []), [shortestPath]);
 
   // Degree count per node
   const degreeMap = new Map<string, number>();
@@ -238,38 +132,21 @@ export const KnowledgeGraphView: React.FC = () => {
     degreeMap.set(e.targetEntityId, (degreeMap.get(e.targetEntityId) || 0) + 1);
   });
 
-  // The most-connected entries stay labelled even when zoomed out.
-  const hubIds = new Set(
-    [...visibleNodes]
-      .sort((a, b) => (degreeMap.get(b.id) || 0) - (degreeMap.get(a.id) || 0))
-      .slice(0, 12)
-      .map((n) => n.id)
-  );
-
   const activeEntity = project.entities.find((e) => e.id === selectedEntityId);
 
-  const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (draggingNodeId) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const rawX = ((e.clientX - rect.left) / rect.width) * 1000;
-      const rawY = ((e.clientY - rect.top) / rect.height) * 1000;
-      const x = (rawX - 500 - pan.x) / zoom + 500;
-      const y = (rawY - 500 - pan.y) / zoom + 500;
-      setPositions((prev) => ({
-        ...prev,
-        [draggingNodeId]: {
-          ...(prev[draggingNodeId] || { id: draggingNodeId, vx: 0, vy: 0 }),
-          x,
-          y,
-        },
-      }));
-    } else if (isPanning) {
-      const dx = e.clientX - panStartRef.current.x;
-      const dy = e.clientY - panStartRef.current.y;
-      panStartRef.current = { x: e.clientX, y: e.clientY };
-      setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
-    }
-  };
+  const graphNodes: GraphNodeInput[] = useMemo(() => visibleNodes.map((n) => ({
+    id: n.id,
+    label: n.title,
+    color: CATEGORY_COLORS[n.category] || '#f59e0b',
+    size: Math.min(16, 3 + Math.sqrt(degreeMap.get(n.id) || 0) * 1.8),
+  })), [visibleNodes, visibleEdges]); // eslint-disable-line react-hooks/exhaustive-deps
+  const graphEdges: GraphEdgeInput[] = useMemo(() => visibleEdges.map((e) => ({
+    id: e.id,
+    source: e.sourceEntityId,
+    target: e.targetEntityId,
+    color: e.type === 'mention' ? '#273449' : e.type === 'property_ref' ? '#0c4a6e' : '#78350f',
+    label: e.type === 'mention' ? undefined : e.label,
+  })), [visibleEdges]);
 
   return (
     <div className="h-full flex bg-slate-950 overflow-hidden">
@@ -282,9 +159,9 @@ export const KnowledgeGraphView: React.FC = () => {
           </h2>
           <button
             type="button"
-            onClick={runForceLayout}
+            onClick={() => setLayoutVersion((v) => v + 1)}
             className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1 text-xs cursor-pointer"
-            title="Re-run Force Layout Simulation"
+            title="Re-arrange the graph"
           >
             <RefreshCw className="w-3 h-3 text-amber-400" />
             Layout
@@ -452,18 +329,16 @@ export const KnowledgeGraphView: React.FC = () => {
         <div className="absolute top-4 right-4 z-10 flex items-center gap-1 bg-slate-900/90 border border-slate-800 rounded-lg p-1 shadow-lg">
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.min(2.4, z * 1.25))}
+            onClick={() => graphApi.current?.zoomIn()}
             className="p-1.5 rounded hover:bg-slate-800 text-slate-300 cursor-pointer"
             title="Zoom In"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
-          <span className="text-xs font-mono text-slate-400 px-1.5">
-            {Math.round(zoom * 100)}%
-          </span>
+
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.max(fitZoom * 0.6, z / 1.25))}
+            onClick={() => graphApi.current?.zoomOut()}
             className="p-1.5 rounded hover:bg-slate-800 text-slate-300 cursor-pointer"
             title="Zoom Out"
           >
@@ -471,155 +346,26 @@ export const KnowledgeGraphView: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setZoom(fitZoom);
-              setPan({ x: 0, y: 0 });
-            }}
+            onClick={() => graphApi.current?.fit()}
             className="px-2 py-1 rounded hover:bg-slate-800 text-xs text-slate-300 cursor-pointer"
           >
             Reset
           </button>
         </div>
 
-        <svg
-          viewBox="0 0 1000 1000"
-          onWheel={(e) => {
-            const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-            setZoom((z) => Math.min(2.4, Math.max(fitZoom * 0.6, z * factor)));
-          }}
-          className="w-full h-full select-none cursor-grab active:cursor-grabbing"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
-              setIsPanning(true);
-              panStartRef.current = { x: e.clientX, y: e.clientY };
-            }
-          }}
-          onMouseMove={handleSvgMouseMove}
-          onMouseUp={() => {
-            setDraggingNodeId(null);
-            setIsPanning(false);
-          }}
-          onMouseLeave={() => {
-            setDraggingNodeId(null);
-            setIsPanning(false);
-          }}
-        >
-          <g
-            transform={`translate(${500 + pan.x}, ${500 + pan.y}) scale(${zoom}) translate(-500, -500)`}
-          >
-            {/* Edges */}
-            {visibleEdges.map((edge) => {
-              const sPos = positions[edge.sourceEntityId];
-              const tPos = positions[edge.targetEntityId];
-              if (!sPos || !tPos) return null;
-
-              const isHighlighted =
-                pathEdgeSet.has(edge.id) ||
-                edge.sourceEntityId === selectedEntityId ||
-                edge.targetEntityId === selectedEntityId;
-
-              const midX = (sPos.x + tPos.x) / 2;
-              const midY = (sPos.y + tPos.y) / 2;
-
-              const strokeColor = pathEdgeSet.has(edge.id)
-                ? '#10b981'
-                : edge.type === 'mention'
-                  ? '#475569'
-                  : edge.type === 'property_ref'
-                    ? '#38bdf8'
-                    : '#f59e0b';
-
-              return (
-                <g key={edge.id} opacity={isHighlighted ? 1 : selectedEntityId ? 0.12 : 0.4}>
-                  <line
-                    x1={sPos.x}
-                    y1={sPos.y}
-                    x2={tPos.x}
-                    y2={tPos.y}
-                    stroke={strokeColor}
-                    strokeWidth={pathEdgeSet.has(edge.id) ? 3.5 : isHighlighted ? 2.2 : 1.3}
-                    strokeDasharray={edge.type === 'mention' ? '5 4' : undefined}
-                  />
-                  {isHighlighted && edge.type !== 'mention' && (
-                    <text
-                      x={midX}
-                      y={midY - 6}
-                      textAnchor="middle"
-                      fill="#cbd5e1"
-                      fontSize={13}
-                      paintOrder="stroke"
-                      stroke="#020617"
-                      strokeWidth={4}
-                      className="pointer-events-none"
-                    >
-                      {edge.label}
-                    </text>
-                  )}
-                </g>
-              );
-            })}
-
-            {/* Nodes */}
-            {visibleNodes.map((node) => {
-              // When zoomed far out, only label the selection and its neighbours.
-              const showLabel =
-                zoom >= 0.7 ||
-                node.id === selectedEntityId ||
-                pathNodeSet.has(node.id) ||
-                selectedNeighborIds.has(node.id) ||
-                hubIds.has(node.id);
-              const pos = positions[node.id] || { x: 500, y: 500 };
-              const deg = degreeMap.get(node.id) || 1;
-              const radius = Math.min(30, 14 + deg * 2.2) * Math.min(2, 1 / Math.sqrt(Math.max(zoom, 0.25)));
-              const color = CATEGORY_COLORS[node.category] || '#f59e0b';
-              const isSelected = node.id === selectedEntityId;
-              const isOnPath = pathNodeSet.has(node.id);
-
-              return (
-                <g
-                  key={node.id}
-                  transform={`translate(${pos.x}, ${pos.y})`}
-                  className="cursor-pointer"
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    selectEntity(node.id);
-                    setDraggingNodeId(node.id);
-                  }}
-                >
-                  {(isSelected || isOnPath) && (
-                    <circle
-                      r={radius + 9}
-                      fill={isOnPath ? '#10b981' : color}
-                      fillOpacity={0.22}
-                      stroke={isOnPath ? '#10b981' : '#fbbf24'}
-                      strokeWidth={2}
-                    />
-                  )}
-                  <circle
-                    r={radius}
-                    fill="#0f172a"
-                    stroke={color}
-                    strokeWidth={isSelected ? 3.5 : 2.2}
-                  />
-                  <circle r={radius - 5} fill={color} fillOpacity={0.35} />
-                  <text
-                    y={radius + 22 / Math.max(Math.min(zoom, 1), 0.2)}
-                    textAnchor="middle"
-                    fill={isSelected ? '#fbbf24' : '#f1f5f9'}
-                    fontSize={22 / Math.max(Math.min(zoom, 1), 0.2)}
-                    paintOrder="stroke"
-                    stroke="#020617"
-                    strokeWidth={5 / Math.max(Math.min(zoom, 1), 0.2)}
-                    fontWeight={isSelected ? 700 : 600}
-                    className="pointer-events-none"
-                  >
-                    {showLabel ? node.title : ''}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        </svg>
+        <SigmaGraph
+          ref={graphApi}
+          nodes={graphNodes}
+          edges={graphEdges}
+          selectedId={selectedEntityId}
+          pathNodeIds={pathNodeSet}
+          pathEdgeIds={pathEdgeSet}
+          layoutVersion={layoutVersion}
+          onSelect={(id) => selectEntity(id)}
+        />
+        <div className="absolute bottom-3 left-3 z-10 text-xs text-slate-500 pointer-events-none">
+          Hover to highlight connections · click to select · drag nodes · scroll to zoom
+        </div>
       </div>
 
       {/* Right Selected Node Inspector */}
