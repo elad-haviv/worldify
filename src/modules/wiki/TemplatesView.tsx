@@ -79,7 +79,7 @@ export const TemplatesView: React.FC = () => {
       {/* Left Sidebar: Templates List */}
       <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-display font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
             <Layers className="w-4 h-4 text-amber-400" />
             Wiki Templates
           </h2>
@@ -116,9 +116,9 @@ export const TemplatesView: React.FC = () => {
                     />
                     {tpl.name}
                   </span>
-                  <span className="text-[10px] text-slate-400">{usageCount} entries</span>
+                  <span className="text-xs text-slate-400">{usageCount} entries</span>
                 </div>
-                <div className="text-[10px] uppercase text-slate-500">
+                <div className="text-xs capitalize text-slate-500">
                   Category: {tpl.category} • {tpl.fields.length} schema fields
                 </div>
               </button>
@@ -141,7 +141,7 @@ export const TemplatesView: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl">
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">
             <div>
-              <span className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold">
+              <span className="text-xs capitalize text-amber-400 font-semibold">
                 Template Schema Designer
               </span>
               <input
@@ -169,7 +169,7 @@ export const TemplatesView: React.FC = () => {
 
           {/* Schema Fields Table */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-            <h3 className="text-sm font-display font-semibold text-slate-100">
+            <h3 className="text-base font-semibold text-slate-100">
               Structured Infobox Properties ({activeTemplate.fields.length})
             </h3>
             <p className="text-xs text-slate-400">
@@ -185,12 +185,12 @@ export const TemplatesView: React.FC = () => {
                 >
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-slate-200">{field.label}</span>
-                    <span className="font-mono text-[10px] text-slate-500">({field.key})</span>
-                    <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] uppercase">
+                    <span className="font-mono text-xs text-slate-500">({field.key})</span>
+                    <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs capitalize">
                       {field.type}
                     </span>
                     {field.options && (
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-xs text-slate-400">
                         Options: [{field.options.join(', ')}]
                       </span>
                     )}
@@ -252,7 +252,7 @@ export const TemplatesView: React.FC = () => {
 
           {/* Default Markdown Structure */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
-            <h3 className="text-sm font-display font-semibold text-slate-100">
+            <h3 className="text-base font-semibold text-slate-100">
               Default Markdown Boilerplate
             </h3>
             <textarea
@@ -274,7 +274,7 @@ export const TemplatesView: React.FC = () => {
             onSubmit={handleCreateTemplate}
             className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4 shadow-2xl text-xs"
           >
-            <h3 className="text-base font-display font-semibold text-slate-100">
+            <h3 className="text-lg font-semibold text-slate-100">
               Create New Wiki Template
             </h3>
             <div>

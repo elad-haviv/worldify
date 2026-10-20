@@ -66,12 +66,12 @@ export const GlobalTimelineBar: React.FC = () => {
           title="Open Full Traversable Timeline & Custom Calendar Studio"
         >
           <Calendar className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-xs font-semibold tracking-wide">{formatted.displayShort}</span>
+          <span className="text-xs font-semibold">{formatted.displayShort}</span>
         </button>
 
-        <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-slate-400">
+        <div className="hidden xl:flex items-center gap-1.5 text-xs text-slate-400">
           <span
-            className="px-1.5 py-0.5 rounded font-medium text-[10px]"
+            className="px-1.5 py-0.5 rounded font-medium text-xs"
             style={{
               backgroundColor: `${formatted.era.color}22`,
               color: formatted.era.color,
@@ -92,7 +92,7 @@ export const GlobalTimelineBar: React.FC = () => {
             type="button"
             onClick={() => stepCurrentTick(-daysPerYear)}
             title="Step Back 1 Year"
-            className="p-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 text-[10px] font-mono cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 text-xs font-mono cursor-pointer"
           >
             -1Y
           </button>
@@ -128,14 +128,14 @@ export const GlobalTimelineBar: React.FC = () => {
             type="button"
             onClick={() => stepCurrentTick(daysPerYear)}
             title="Step Forward 1 Year"
-            className="p-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 text-[10px] font-mono cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-100 rounded hover:bg-slate-800 text-xs font-mono cursor-pointer"
           >
             +1Y
           </button>
           <select
             value={speedDaysPerStep}
             onChange={(e) => setSpeedDaysPerStep(Number(e.target.value))}
-            className="bg-transparent text-[10px] text-slate-400 px-1 py-0.5 focus:outline-none cursor-pointer"
+            className="bg-transparent text-xs text-slate-400 px-1 py-0.5 focus:outline-none cursor-pointer"
             title="Simulation Speed"
           >
             <option value={1} className="bg-slate-900">1x (Daily)</option>
@@ -177,7 +177,7 @@ export const GlobalTimelineBar: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveModule('timeline')}
-            className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/15 border border-sky-500/40 text-sky-300 text-[11px] truncate max-w-[210px] cursor-pointer hover:bg-sky-500/25"
+            className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/15 border border-sky-500/40 text-sky-300 text-xs truncate max-w-[210px] cursor-pointer hover:bg-sky-500/25"
             title={activeEvent.summary}
           >
             <Sparkles className="w-3 h-3 shrink-0" />
@@ -197,14 +197,14 @@ export const GlobalTimelineBar: React.FC = () => {
               title={`${mp.moon.name}: ${mp.phaseName} (${mp.moon.periodDays}-day cycle)`}
             >
               <span>{mp.phaseIcon}</span>
-              <span className="text-[11px] text-slate-300 font-medium">
+              <span className="text-xs text-slate-300 font-medium">
                 {mp.moon.name.split(' ')[0]}
               </span>
             </div>
           ))}
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] font-mono text-slate-500">
+        <div className="flex items-center gap-1 text-xs font-mono text-slate-500">
           <Clock className="w-3 h-3 text-slate-500" />
           <span>T:{project.currentTick}</span>
         </div>

@@ -164,14 +164,14 @@ export const StoryStudioView: React.FC = () => {
       {/* Left Sidebar: Story Selector, Chapters & Scenes Outliner */}
       <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-3 shrink-0 text-xs">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-display font-semibold uppercase tracking-wider text-slate-100 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
             <Feather className="w-4 h-4 text-pink-400" />
             Story Studio
           </h2>
           <button
             type="button"
             onClick={() => setShowNewStory(true)}
-            className="px-2 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+            className="px-2 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3 h-3" />
             New Story
@@ -200,13 +200,13 @@ export const StoryStudioView: React.FC = () => {
         {activeStory ? (
           <>
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+              <span className="text-xs capitalize text-slate-400 font-semibold">
                 Manuscript Structure
               </span>
               <button
                 type="button"
                 onClick={() => setShowNewChap(true)}
-                className="text-[11px] text-amber-400 hover:text-amber-300 cursor-pointer"
+                className="text-xs text-amber-400 hover:text-amber-300 cursor-pointer"
               >
                 + Chapter
               </button>
@@ -229,7 +229,7 @@ export const StoryStudioView: React.FC = () => {
                           title: `Scene ${chap.scenes.length + 1}`,
                         })
                       }
-                      className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 cursor-pointer"
+                      className="text-xs px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 cursor-pointer"
                       title="Add Scene to Chapter"
                     >
                       + Scene
@@ -257,9 +257,9 @@ export const StoryStudioView: React.FC = () => {
                           }`}
                         >
                           <div className="font-medium truncate">{sc.title}</div>
-                          <div className="flex items-center justify-between text-[10px] text-slate-400 mt-0.5">
+                          <div className="flex items-center justify-between text-xs text-slate-400 mt-0.5">
                             <span>{scDate}</span>
-                            <span className="uppercase">{sc.status}</span>
+                            <span className="capitalize">{sc.status}</span>
                           </div>
                         </button>
                       );
@@ -323,7 +323,7 @@ export const StoryStudioView: React.FC = () => {
 
             {subView === 'manuscript' && (
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-1 text-[11px]">
+                <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-1 text-xs">
                   <button
                     type="button"
                     disabled={isAiBusy}
@@ -410,7 +410,7 @@ export const StoryStudioView: React.FC = () => {
                         status: e.target.value as typeof activeScene.status,
                       })
                     }
-                    className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 uppercase text-[10px]"
+                    className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 capitalize text-xs"
                   >
                     <option value="outline">Outline</option>
                     <option value="draft">Draft</option>
@@ -466,7 +466,7 @@ export const StoryStudioView: React.FC = () => {
           {/* SUBVIEW 2: DEDICATED STORY TIMELINE */}
           {subView === 'story_timeline' && (
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              <h3 className="text-base font-display font-bold text-slate-100">
+              <h3 className="text-lg font-semibold text-slate-100">
                 Chronological Scene Sequence — {activeStory.title}
               </h3>
               <div className="relative pl-6 border-l-2 border-pink-500/40 space-y-4">
@@ -497,7 +497,7 @@ export const StoryStudioView: React.FC = () => {
                           <span className="font-mono text-pink-300 font-semibold">
                             {d?.displayFull || `Tick ${scene.startTick}`}
                           </span>
-                          <span className="text-[11px] text-slate-400">
+                          <span className="text-xs text-slate-400">
                             {chapterTitle}
                           </span>
                         </div>
@@ -505,7 +505,7 @@ export const StoryStudioView: React.FC = () => {
                           {scene.title}
                         </div>
                         <p className="text-xs text-slate-300">{scene.summary}</p>
-                        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                           {pov && (
                             <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
                               POV: {pov.title}
@@ -661,7 +661,7 @@ export const StoryStudioView: React.FC = () => {
         <aside className="w-80 bg-slate-900 border-l border-slate-800 p-4 overflow-y-auto space-y-5 shrink-0 text-xs">
           {/* Scene Spatio-Temporal Bindings */}
           <div className="space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <div className="text-xs font-semibold capitalize text-amber-400 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               Scene Spatio-Temporal Anchor
             </div>
@@ -670,7 +670,7 @@ export const StoryStudioView: React.FC = () => {
               <div className="text-slate-200 font-semibold">
                 {sceneFormattedDate?.displayFull || `Tick ${activeScene.startTick}`}
               </div>
-              <div className="flex flex-wrap gap-2 text-[11px] text-slate-400">
+              <div className="flex flex-wrap gap-2 text-xs text-slate-400">
                 {sceneFormattedDate?.moonPhases.map((mp) => (
                   <span key={mp.moon.id}>
                     {mp.phaseIcon} {mp.moon.name.split(' ')[0]}: {mp.phaseName}
@@ -681,7 +681,7 @@ export const StoryStudioView: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] text-slate-400 mb-0.5">
+                <label className="block text-xs text-slate-400 mb-0.5">
                   Scene Start Tick
                 </label>
                 <input
@@ -701,7 +701,7 @@ export const StoryStudioView: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-400 mb-0.5">
+                <label className="block text-xs text-slate-400 mb-0.5">
                   POV Character
                 </label>
                 <select
@@ -745,7 +745,7 @@ export const StoryStudioView: React.FC = () => {
 
           {/* Participating Cast & Entities in Scene */}
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <div className="text-xs font-semibold capitalize text-slate-300 flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
               Cast, Relics & Locations in Scene
             </div>
@@ -772,7 +772,7 @@ export const StoryStudioView: React.FC = () => {
                       <div className="font-semibold text-slate-200 truncate">
                         {status.activeTitle}
                       </div>
-                      <div className="text-[10px] text-slate-400">
+                      <div className="text-xs text-slate-400">
                         {status.activeStatus}{' '}
                         {status.ageYears !== undefined
                           ? `• Age ${status.ageYears}`
@@ -825,21 +825,21 @@ export const StoryStudioView: React.FC = () => {
 
           {/* Live Spatio-Temporal Continuity Auditor */}
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-300 flex items-center justify-between">
+            <div className="text-xs font-semibold capitalize text-slate-300 flex items-center justify-between">
               <span>Spatio-Temporal Continuity</span>
               {continuityIssues.length === 0 ? (
-                <span className="text-emerald-400 flex items-center gap-1 text-[10px]">
+                <span className="text-emerald-400 flex items-center gap-1 text-xs">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Passed
                 </span>
               ) : (
-                <span className="text-amber-400 flex items-center gap-1 text-[10px]">
+                <span className="text-amber-400 flex items-center gap-1 text-xs">
                   <AlertTriangle className="w-3.5 h-3.5" /> {continuityIssues.length} Alert(s)
                 </span>
               )}
             </div>
 
             {continuityIssues.length === 0 ? (
-              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-200 leading-relaxed">
+              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-200 leading-relaxed">
                 All participating entities exist at their scene timestamps and travel speeds between scenes are consistent with map scale.
               </div>
             ) : (
@@ -847,14 +847,14 @@ export const StoryStudioView: React.FC = () => {
                 {continuityIssues.map((issue) => (
                   <div
                     key={issue.id}
-                    className={`p-2.5 rounded-lg border text-[11px] space-y-1 ${
+                    className={`p-2.5 rounded-lg border text-xs space-y-1 ${
                       issue.severity === 'error'
                         ? 'bg-rose-500/10 border-rose-500/40 text-rose-200'
                         : 'bg-amber-500/10 border-amber-500/40 text-amber-200'
                     }`}
                   >
                     <div className="font-semibold">{issue.message}</div>
-                    <p className="text-[10px] opacity-85 leading-relaxed">
+                    <p className="text-xs opacity-85 leading-relaxed">
                       {issue.detail}
                     </p>
                   </div>
@@ -884,7 +884,7 @@ export const StoryStudioView: React.FC = () => {
             }}
             className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4 shadow-2xl text-xs"
           >
-            <h3 className="text-base font-display font-semibold text-slate-100">
+            <h3 className="text-lg font-semibold text-slate-100">
               Create New Story / Campaign
             </h3>
             <div>
@@ -953,7 +953,7 @@ export const StoryStudioView: React.FC = () => {
             }}
             className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4 shadow-2xl text-xs"
           >
-            <h3 className="text-base font-display font-semibold text-slate-100">
+            <h3 className="text-lg font-semibold text-slate-100">
               Add Chapter to {activeStory.title}
             </h3>
             <div>

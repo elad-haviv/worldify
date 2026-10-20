@@ -70,10 +70,10 @@ export const App: React.FC = () => {
               W
             </div>
             <div className="hidden sm:block">
-              <div className="text-sm font-display font-bold tracking-wider text-slate-100 group-hover:text-amber-300 transition-colors">
+              <div className="text-base font-semibold text-slate-100 group-hover:text-amber-300 transition-colors">
                 WORLDIFY
               </div>
-              <div className="text-[10px] text-slate-400 -mt-0.5">
+              <div className="text-xs text-slate-400 -mt-0.5">
                 Spatio-Temporal Lore Studio
               </div>
             </div>
@@ -147,7 +147,7 @@ export const App: React.FC = () => {
           >
             <Search className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden lg:inline">Quick Search</span>
-            <kbd className="hidden sm:inline px-1.5 py-0.5 text-[10px] font-mono bg-slate-900 text-slate-400 rounded border border-slate-800">
+            <kbd className="hidden sm:inline px-1.5 py-0.5 text-xs font-mono bg-slate-900 text-slate-400 rounded border border-slate-800">
               Ctrl K
             </kbd>
           </button>

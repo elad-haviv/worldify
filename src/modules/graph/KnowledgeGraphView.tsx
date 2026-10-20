@@ -153,7 +153,7 @@ export const KnowledgeGraphView: React.FC = () => {
 
     // 90 iterations of Fruchterman-Reingold / spring-repulsion simulation
     const ids = Object.keys(layoutMap);
-    for (let iter = 0; iter < 90; iter++) {
+    for (let iter = 0; iter < 220; iter++) {
       // Repulsion
       for (let i = 0; i < ids.length; i++) {
         for (let j = i + 1; j < ids.length; j++) {
@@ -163,7 +163,7 @@ export const KnowledgeGraphView: React.FC = () => {
           const dy = b.y - a.y;
           const distSq = Math.max(400, dx * dx + dy * dy);
           const dist = Math.sqrt(distSq);
-          const force = 18000 / distSq;
+          const force = 140000 / distSq;
           const fx = (dx / dist) * force;
           const fy = (dy / dist) * force;
           a.vx -= fx;
@@ -181,8 +181,8 @@ export const KnowledgeGraphView: React.FC = () => {
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const dist = Math.max(1, Math.hypot(dx, dy));
-        const desired = 210;
-        const force = (dist - desired) * 0.035;
+        const desired = 240;
+        const force = (dist - desired) * 0.012;
         const fx = (dx / dist) * force;
         const fy = (dy / dist) * force;
         a.vx += fx;
@@ -194,10 +194,10 @@ export const KnowledgeGraphView: React.FC = () => {
       // Center gravity + update
       for (const id of ids) {
         const node = layoutMap[id];
-        node.vx += (500 - node.x) * 0.015;
-        node.vy += (500 - node.y) * 0.015;
-        node.x = Math.max(90, Math.min(910, node.x + node.vx * 0.35));
-        node.y = Math.max(90, Math.min(910, node.y + node.vy * 0.35));
+        node.vx += (500 - node.x) * 0.006;
+        node.vy += (500 - node.y) * 0.006;
+        node.x = Math.max(70, Math.min(930, node.x + node.vx * 0.35));
+        node.y = Math.max(70, Math.min(930, node.y + node.vy * 0.35));
         node.vx *= 0.5;
         node.vy *= 0.5;
       }
@@ -258,14 +258,14 @@ export const KnowledgeGraphView: React.FC = () => {
       {/* Left Filter & Shortest-Path Panel */}
       <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 text-xs">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-display font-semibold uppercase tracking-wider text-slate-100 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
             <Network className="w-4 h-4 text-sky-400" />
             Knowledge Graph
           </h2>
           <button
             type="button"
             onClick={runForceLayout}
-            className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1 text-[11px] cursor-pointer"
+            className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1 text-xs cursor-pointer"
             title="Re-run Force Layout Simulation"
           >
             <RefreshCw className="w-3 h-3 text-amber-400" />
@@ -275,13 +275,13 @@ export const KnowledgeGraphView: React.FC = () => {
 
         {/* Graph Filters */}
         <div className="space-y-2.5 pt-2 border-t border-slate-800">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <div className="text-xs font-semibold capitalize text-slate-400 flex items-center gap-1.5">
             <Filter className="w-3 h-3 text-amber-400" />
             Graph Filters
           </div>
 
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">World Filter</label>
+            <label className="block text-xs text-slate-400 mb-1">World Filter</label>
             <select
               value={worldFilter}
               onChange={(e) => setWorldFilter(e.target.value)}
@@ -297,7 +297,7 @@ export const KnowledgeGraphView: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">Entity Category</label>
+            <label className="block text-xs text-slate-400 mb-1">Entity Category</label>
             <select
               value={categoryFilter}
               onChange={(e) =>
@@ -316,7 +316,7 @@ export const KnowledgeGraphView: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">Connection Type</label>
+            <label className="block text-xs text-slate-400 mb-1">Connection Type</label>
             <select
               value={edgeFilter}
               onChange={(e) => setEdgeFilter(e.target.value as typeof edgeFilter)}
@@ -353,11 +353,11 @@ export const KnowledgeGraphView: React.FC = () => {
 
         {/* Shortest Lore Path Finder */}
         <div className="space-y-2.5 pt-3 border-t border-slate-800">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+          <div className="text-xs font-semibold capitalize text-amber-400 flex items-center gap-1.5">
             <Route className="w-3.5 h-3.5" />
             Degrees of Lore Pathfiding
           </div>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-xs text-slate-400">
             Discover how any two entities in your project are connected across the wiki graph.
           </p>
 
@@ -391,17 +391,17 @@ export const KnowledgeGraphView: React.FC = () => {
             <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
               {shortestPath ? (
                 <div className="space-y-1">
-                  <div className="text-[11px] font-semibold text-emerald-400">
+                  <div className="text-xs font-semibold text-emerald-400">
                     Connected in {shortestPath.entityIds.length - 1} hop(s):
                   </div>
-                  <div className="text-[11px] text-slate-300 leading-relaxed">
+                  <div className="text-xs text-slate-300 leading-relaxed">
                     {shortestPath.entityIds
                       .map((id) => project.entities.find((e) => e.id === id)?.title)
                       .join(' → ')}
                   </div>
                 </div>
               ) : (
-                <div className="text-[11px] text-rose-400">
+                <div className="text-xs text-rose-400">
                   No direct path found under current filters.
                 </div>
               )}
@@ -411,12 +411,12 @@ export const KnowledgeGraphView: React.FC = () => {
 
         {/* Category Color Legend */}
         <div className="pt-3 border-t border-slate-800 space-y-1.5">
-          <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
+          <div className="text-xs capitalize text-slate-500 font-semibold">
             Category Legend
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {Object.entries(CATEGORY_COLORS).map(([cat, col]) => (
-              <div key={cat} className="flex items-center gap-1.5 text-[11px] text-slate-300">
+              <div key={cat} className="flex items-center gap-1.5 text-xs text-slate-300">
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: col }}
@@ -440,7 +440,7 @@ export const KnowledgeGraphView: React.FC = () => {
           >
             <ZoomIn className="w-4 h-4" />
           </button>
-          <span className="text-[11px] font-mono text-slate-400 px-1.5">
+          <span className="text-xs font-mono text-slate-400 px-1.5">
             {Math.round(zoom * 100)}%
           </span>
           <button
@@ -457,7 +457,7 @@ export const KnowledgeGraphView: React.FC = () => {
               setZoom(1);
               setPan({ x: 0, y: 0 });
             }}
-            className="px-2 py-1 rounded hover:bg-slate-800 text-[11px] text-slate-300 cursor-pointer"
+            className="px-2 py-1 rounded hover:bg-slate-800 text-xs text-slate-300 cursor-pointer"
           >
             Reset
           </button>
@@ -508,7 +508,7 @@ export const KnowledgeGraphView: React.FC = () => {
                     : '#f59e0b';
 
               return (
-                <g key={edge.id} opacity={isHighlighted ? 1 : 0.55}>
+                <g key={edge.id} opacity={isHighlighted ? 1 : selectedEntityId ? 0.12 : 0.4}>
                   <line
                     x1={sPos.x}
                     y1={sPos.y}
@@ -518,13 +518,16 @@ export const KnowledgeGraphView: React.FC = () => {
                     strokeWidth={pathEdgeSet.has(edge.id) ? 3.5 : isHighlighted ? 2.2 : 1.3}
                     strokeDasharray={edge.type === 'mention' ? '5 4' : undefined}
                   />
-                  {isHighlighted && (
+                  {isHighlighted && edge.type !== 'mention' && (
                     <text
                       x={midX}
                       y={midY - 6}
                       textAnchor="middle"
                       fill="#cbd5e1"
-                      fontSize={10}
+                      fontSize={12}
+                      paintOrder="stroke"
+                      stroke="#020617"
+                      strokeWidth={4}
                       className="pointer-events-none"
                     >
                       {edge.label}
@@ -574,7 +577,10 @@ export const KnowledgeGraphView: React.FC = () => {
                     y={radius + 16}
                     textAnchor="middle"
                     fill={isSelected ? '#fbbf24' : '#f1f5f9'}
-                    fontSize={12}
+                    fontSize={13}
+                    paintOrder="stroke"
+                    stroke="#020617"
+                    strokeWidth={4}
                     fontWeight={isSelected ? 700 : 600}
                     className="pointer-events-none"
                   >
@@ -591,14 +597,14 @@ export const KnowledgeGraphView: React.FC = () => {
       {activeEntity && (
         <aside className="w-80 bg-slate-900 border-l border-slate-800 p-4 overflow-y-auto space-y-4 shrink-0 text-xs">
           <div>
-            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <span className="text-xs capitalize px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
               {activeEntity.category}
             </span>
-            <h3 className="text-base font-display font-bold text-slate-100 mt-1.5">
+            <h3 className="text-lg font-semibold text-slate-100 mt-1.5">
               {activeEntity.title}
             </h3>
             {activeEntity.subtitle && (
-              <p className="text-[11px] text-amber-200/80 italic">{activeEntity.subtitle}</p>
+              <p className="text-xs text-amber-200/80 italic">{activeEntity.subtitle}</p>
             )}
             <p className="text-xs text-slate-300 mt-2 leading-relaxed">
               {activeEntity.summary}
@@ -632,7 +638,7 @@ export const KnowledgeGraphView: React.FC = () => {
             }}
             className="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-2"
           >
-            <div className="text-[11px] font-semibold text-slate-200 flex items-center gap-1">
+            <div className="text-xs font-semibold text-slate-200 flex items-center gap-1">
               <Plus className="w-3.5 h-3.5 text-amber-400" />
               Quick Link to Entity
             </div>
@@ -670,7 +676,7 @@ export const KnowledgeGraphView: React.FC = () => {
 
           {/* Direct Neighbors List */}
           <div className="pt-2 border-t border-slate-800 space-y-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="text-xs font-semibold capitalize text-slate-400">
               Direct Graph Edges (
               {
                 visibleEdges.filter(
@@ -701,14 +707,14 @@ export const KnowledgeGraphView: React.FC = () => {
                       className="w-full p-2 rounded bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between cursor-pointer"
                     >
                       <div className="truncate">
-                        <div className="text-[10px] text-slate-400">
+                        <div className="text-xs text-slate-400">
                           {isOut ? `→ ${rel.label}` : `← ${rel.label}`}
                         </div>
                         <div className="font-semibold text-slate-200 truncate">
                           {other.title}
                         </div>
                       </div>
-                      <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-900 text-slate-400">
+                      <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-900 text-slate-400">
                         {rel.type.replace('_', ' ')}
                       </span>
                     </button>

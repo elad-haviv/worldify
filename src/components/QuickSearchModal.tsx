@@ -94,7 +94,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Wiki Entities */}
           {matchedEntities.length > 0 && (
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-2 mb-1.5">
+              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
                 Wiki Entries & Entities ({matchedEntities.length})
               </div>
               <div className="space-y-1">
@@ -114,13 +114,13 @@ export const QuickSearchModal: React.FC = () => {
                         <div className="text-xs font-semibold text-slate-100 group-hover:text-amber-300">
                           {ent.title}
                         </div>
-                        <div className="text-[11px] text-slate-400 truncate">
+                        <div className="text-xs text-slate-400 truncate">
                           {ent.summary}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 uppercase">
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 capitalize">
                         {ent.category}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400" />
@@ -134,7 +134,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Maps */}
           {matchedMaps.length > 0 && (
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-2 mb-1.5">
+              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
                 Interactive Maps ({matchedMaps.length})
               </div>
               <div className="space-y-1">
@@ -152,10 +152,10 @@ export const QuickSearchModal: React.FC = () => {
                       <MapIcon className="w-4 h-4 text-emerald-400" />
                       <div>
                         <div className="text-xs font-semibold text-slate-100">{m.name}</div>
-                        <div className="text-[11px] text-slate-400">{m.summary}</div>
+                        <div className="text-xs text-slate-400">{m.summary}</div>
                       </div>
                     </div>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 uppercase">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 capitalize">
                       {m.mode}
                     </span>
                   </button>
@@ -167,7 +167,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Timeline Events */}
           {matchedEvents.length > 0 && (
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-2 mb-1.5">
+              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
                 Timeline Events ({matchedEvents.length})
               </div>
               <div className="space-y-1">
@@ -186,10 +186,10 @@ export const QuickSearchModal: React.FC = () => {
                       <Clock className="w-4 h-4 text-sky-400" />
                       <div>
                         <div className="text-xs font-semibold text-slate-100">{ev.title}</div>
-                        <div className="text-[11px] text-slate-400">{ev.summary}</div>
+                        <div className="text-xs text-slate-400">{ev.summary}</div>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono text-sky-300">
+                    <span className="text-xs font-mono text-sky-300">
                       Jump to Tick {ev.startTick}
                     </span>
                   </button>
@@ -201,7 +201,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Worlds */}
           {matchedWorlds.length > 0 && (
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-2 mb-1.5">
+              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
                 Connected Worlds & Planes ({matchedWorlds.length})
               </div>
               <div className="space-y-1">
@@ -220,10 +220,10 @@ export const QuickSearchModal: React.FC = () => {
                       <Globe2 className="w-4 h-4 text-purple-400" />
                       <div>
                         <div className="text-xs font-semibold text-slate-100">{w.name}</div>
-                        <div className="text-[11px] text-slate-400">{w.summary}</div>
+                        <div className="text-xs text-slate-400">{w.summary}</div>
                       </div>
                     </div>
-                    <span className="text-[10px] uppercase text-slate-400">{w.type}</span>
+                    <span className="text-xs capitalize text-slate-400">{w.type}</span>
                   </button>
                 ))}
               </div>
@@ -233,7 +233,7 @@ export const QuickSearchModal: React.FC = () => {
           {/* Stories */}
           {project.stories.length > 0 && (
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-2 mb-1.5">
+              <div className="text-xs font-semibold capitalize text-slate-400 px-2 mb-1.5">
                 Stories & Manuscripts
               </div>
               {project.stories.map((st) =>
@@ -256,10 +256,10 @@ export const QuickSearchModal: React.FC = () => {
                             <div className="text-xs font-semibold text-slate-100">
                               {st.title} — {sc.title}
                             </div>
-                            <div className="text-[11px] text-slate-400">{sc.summary}</div>
+                            <div className="text-xs text-slate-400">{sc.summary}</div>
                           </div>
                         </div>
-                        <span className="text-[10px] text-slate-400">{sc.status}</span>
+                        <span className="text-xs text-slate-400">{sc.status}</span>
                       </button>
                     ))
                 )

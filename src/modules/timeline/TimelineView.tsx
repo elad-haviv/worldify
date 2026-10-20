@@ -218,11 +218,11 @@ export const TimelineView: React.FC = () => {
                       >
                         {era.name} [{era.abbreviation}]
                       </span>
-                      <span className="text-[10px] font-mono text-slate-400">
+                      <span className="text-xs font-mono text-slate-400">
                         Yr {era.startYear} – {era.endYear ?? 'Present'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <p className="text-xs text-slate-400 leading-relaxed">
                       {era.description}
                     </p>
                   </div>
@@ -271,19 +271,19 @@ export const TimelineView: React.FC = () => {
                           {evDate.displayShort}
                         </span>
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded border uppercase font-medium ${catStyle.bg}`}
+                          className={`text-xs px-2 py-0.5 rounded border capitalize font-medium ${catStyle.bg}`}
                         >
                           {catStyle.label}
                         </span>
                         {ev.endTick && ev.endTick > ev.startTick && (
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-xs text-slate-400">
                             Duration: {formatTickDuration(calendar, ev.endTick - ev.startTick)}
                           </span>
                         )}
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-slate-500">
+                        <span className="text-xs font-mono text-slate-500">
                           {deltaFromCursor === 0
                             ? 'Active Now'
                             : deltaFromCursor > 0
@@ -298,7 +298,7 @@ export const TimelineView: React.FC = () => {
                               setCurrentTick(ev.startTick);
                               selectMap(ev.mapId!, true);
                             }}
-                            className="px-2 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[10px] flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs flex items-center gap-1 cursor-pointer"
                           >
                             <MapPin className="w-3 h-3" />
                             View on Map
@@ -317,7 +317,7 @@ export const TimelineView: React.FC = () => {
                       </div>
                     </div>
 
-                    <h3 className="text-sm font-display font-bold text-slate-100 mb-1">
+                    <h3 className="text-base font-semibold text-slate-100 mb-1">
                       {ev.title}
                     </h3>
                     <p className="text-xs text-slate-300 leading-relaxed mb-3">
@@ -338,7 +338,7 @@ export const TimelineView: React.FC = () => {
                                 e.stopPropagation();
                                 selectEntity(ent.id, true);
                               }}
-                              className="px-2 py-0.5 rounded bg-slate-950 hover:bg-slate-800 text-amber-300 border border-slate-800 text-[11px] flex items-center gap-1 cursor-pointer"
+                              className="px-2 py-0.5 rounded bg-slate-950 hover:bg-slate-800 text-amber-300 border border-slate-800 text-xs flex items-center gap-1 cursor-pointer"
                             >
                               <BookOpen className="w-2.5 h-2.5" />
                               {ent.title}
@@ -357,15 +357,15 @@ export const TimelineView: React.FC = () => {
           <aside className="w-full lg:w-96 bg-slate-900 border-l border-slate-800 p-5 overflow-y-auto space-y-5 shrink-0">
             <div className="p-4 rounded-xl bg-slate-950 border border-amber-500/30 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-400 flex items-center gap-1">
+                <span className="text-xs capitalize font-semibold text-amber-400 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   World Cursor State
                 </span>
-                <span className="text-[10px] font-mono text-slate-500">
+                <span className="text-xs font-mono text-slate-500">
                   Tick {project.currentTick}
                 </span>
               </div>
-              <div className="text-sm font-display font-bold text-slate-100">
+              <div className="text-base font-semibold text-slate-100">
                 {formattedNow.displayFull}
               </div>
 
@@ -378,10 +378,10 @@ export const TimelineView: React.FC = () => {
                   >
                     <span className="text-lg">{mp.phaseIcon}</span>
                     <div className="min-w-0">
-                      <div className="text-[11px] font-semibold text-slate-200 truncate">
+                      <div className="text-xs font-semibold text-slate-200 truncate">
                         {mp.moon.name.split(' ')[0]}
                       </div>
-                      <div className="text-[10px] text-slate-400">{mp.phaseName}</div>
+                      <div className="text-xs text-slate-400">{mp.phaseName}</div>
                     </div>
                   </div>
                 ))}
@@ -391,13 +391,13 @@ export const TimelineView: React.FC = () => {
             {/* Entity Lifespans & Active Positions at Current Cursor */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-display font-semibold uppercase tracking-wider text-slate-200">
+                <h3 className="text-sm font-semibold text-slate-200">
                   Entity States at This Date
                 </h3>
                 <button
                   type="button"
                   onClick={() => selectMap(project.maps[0]?.id || null, true)}
-                  className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+                  className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
                 >
                   <Compass className="w-3 h-3" />
                   See on Map
@@ -422,7 +422,7 @@ export const TimelineView: React.FC = () => {
                           {status.activeTitle}
                         </span>
                         <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          className={`text-xs px-1.5 py-0.5 rounded ${
                             status.lifecycleState === 'active'
                               ? 'bg-emerald-500/15 text-emerald-300'
                               : status.lifecycleState === 'unborn'
@@ -435,7 +435,7 @@ export const TimelineView: React.FC = () => {
                             : status.lifecycleState}
                         </span>
                       </div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="text-xs text-slate-400">
                         {status.activeStatus}
                       </div>
                     </div>
@@ -493,7 +493,7 @@ export const TimelineView: React.FC = () => {
             {/* Months & Intercalary Festivals */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-display font-semibold text-slate-100 flex items-center gap-1.5">
+                <h3 className="text-base font-semibold text-slate-100 flex items-center gap-1.5">
                   <Sun className="w-4 h-4 text-amber-400" />
                   Months & Festivals ({daysPerYear} days/yr)
                 </h3>
@@ -509,12 +509,12 @@ export const TimelineView: React.FC = () => {
                       <div className="font-semibold text-slate-200">
                         {idx + 1}. {m.name}{' '}
                         {m.intercalary && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 ml-1">
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 ml-1">
                             Intercalary
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-slate-400">
+                      <div className="text-xs text-slate-400">
                         {m.days} days • Season: {m.season}
                       </div>
                     </div>
@@ -606,7 +606,7 @@ export const TimelineView: React.FC = () => {
 
             {/* Historical Eras */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-              <h3 className="text-sm font-display font-semibold text-slate-100 flex items-center gap-1.5">
+              <h3 className="text-base font-semibold text-slate-100 flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-sky-400" />
                 Historical Eras ({calendar.eras.length})
               </h3>
@@ -621,11 +621,11 @@ export const TimelineView: React.FC = () => {
                       <span className="font-semibold" style={{ color: era.color }}>
                         {era.name} ({era.abbreviation})
                       </span>
-                      <span className="text-[10px] font-mono text-slate-400">
+                      <span className="text-xs font-mono text-slate-400">
                         Start Yr: {era.startYear}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400">{era.description}</p>
+                    <p className="text-xs text-slate-400">{era.description}</p>
                   </div>
                 ))}
               </div>
@@ -696,7 +696,7 @@ export const TimelineView: React.FC = () => {
 
             {/* Celestial Moons & Orbital Cycles */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-              <h3 className="text-sm font-display font-semibold text-slate-100 flex items-center gap-1.5">
+              <h3 className="text-base font-semibold text-slate-100 flex items-center gap-1.5">
                 <Moon className="w-4 h-4 text-purple-400" />
                 Celestial Moons ({calendar.moons.length})
               </h3>
@@ -711,7 +711,7 @@ export const TimelineView: React.FC = () => {
                       <span className="text-xl">{phaseIcon}</span>
                       <div>
                         <div className="font-semibold text-slate-200">{moon.name}</div>
-                        <div className="text-[10px] text-slate-400">
+                        <div className="text-xs text-slate-400">
                           Cycle: {moon.periodDays} days • Now: {phaseName}
                         </div>
                       </div>
@@ -761,7 +761,7 @@ export const TimelineView: React.FC = () => {
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-0.5">
+                    <label className="block text-xs text-slate-400 mb-0.5">
                       Orbital Period (Days)
                     </label>
                     <input
@@ -773,7 +773,7 @@ export const TimelineView: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-0.5">
+                    <label className="block text-xs text-slate-400 mb-0.5">
                       Color
                     </label>
                     <input
@@ -803,7 +803,7 @@ export const TimelineView: React.FC = () => {
             onSubmit={handleCreateEvent}
             className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4 shadow-2xl text-xs"
           >
-            <h3 className="text-base font-display font-semibold text-slate-100">
+            <h3 className="text-lg font-semibold text-slate-100">
               Record Canonical Timeline Event
             </h3>
             <div>

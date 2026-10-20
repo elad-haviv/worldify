@@ -85,10 +85,10 @@ export const AICopilotDrawer: React.FC = () => {
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-display font-semibold text-slate-100">
+            <h3 className="text-base font-semibold text-slate-100">
               AI Lore Copilot
             </h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-slate-400">
               Graph + Spatio-Temporal Grounded Assistant
             </p>
           </div>
@@ -134,12 +134,12 @@ export const AICopilotDrawer: React.FC = () => {
               <KeyRound className="w-3.5 h-3.5" />
               BYOK Provider & Model
             </span>
-            <span className="text-[10px] text-slate-500">Stored locally in browser</span>
+            <span className="text-xs text-slate-500">Stored locally in browser</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Active Engine</label>
+              <label className="block text-xs text-slate-400 mb-1">Active Engine</label>
               <select
                 value={aiSettings.activeProvider}
                 onChange={(e) =>
@@ -158,7 +158,7 @@ export const AICopilotDrawer: React.FC = () => {
 
             {aiSettings.activeProvider === 'gemini' && (
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">Gemini Model</label>
+                <label className="block text-xs text-slate-400 mb-1">Gemini Model</label>
                 <input
                   type="text"
                   value={aiSettings.geminiModel}
@@ -169,7 +169,7 @@ export const AICopilotDrawer: React.FC = () => {
             )}
             {aiSettings.activeProvider === 'openai' && (
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">OpenAI Model</label>
+                <label className="block text-xs text-slate-400 mb-1">OpenAI Model</label>
                 <input
                   type="text"
                   value={aiSettings.openaiModel}
@@ -180,7 +180,7 @@ export const AICopilotDrawer: React.FC = () => {
             )}
             {aiSettings.activeProvider === 'anthropic' && (
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">Claude Model</label>
+                <label className="block text-xs text-slate-400 mb-1">Claude Model</label>
                 <input
                   type="text"
                   value={aiSettings.anthropicModel}
@@ -193,7 +193,7 @@ export const AICopilotDrawer: React.FC = () => {
 
           {aiSettings.activeProvider === 'gemini' && (
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Google Gemini API Key</label>
+              <label className="block text-xs text-slate-400 mb-1">Google Gemini API Key</label>
               <input
                 type="password"
                 placeholder="AIzaSy..."
@@ -206,7 +206,7 @@ export const AICopilotDrawer: React.FC = () => {
 
           {aiSettings.activeProvider === 'openai' && (
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">OpenAI API Key</label>
+              <label className="block text-xs text-slate-400 mb-1">OpenAI API Key</label>
               <input
                 type="password"
                 placeholder="sk-..."
@@ -219,7 +219,7 @@ export const AICopilotDrawer: React.FC = () => {
 
           {aiSettings.activeProvider === 'anthropic' && (
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Anthropic API Key</label>
+              <label className="block text-xs text-slate-400 mb-1">Anthropic API Key</label>
               <input
                 type="password"
                 placeholder="sk-ant-..."
@@ -231,9 +231,9 @@ export const AICopilotDrawer: React.FC = () => {
           )}
 
           <div className="pt-1 border-t border-slate-800 space-y-1.5">
-            <div className="text-[11px] font-medium text-slate-300">Automatic RAG Context Injection:</div>
+            <div className="text-xs font-medium text-slate-300">Automatic RAG Context Injection:</div>
             <div className="flex flex-wrap gap-2">
-              <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={aiSettings.includeGraphNeighbors}
@@ -243,7 +243,7 @@ export const AICopilotDrawer: React.FC = () => {
                 <Network className="w-3 h-3 text-amber-400" />
                 Graph Neighbors
               </label>
-              <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={aiSettings.includeTemporalContext}
@@ -253,7 +253,7 @@ export const AICopilotDrawer: React.FC = () => {
                 <Clock className="w-3 h-3 text-sky-400" />
                 Calendar & Timeline
               </label>
-              <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={aiSettings.includeSpatialContext}
@@ -279,7 +279,7 @@ export const AICopilotDrawer: React.FC = () => {
               } and propose adding them to the wiki.`
             )
           }
-          className="shrink-0 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-[11px] border border-slate-700 flex items-center gap-1 cursor-pointer"
+          className="shrink-0 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer"
         >
           <Wand2 className="w-3 h-3 text-amber-400" />
           <span>+ Character</span>
@@ -293,7 +293,7 @@ export const AICopilotDrawer: React.FC = () => {
               }.`
             )
           }
-          className="shrink-0 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-[11px] border border-slate-700 flex items-center gap-1 cursor-pointer"
+          className="shrink-0 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer"
         >
           <Clock className="w-3 h-3 text-sky-400" />
           <span>+ Timeline Event</span>
@@ -305,7 +305,7 @@ export const AICopilotDrawer: React.FC = () => {
               `Run a full continuity & worldbuilding audit across our stories, timeline, and knowledge graph.`
             )
           }
-          className="shrink-0 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-[11px] border border-slate-700 flex items-center gap-1 cursor-pointer"
+          className="shrink-0 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer"
         >
           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
           <span>Audit Continuity</span>
@@ -328,7 +328,7 @@ export const AICopilotDrawer: React.FC = () => {
                 {msg.contextSummary.map((badge, i) => (
                   <span
                     key={i}
-                    className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-400"
+                    className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-xs text-slate-400"
                   >
                     {badge}
                   </span>
@@ -348,7 +348,7 @@ export const AICopilotDrawer: React.FC = () => {
             {/* Staged Proposals */}
             {msg.proposals && msg.proposals.length > 0 && (
               <div className="mt-3 pt-2.5 border-t border-slate-800 space-y-2">
-                <div className="text-[10px] uppercase tracking-wider font-semibold text-amber-400">
+                <div className="text-xs capitalize font-semibold text-amber-400">
                   Staged Canon Proposals ({msg.proposals.length})
                 </div>
                 {msg.proposals.map((prop) => (
@@ -360,16 +360,16 @@ export const AICopilotDrawer: React.FC = () => {
                       <span className="font-semibold text-slate-100 text-xs">
                         {prop.title}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 shrink-0">
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 shrink-0">
                         {prop.type.replace(/_/g, ' ')}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <p className="text-xs text-slate-400 leading-relaxed">
                       {prop.description}
                     </p>
                     <div className="pt-1">
                       {prop.applied ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-medium">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           Committed to Project Canon
                         </span>
@@ -377,7 +377,7 @@ export const AICopilotDrawer: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => applyAIProposal(msg.id, prop.id)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-[11px] transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs transition-colors cursor-pointer"
                         >
                           <PlusCircle className="w-3.5 h-3.5" />
                           Apply to Canon
@@ -408,12 +408,12 @@ export const AICopilotDrawer: React.FC = () => {
         className="p-3 border-t border-slate-800 bg-slate-950/80"
       >
         {activeEntity && (
-          <div className="mb-1.5 flex items-center justify-between text-[11px] text-slate-400 px-1">
+          <div className="mb-1.5 flex items-center justify-between text-xs text-slate-400 px-1">
             <span>
               Active Focus:{' '}
               <strong className="text-amber-300">{activeEntity.title}</strong>
             </span>
-            <span className="text-[10px] text-slate-500">RAG Grounded</span>
+            <span className="text-xs text-slate-500">RAG Grounded</span>
           </div>
         )}
         <div className="flex items-center gap-2">

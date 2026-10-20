@@ -137,14 +137,14 @@ export const ProjectDashboardView: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div className="space-y-2 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
                 {project.genre}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] bg-slate-800 text-slate-300 border border-slate-700">
+              <span className="px-2.5 py-0.5 rounded-full text-xs bg-slate-800 text-slate-300 border border-slate-700">
                 {project.worlds.length} Connected Worlds
               </span>
               {formattedDate && (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                <span className="px-2.5 py-0.5 rounded-full text-xs bg-sky-500/15 text-sky-300 border border-sky-500/30">
                   World Clock: {formattedDate.displayShort}
                 </span>
               )}
@@ -185,7 +185,7 @@ export const ProjectDashboardView: React.FC = () => {
               <button
                 type="button"
                 onClick={handleExportVault}
-                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] border border-slate-700 flex items-center gap-1 cursor-pointer"
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer"
                 title="Export full JSON Vault"
               >
                 <Download className="w-3 h-3 text-amber-400" />
@@ -194,13 +194,13 @@ export const ProjectDashboardView: React.FC = () => {
               <button
                 type="button"
                 onClick={handleExportMarkdownBundle}
-                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] border border-slate-700 flex items-center gap-1 cursor-pointer"
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer"
                 title="Export all Wiki entries with YAML frontmatter as Markdown"
               >
                 <Download className="w-3 h-3 text-sky-400" />
                 Markdown
               </button>
-              <label className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] border border-slate-700 flex items-center gap-1 cursor-pointer">
+              <label className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer">
                 <Upload className="w-3 h-3 text-emerald-400" />
                 Import
                 <input
@@ -213,7 +213,7 @@ export const ProjectDashboardView: React.FC = () => {
               <button
                 type="button"
                 onClick={resetVaultToDemo}
-                className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-[11px] border border-slate-800 flex items-center gap-1 cursor-pointer"
+                className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs border border-slate-800 flex items-center gap-1 cursor-pointer"
                 title="Reset to default sample worlds"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -236,7 +236,7 @@ export const ProjectDashboardView: React.FC = () => {
             <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-amber-400" />
           </div>
           <div className="text-xl font-bold text-slate-100">{project.entities.length}</div>
-          <div className="text-[11px] text-slate-400">Wiki Entries & Entities</div>
+          <div className="text-xs text-slate-400">Wiki Entries & Entities</div>
         </button>
 
         <button
@@ -249,7 +249,7 @@ export const ProjectDashboardView: React.FC = () => {
             <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-sky-400" />
           </div>
           <div className="text-xl font-bold text-slate-100">{allRelations.length}</div>
-          <div className="text-[11px] text-slate-400">Graph Connections</div>
+          <div className="text-xs text-slate-400">Graph Connections</div>
         </button>
 
         <button
@@ -262,7 +262,7 @@ export const ProjectDashboardView: React.FC = () => {
             <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-emerald-400" />
           </div>
           <div className="text-xl font-bold text-slate-100">{project.maps.length}</div>
-          <div className="text-[11px] text-slate-400">Interactive Maps</div>
+          <div className="text-xs text-slate-400">Interactive Maps</div>
         </button>
 
         <button
@@ -275,7 +275,7 @@ export const ProjectDashboardView: React.FC = () => {
             <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-purple-400" />
           </div>
           <div className="text-xl font-bold text-slate-100">{project.timelineEvents.length}</div>
-          <div className="text-[11px] text-slate-400">Timeline Events</div>
+          <div className="text-xs text-slate-400">Timeline Events</div>
         </button>
 
         <button
@@ -288,7 +288,7 @@ export const ProjectDashboardView: React.FC = () => {
             <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-cyan-400" />
           </div>
           <div className="text-xl font-bold text-slate-100">{project.worlds.length}</div>
-          <div className="text-[11px] text-slate-400">Connected Worlds</div>
+          <div className="text-xs text-slate-400">Connected Worlds</div>
         </button>
 
         <button
@@ -306,7 +306,7 @@ export const ProjectDashboardView: React.FC = () => {
               0
             )}
           </div>
-          <div className="text-[11px] text-slate-400">Story Scenes</div>
+          <div className="text-xs text-slate-400">Story Scenes</div>
         </button>
       </div>
 
@@ -315,7 +315,7 @@ export const ProjectDashboardView: React.FC = () => {
         {/* Connected Worlds within Project */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-display font-semibold text-slate-100 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
               <Globe2 className="w-4 h-4 text-cyan-400" />
               Connected Worlds & Planes
             </h2>
@@ -349,11 +349,11 @@ export const ProjectDashboardView: React.FC = () => {
                       />
                       <span className="text-xs font-semibold text-slate-100">{w.name}</span>
                     </div>
-                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+                    <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
                       {w.type.replace('_', ' ')}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 line-clamp-2">{w.summary}</p>
+                  <p className="text-xs text-slate-400 line-clamp-2">{w.summary}</p>
                 </div>
               );
             })}
@@ -363,7 +363,7 @@ export const ProjectDashboardView: React.FC = () => {
         {/* Featured Wiki Entries */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-display font-semibold text-slate-100 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-amber-400" />
               Canonical Wiki Entries
             </h2>
@@ -388,9 +388,9 @@ export const ProjectDashboardView: React.FC = () => {
                   <div className="text-xs font-semibold text-slate-100 truncate">
                     {ent.title}
                   </div>
-                  <div className="text-[11px] text-slate-400 line-clamp-1">{ent.summary}</div>
+                  <div className="text-xs text-slate-400 line-clamp-1">{ent.summary}</div>
                 </div>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 text-amber-300/90 border border-slate-800 uppercase shrink-0">
+                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-900 text-amber-300/90 border border-slate-800 capitalize shrink-0">
                   {ent.category}
                 </span>
               </button>
@@ -401,7 +401,7 @@ export const ProjectDashboardView: React.FC = () => {
         {/* Cartography, Stories & AI Studio */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-display font-semibold text-slate-100 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
               <Compass className="w-4 h-4 text-emerald-400" />
               Maps, Stories & AI Studio
             </h2>
@@ -428,11 +428,11 @@ export const ProjectDashboardView: React.FC = () => {
                     <MapIcon className="w-3.5 h-3.5" />
                     {m.name}
                   </span>
-                  <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                     {m.mode}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 line-clamp-2">{m.summary}</p>
+                <p className="text-xs text-slate-400 line-clamp-2">{m.summary}</p>
               </button>
             ))}
 
@@ -453,11 +453,11 @@ export const ProjectDashboardView: React.FC = () => {
                     <Feather className="w-3.5 h-3.5" />
                     Story: {st.title}
                   </span>
-                  <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-pink-500/15 text-pink-300 border border-pink-500/30">
+                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-pink-500/15 text-pink-300 border border-pink-500/30">
                     {st.chapters.length} Chapters
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 line-clamp-2">{st.synopsis}</p>
+                <p className="text-xs text-slate-400 line-clamp-2">{st.synopsis}</p>
               </button>
             ))}
 
@@ -483,7 +483,7 @@ export const ProjectDashboardView: React.FC = () => {
             onSubmit={handleCreateProject}
             className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4 shadow-2xl"
           >
-            <h3 className="text-base font-display font-semibold text-slate-100">
+            <h3 className="text-lg font-semibold text-slate-100">
               Create New Worldbuilding Project
             </h3>
             <div className="space-y-3 text-xs">

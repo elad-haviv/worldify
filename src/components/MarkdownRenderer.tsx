@@ -63,14 +63,14 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               </button>
               {/* Hover Preview Card */}
               <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-0 mb-1.5 w-64 p-2.5 rounded-lg bg-slate-900/95 border border-slate-700 shadow-2xl z-50 text-left block">
-                <span className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-400 mb-1">
+                <span className="flex items-center justify-between text-xs capitalize text-slate-400 mb-1">
                   <span>{resolved.category}</span>
                   <span className="text-amber-400">Click to open</span>
                 </span>
                 <span className="block text-xs font-semibold text-slate-100 mb-1">
                   {resolved.title}
                 </span>
-                <span className="block text-[11px] text-slate-300 line-clamp-3 leading-relaxed">
+                <span className="block text-xs text-slate-300 line-clamp-3 leading-relaxed">
                   {resolved.summary}
                 </span>
               </span>
@@ -140,7 +140,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       elements.push(
         <h3
           key={`h3-${i}`}
-          className="text-sm font-semibold text-amber-300/90 mt-4 mb-1.5 tracking-wide uppercase"
+          className="text-sm font-semibold text-amber-300/90 mt-4 mb-1.5 capitalize"
         >
           {renderInlineTokens(trimmed.slice(4), `h3-${i}`)}
         </h3>
@@ -152,7 +152,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       elements.push(
         <h2
           key={`h2-${i}`}
-          className="text-base font-display font-semibold text-slate-100 mt-5 mb-2 pb-1 border-b border-slate-800"
+          className="text-lg font-semibold text-slate-100 mt-5 mb-2 pb-1 border-b border-slate-800"
         >
           {renderInlineTokens(trimmed.slice(3), `h2-${i}`)}
         </h2>
@@ -185,7 +185,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       elements.push(
         <div key={`li-${i}`} className="flex items-start gap-2 pl-2 my-1 text-sm text-slate-300">
-          <span className="text-amber-400 mt-1.5 text-[10px]">●</span>
+          <span className="text-amber-400 mt-1.5 text-xs">●</span>
           <span className="leading-relaxed">{renderInlineTokens(trimmed.slice(2), `li-${i}`)}</span>
         </div>
       );

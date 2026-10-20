@@ -231,14 +231,14 @@ export const MapView: React.FC = () => {
       <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 text-xs">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-display font-semibold uppercase tracking-wider text-slate-100 flex items-center gap-1.5">
+            <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
               <MapIcon className="w-4 h-4 text-emerald-400" />
               Cartography Studio
             </h2>
             <button
               type="button"
               onClick={() => setShowNewMapModal(true)}
-              className="px-2 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+              className="px-2 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3 h-3" />
               New Map
@@ -261,15 +261,15 @@ export const MapView: React.FC = () => {
         {/* Spatio-Temporal Historical Presets */}
         <div className="p-3 rounded-xl bg-slate-950 border border-amber-500/30 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-400 flex items-center gap-1">
+            <span className="text-xs capitalize font-semibold text-amber-400 flex items-center gap-1">
               <Clock className="w-3 h-3" />
               Spatio-Temporal Map State
             </span>
           </div>
-          <div className="text-[11px] text-slate-300 font-medium">
+          <div className="text-xs text-slate-300 font-medium">
             {formattedDate?.displayShort || `Tick ${project.currentTick}`}
           </div>
-          <p className="text-[10px] text-slate-400 leading-relaxed">
+          <p className="text-xs text-slate-400 leading-relaxed">
             Jump between eras or scrub the bottom timeline to watch kingdom borders morph and characters march along paths:
           </p>
           <div className="grid grid-cols-1 gap-1 pt-1">
@@ -278,7 +278,7 @@ export const MapView: React.FC = () => {
                 key={ev.id}
                 type="button"
                 onClick={() => setCurrentTick(ev.startTick)}
-                className={`px-2 py-1 rounded text-left text-[10px] truncate border cursor-pointer ${
+                className={`px-2 py-1 rounded text-left text-xs truncate border cursor-pointer ${
                   Math.abs(project.currentTick - ev.startTick) < 25
                     ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-semibold'
                     : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
@@ -292,7 +292,7 @@ export const MapView: React.FC = () => {
 
         {/* Layer Visibility Toggles */}
         <div className="space-y-2 pt-2 border-t border-slate-800">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <div className="text-xs font-semibold capitalize text-slate-400 flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-emerald-400" />
             Map Layers
           </div>
@@ -315,7 +315,7 @@ export const MapView: React.FC = () => {
             ).map(([key, label]) => (
               <label
                 key={key}
-                className="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer hover:text-slate-100"
+                className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-slate-100"
               >
                 <input
                   type="checkbox"
@@ -334,14 +334,14 @@ export const MapView: React.FC = () => {
         {/* Azgaar-style Procedural Map Generator Controls */}
         {activeMap.mode === 'procedural' && (
           <div className="space-y-2.5 pt-3 border-t border-slate-800">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <div className="text-xs font-semibold capitalize text-amber-400 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
               Azgaar-Style Map Generator
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] text-slate-400 mb-0.5">World Seed</label>
+                <label className="block text-xs text-slate-400 mb-0.5">World Seed</label>
                 <input
                   type="number"
                   value={procSeed}
@@ -350,7 +350,7 @@ export const MapView: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-400 mb-0.5">States / Realms</label>
+                <label className="block text-xs text-slate-400 mb-0.5">States / Realms</label>
                 <input
                   type="number"
                   min={2}
@@ -363,7 +363,7 @@ export const MapView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[10px] text-slate-400 mb-0.5">
+              <label className="block text-xs text-slate-400 mb-0.5">
                 Continental Template
               </label>
               <select
@@ -382,7 +382,7 @@ export const MapView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[10px] text-slate-400 mb-0.5">
+              <label className="block text-xs text-slate-400 mb-0.5">
                 Sea Level Threshold ({procSeaLevel}m)
               </label>
               <input
@@ -408,7 +408,7 @@ export const MapView: React.FC = () => {
                     procSeaLevel
                   )
                 }
-                className="flex-1 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                className="flex-1 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center justify-center gap-1 cursor-pointer"
               >
                 <RefreshCw className="w-3 h-3" />
                 Generate
@@ -427,7 +427,7 @@ export const MapView: React.FC = () => {
                     procSeaLevel
                   );
                 }}
-                className="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] cursor-pointer"
+                className="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs cursor-pointer"
                 title="Random Seed"
               >
                 🎲 Random
@@ -485,7 +485,7 @@ export const MapView: React.FC = () => {
             >
               <ZoomIn className="w-4 h-4" />
             </button>
-            <span className="text-[11px] font-mono text-slate-400 px-1.5">
+            <span className="text-xs font-mono text-slate-400 px-1.5">
               {Math.round(zoom * 100)}%
             </span>
             <button
@@ -501,7 +501,7 @@ export const MapView: React.FC = () => {
                 setZoom(1);
                 setPan({ x: 0, y: 0 });
               }}
-              className="px-2 py-0.5 text-[11px] text-slate-300 hover:text-amber-400 cursor-pointer"
+              className="px-2 py-0.5 text-xs text-slate-300 hover:text-amber-400 cursor-pointer"
             >
               Reset
             </button>
@@ -588,7 +588,7 @@ export const MapView: React.FC = () => {
               Click any two points on the map to measure distance and travel times:
             </span>
             {rulerStats ? (
-              <div className="flex flex-wrap items-center gap-3 font-mono text-[11px]">
+              <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
                 <strong className="text-amber-300">
                   Distance: {rulerStats.distance.toLocaleString()} {rulerStats.unit}
                 </strong>
@@ -1110,23 +1110,23 @@ export const MapView: React.FC = () => {
         {selectedBurg && (
           <div className="p-3.5 rounded-xl bg-slate-950 border border-amber-500/40 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">
+              <span className="text-xs capitalize px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">
                 {selectedBurg.isCapital ? 'Procedural Capital' : 'Procedural Burg'}
               </span>
               {selectedBurg.port && (
-                <span className="text-[10px] text-sky-400">⚓ Maritime Port</span>
+                <span className="text-xs text-sky-400">⚓ Maritime Port</span>
               )}
             </div>
-            <h3 className="text-base font-display font-bold text-slate-100">
+            <h3 className="text-lg font-semibold text-slate-100">
               {selectedBurg.name}
             </h3>
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+            <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
               <div>
-                <span className="text-slate-500 block text-[10px]">Population</span>
+                <span className="text-slate-500 block text-xs">Population</span>
                 {selectedBurg.population.toLocaleString()}
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Culture</span>
+                <span className="text-slate-500 block text-xs">Culture</span>
                 {selectedBurg.culture}
               </div>
             </div>
@@ -1159,23 +1159,23 @@ export const MapView: React.FC = () => {
         {/* Selected Voronoi Cell & State Inspector */}
         {selectedCell && (
           <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+            <div className="text-xs capitalize text-slate-400 font-semibold">
               Cell #{selectedCell.id} Geography
             </div>
             <div className="text-sm font-bold text-slate-100">
               {BIOME_METADATA[selectedCell.biome]?.label || selectedCell.biome}
             </div>
-            <div className="grid grid-cols-3 gap-2 text-[11px]">
+            <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="p-2 rounded bg-slate-900">
-                <span className="block text-[10px] text-slate-500">Elevation</span>
+                <span className="block text-xs text-slate-500">Elevation</span>
                 <span className="font-mono text-slate-200">{selectedCell.elevation}m</span>
               </div>
               <div className="p-2 rounded bg-slate-900">
-                <span className="block text-[10px] text-slate-500">Temp</span>
+                <span className="block text-xs text-slate-500">Temp</span>
                 <span className="font-mono text-slate-200">{selectedCell.temperature}°C</span>
               </div>
               <div className="p-2 rounded bg-slate-900">
-                <span className="block text-[10px] text-slate-500">Moisture</span>
+                <span className="block text-xs text-slate-500">Moisture</span>
                 <span className="font-mono text-slate-200">{selectedCell.moisture}%</span>
               </div>
             </div>
@@ -1193,13 +1193,13 @@ export const MapView: React.FC = () => {
                         <span className="font-semibold" style={{ color: st.color }}>
                           {st.name}
                         </span>
-                        <span className="text-[10px] text-slate-400">{st.culture}</span>
+                        <span className="text-xs text-slate-400">{st.culture}</span>
                       </div>
                       {st.linkedEntityId ? (
                         <button
                           type="button"
                           onClick={() => selectEntity(st.linkedEntityId!, true)}
-                          className="w-full py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 text-[11px] cursor-pointer"
+                          className="w-full py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs cursor-pointer"
                         >
                           Open Realm in Wiki →
                         </button>
@@ -1207,7 +1207,7 @@ export const MapView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => promoteStateToEntity(activeMap.id, st)}
-                          className="w-full py-1.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-[11px] font-medium cursor-pointer"
+                          className="w-full py-1.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-medium cursor-pointer"
                         >
                           + Promote "{st.name}" to Faction Wiki
                         </button>
@@ -1224,7 +1224,7 @@ export const MapView: React.FC = () => {
         {selectedMarker && (
           <div className="p-3.5 rounded-xl bg-slate-950 border border-amber-500/40 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold">
+              <span className="text-xs capitalize text-amber-400 font-semibold">
                 Map Marker ({selectedMarker.icon})
               </span>
               <button
@@ -1240,7 +1240,7 @@ export const MapView: React.FC = () => {
             </div>
             <div className="text-sm font-bold text-slate-100">{selectedMarker.name}</div>
             {selectedMarker.notes && (
-              <p className="text-[11px] text-slate-400">{selectedMarker.notes}</p>
+              <p className="text-xs text-slate-400">{selectedMarker.notes}</p>
             )}
             {selectedMarker.linkedEntityId && (
               <button
@@ -1257,7 +1257,7 @@ export const MapView: React.FC = () => {
 
         {/* Live Entities on Map at Current Tick */}
         <div className="space-y-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
+          <div className="text-xs font-semibold capitalize text-amber-400">
             Entities on Map at Current Tick ({liveEntityPositions.length})
           </div>
           {liveEntityPositions.map((pos) => (
@@ -1268,12 +1268,12 @@ export const MapView: React.FC = () => {
             >
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-100">{pos.activeTitle}</span>
-                <span className="font-mono text-[10px] text-emerald-400">
+                <span className="font-mono text-xs text-emerald-400">
                   ({Math.round(pos.x)}, {Math.round(pos.y)})
                 </span>
               </div>
               {pos.statusNote && (
-                <p className="text-[11px] text-slate-400 italic">"{pos.statusNote}"</p>
+                <p className="text-xs text-slate-400 italic">"{pos.statusNote}"</p>
               )}
             </div>
           ))}
@@ -1281,7 +1281,7 @@ export const MapView: React.FC = () => {
 
         {/* Zones, Paths & Labels List with Delete */}
         <div className="pt-3 border-t border-slate-800 space-y-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <div className="text-xs font-semibold capitalize text-slate-400">
             Zones ({activeMap.zones.length}) & Paths ({activeMap.paths.length})
           </div>
           {activeMap.zones.map((z) => (
@@ -1368,7 +1368,7 @@ export const MapView: React.FC = () => {
             }}
             className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4 shadow-2xl text-xs"
           >
-            <h3 className="text-sm font-display font-semibold text-slate-100">
+            <h3 className="text-base font-semibold text-slate-100">
               {activeTool === 'add_marker' ? 'Place Map Marker' : 'Place Map Label'} at (
               {pendingCoord[0]}, {pendingCoord[1]})
             </h3>
@@ -1476,7 +1476,7 @@ export const MapView: React.FC = () => {
             }}
             className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4 shadow-2xl text-xs"
           >
-            <h3 className="text-base font-display font-semibold text-slate-100">
+            <h3 className="text-lg font-semibold text-slate-100">
               Create New Interactive Map
             </h3>
             <div>

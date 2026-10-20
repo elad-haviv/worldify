@@ -227,7 +227,7 @@ export const WikiView: React.FC = () => {
       <aside className="w-72 bg-slate-900/95 border-r border-slate-800 flex flex-col shrink-0">
         <div className="p-3.5 border-b border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-display font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+            <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
               Lore Encyclopedia
             </h2>
@@ -258,7 +258,7 @@ export const WikiView: React.FC = () => {
             <select
               value={worldFilter}
               onChange={(e) => setWorldFilter(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-300 focus:outline-none"
+              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none"
             >
               <option value="all">All Worlds</option>
               {project.worlds.map((w) => (
@@ -273,7 +273,7 @@ export const WikiView: React.FC = () => {
               onChange={(e) =>
                 setSelectedCategory(e.target.value as EntityCategory | 'all')
               }
-              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-300 focus:outline-none"
+              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.key} value={c.key}>
@@ -289,7 +289,7 @@ export const WikiView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedTag(null)}
-                className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] border cursor-pointer ${
+                className={`shrink-0 px-2 py-0.5 rounded-full text-xs border cursor-pointer ${
                   selectedTag === null
                     ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                     : 'bg-slate-950 text-slate-400 border-slate-800'
@@ -302,7 +302,7 @@ export const WikiView: React.FC = () => {
                   key={tag}
                   type="button"
                   onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                  className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] border cursor-pointer ${
+                  className={`shrink-0 px-2 py-0.5 rounded-full text-xs border cursor-pointer ${
                     selectedTag === tag
                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                       : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
@@ -332,11 +332,11 @@ export const WikiView: React.FC = () => {
               >
                 <div className="flex items-center justify-between gap-1 mb-0.5">
                   <span className="text-xs font-semibold truncate">{ent.title}</span>
-                  <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-950/90 text-slate-400 border border-slate-800 shrink-0">
+                  <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-950/90 text-slate-400 border border-slate-800 shrink-0">
                     {ent.category}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 line-clamp-1">{ent.summary}</p>
+                <p className="text-xs text-slate-400 line-clamp-1">{ent.summary}</p>
               </button>
             );
           })}
@@ -350,14 +350,14 @@ export const WikiView: React.FC = () => {
           <div className="px-6 py-4 bg-slate-900/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1 flex-1 min-w-[260px]">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <span className="text-xs capitalize font-semibold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
                   {activeEntity.category}
                 </span>
                 {activeTemplate && (
                   <button
                     type="button"
                     onClick={() => setActiveModule('templates')}
-                    className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:border-amber-500/40 flex items-center gap-1 cursor-pointer"
+                    className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:border-amber-500/40 flex items-center gap-1 cursor-pointer"
                   >
                     <Layers className="w-3 h-3 text-amber-400" />
                     Template: {activeTemplate.name}
@@ -365,7 +365,7 @@ export const WikiView: React.FC = () => {
                 )}
                 {temporalStatus && (
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded border font-medium ${
+                    className={`text-xs px-2 py-0.5 rounded border font-medium ${
                       temporalStatus.lifecycleState === 'active'
                         ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
                         : temporalStatus.lifecycleState === 'unborn'
@@ -404,7 +404,7 @@ export const WikiView: React.FC = () => {
                   type="button"
                   disabled={isAiBusy}
                   onClick={() => handleInlineAI('expand')}
-                  className="px-2 py-1 rounded text-[11px] text-amber-300 hover:bg-amber-500/15 flex items-center gap-1 cursor-pointer"
+                  className="px-2 py-1 rounded text-xs text-amber-300 hover:bg-amber-500/15 flex items-center gap-1 cursor-pointer"
                   title="AI: Expand Lore Section"
                 >
                   <Wand2 className="w-3 h-3" />
@@ -414,7 +414,7 @@ export const WikiView: React.FC = () => {
                   type="button"
                   disabled={isAiBusy}
                   onClick={() => handleInlineAI('sensory')}
-                  className="px-2 py-1 rounded text-[11px] text-sky-300 hover:bg-sky-500/15 flex items-center gap-1 cursor-pointer"
+                  className="px-2 py-1 rounded text-xs text-sky-300 hover:bg-sky-500/15 flex items-center gap-1 cursor-pointer"
                   title="AI: Add Sensory Atmosphere"
                 >
                   <Sparkles className="w-3 h-3" />
@@ -424,7 +424,7 @@ export const WikiView: React.FC = () => {
                   type="button"
                   disabled={isAiBusy}
                   onClick={() => handleInlineAI('hooks')}
-                  className="px-2 py-1 rounded text-[11px] text-emerald-300 hover:bg-emerald-500/15 flex items-center gap-1 cursor-pointer"
+                  className="px-2 py-1 rounded text-xs text-emerald-300 hover:bg-emerald-500/15 flex items-center gap-1 cursor-pointer"
                   title="AI: Generate Plot Hooks"
                 >
                   + Hooks
@@ -433,7 +433,7 @@ export const WikiView: React.FC = () => {
                   type="button"
                   disabled={isAiBusy}
                   onClick={() => handleInlineAI('autolink')}
-                  className="px-2 py-1 rounded text-[11px] text-purple-300 hover:bg-purple-500/15 flex items-center gap-1 cursor-pointer"
+                  className="px-2 py-1 rounded text-xs text-purple-300 hover:bg-purple-500/15 flex items-center gap-1 cursor-pointer"
                   title="AI: Automatically wrap mentioned entities in [[WikiLinks]]"
                 >
                   <Link2 className="w-3 h-3" />
@@ -494,7 +494,7 @@ export const WikiView: React.FC = () => {
 
           {/* Quick [[WikiLink]] Insertion Bar */}
           {editorMode !== 'preview' && (
-            <div className="px-6 py-1.5 bg-slate-950 border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto text-[11px]">
+            <div className="px-6 py-1.5 bg-slate-950 border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto text-xs">
               <span className="text-slate-400 shrink-0 flex items-center gap-1">
                 <Link2 className="w-3 h-3 text-amber-400" />
                 Insert <code className="text-amber-300">[[WikiLink]]</code>:
@@ -523,7 +523,7 @@ export const WikiView: React.FC = () => {
                   editorMode === 'split' ? 'border-r border-slate-800' : ''
                 }`}
               >
-                <div className="px-4 py-2 bg-slate-900/30 border-b border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+                <div className="px-4 py-2 bg-slate-900/30 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
                   <span>Markdown Source (Use [[Entity Title]] to link entries)</span>
                   <span className="font-mono">{activeEntity.contentMd.length} chars</span>
                 </div>
@@ -542,7 +542,7 @@ export const WikiView: React.FC = () => {
               <div className="flex-1 h-full overflow-y-auto p-6 space-y-6 bg-slate-950/60">
                 {/* Summary Callout */}
                 <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                  <label className="block text-[10px] uppercase tracking-wider text-slate-400 mb-1">
+                  <label className="block text-xs capitalize text-slate-400 mb-1">
                     Canonical Summary
                   </label>
                   <input
@@ -568,14 +568,14 @@ export const WikiView: React.FC = () => {
                 {/* Backlinks & Graph Connections Section */}
                 <div className="pt-6 border-t border-slate-800 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-display font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-1.5">
                       <Network className="w-3.5 h-3.5 text-sky-400" />
                       Connected Lore & Backlinks ({entityRelations.length})
                     </h3>
                     <button
                       type="button"
                       onClick={() => setActiveModule('graph')}
-                      className="text-[11px] text-amber-400 hover:text-amber-300 cursor-pointer"
+                      className="text-xs text-amber-400 hover:text-amber-300 cursor-pointer"
                     >
                       Inspect in Knowledge Graph →
                     </button>
@@ -598,7 +598,7 @@ export const WikiView: React.FC = () => {
                             onClick={() => selectEntity(other.id)}
                             className="text-left min-w-0 flex-1 cursor-pointer group"
                           >
-                            <div className="text-[10px] text-slate-400">
+                            <div className="text-xs text-slate-400">
                               {isOutgoing ? `→ ${rel.label}` : `← ${rel.label} (from)`}
                             </div>
                             <div className="font-semibold text-slate-200 group-hover:text-amber-300 truncate">
@@ -635,7 +635,7 @@ export const WikiView: React.FC = () => {
         <aside className="w-80 bg-slate-900/95 border-l border-slate-800 overflow-y-auto p-4 space-y-5 shrink-0 text-xs">
           {/* Tags Section */}
           <div className="space-y-2">
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <label className="text-xs font-semibold capitalize text-slate-400 flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5 text-amber-400" />
               Tags
             </label>
@@ -643,7 +643,7 @@ export const WikiView: React.FC = () => {
               {activeEntity.tags.map((t) => (
                 <span
                   key={t}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-[11px] text-slate-300"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-xs text-slate-300"
                 >
                   #{t}
                   <button
@@ -692,13 +692,13 @@ export const WikiView: React.FC = () => {
           {activeTemplate && (
             <div className="pt-3 border-t border-slate-800 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
+                <span className="text-xs font-semibold capitalize text-amber-400">
                   {activeTemplate.name} Fields
                 </span>
                 <button
                   type="button"
                   onClick={() => setActiveModule('templates')}
-                  className="text-[10px] text-slate-400 hover:text-slate-200 cursor-pointer"
+                  className="text-xs text-slate-400 hover:text-slate-200 cursor-pointer"
                 >
                   Edit Schema
                 </button>
@@ -708,7 +708,7 @@ export const WikiView: React.FC = () => {
                 const val = activeEntity.templateValues[field.key] ?? '';
                 return (
                   <div key={field.key} className="space-y-1">
-                    <label className="block text-[11px] text-slate-400">{field.label}</label>
+                    <label className="block text-xs text-slate-400">{field.label}</label>
                     {field.type === 'entity_ref' ? (
                       <div className="flex gap-1">
                         <select
@@ -736,7 +736,7 @@ export const WikiView: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => selectEntity(String(val))}
-                            className="px-2 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] cursor-pointer"
+                            className="px-2 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs cursor-pointer"
                             title="Jump to linked entity"
                           >
                             Go
@@ -789,7 +789,7 @@ export const WikiView: React.FC = () => {
 
           {/* Ad-Hoc Custom Properties */}
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
-            <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <span className="block text-xs font-semibold capitalize text-slate-400">
               Custom Ad-Hoc Properties
             </span>
 
@@ -800,7 +800,7 @@ export const WikiView: React.FC = () => {
                   className="flex items-center justify-between gap-2 p-2 rounded bg-slate-950 border border-slate-800"
                 >
                   <div className="min-w-0">
-                    <div className="text-[10px] text-slate-400">{prop.label}</div>
+                    <div className="text-xs text-slate-400">{prop.label}</div>
                     <div className="text-xs font-medium text-slate-200 truncate">
                       {prop.value}
                     </div>
@@ -853,7 +853,7 @@ export const WikiView: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] cursor-pointer"
+                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs cursor-pointer"
                 >
                   Add
                 </button>
@@ -863,14 +863,14 @@ export const WikiView: React.FC = () => {
 
           {/* Lifespan & Spatio-Temporal Map Keyframes */}
           <div className="pt-3 border-t border-slate-800 space-y-2.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <span className="text-xs font-semibold capitalize text-emerald-400 flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5" />
               Map & Timeline Integration
             </span>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] text-slate-400 mb-0.5">
+                <label className="block text-xs text-slate-400 mb-0.5">
                   Birth / Founding Tick
                 </label>
                 <input
@@ -886,7 +886,7 @@ export const WikiView: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-400 mb-0.5">
+                <label className="block text-xs text-slate-400 mb-0.5">
                   Death / Fall Tick
                 </label>
                 <input
@@ -916,7 +916,7 @@ export const WikiView: React.FC = () => {
                     className="p-2 rounded bg-slate-950 border border-slate-800 space-y-1"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-emerald-300 flex items-center gap-1">
+                      <span className="text-xs font-semibold text-emerald-300 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {dateLabel}
                       </span>
@@ -927,7 +927,7 @@ export const WikiView: React.FC = () => {
                             setCurrentTick(kf.tick);
                             selectMap(kf.mapId, true);
                           }}
-                          className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[10px] cursor-pointer"
+                          className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-xs cursor-pointer"
                           title="Jump to Map & Time"
                         >
                           View on Map
@@ -943,11 +943,11 @@ export const WikiView: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="text-[11px] text-slate-300">
+                    <div className="text-xs text-slate-300">
                       {mapObj?.name || 'Map'} at ({kf.x}, {kf.y})
                     </div>
                     {kf.statusNote && (
-                      <div className="text-[10px] text-slate-400 italic">
+                      <div className="text-xs text-slate-400 italic">
                         "{kf.statusNote}"
                       </div>
                     )}
@@ -961,13 +961,13 @@ export const WikiView: React.FC = () => {
               onSubmit={handleAddKeyframe}
               className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800/80 space-y-2"
             >
-              <div className="text-[10px] font-semibold text-slate-300">
+              <div className="text-xs font-semibold text-slate-300">
                 + Add Map Location at Current/Custom Tick
               </div>
               <select
                 value={kfMapId || project.maps[0]?.id || ''}
                 onChange={(e) => setKfMapId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-200"
+                className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200"
               >
                 {project.maps.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -982,7 +982,7 @@ export const WikiView: React.FC = () => {
                   onChange={(e) => setKfTick(Number(e.target.value))}
                   placeholder="Tick"
                   title="Calendar Tick"
-                  className="bg-slate-900 border border-slate-800 rounded px-1.5 py-1 text-[11px] text-slate-200 font-mono"
+                  className="bg-slate-900 border border-slate-800 rounded px-1.5 py-1 text-xs text-slate-200 font-mono"
                 />
                 <input
                   type="number"
@@ -992,7 +992,7 @@ export const WikiView: React.FC = () => {
                   onChange={(e) => setKfX(Number(e.target.value))}
                   placeholder="X"
                   title="Map X (0-1000)"
-                  className="bg-slate-900 border border-slate-800 rounded px-1.5 py-1 text-[11px] text-slate-200 font-mono"
+                  className="bg-slate-900 border border-slate-800 rounded px-1.5 py-1 text-xs text-slate-200 font-mono"
                 />
                 <input
                   type="number"
@@ -1002,7 +1002,7 @@ export const WikiView: React.FC = () => {
                   onChange={(e) => setKfY(Number(e.target.value))}
                   placeholder="Y"
                   title="Map Y (0-1000)"
-                  className="bg-slate-900 border border-slate-800 rounded px-1.5 py-1 text-[11px] text-slate-200 font-mono"
+                  className="bg-slate-900 border border-slate-800 rounded px-1.5 py-1 text-xs text-slate-200 font-mono"
                 />
               </div>
               <input
@@ -1010,11 +1010,11 @@ export const WikiView: React.FC = () => {
                 value={kfNote}
                 onChange={(e) => setKfNote(e.target.value)}
                 placeholder="Status note (e.g., Encamped at river)..."
-                className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-200"
+                className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200"
               />
               <button
                 type="submit"
-                className="w-full py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-medium text-[11px] cursor-pointer"
+                className="w-full py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-medium text-xs cursor-pointer"
               >
                 Pin Entity to Map & Timeline
               </button>
@@ -1023,7 +1023,7 @@ export const WikiView: React.FC = () => {
 
           {/* Add Explicit Semantic Relationship */}
           <div className="pt-3 border-t border-slate-800 space-y-2">
-            <span className="block text-[11px] font-semibold uppercase tracking-wider text-sky-400">
+            <span className="block text-xs font-semibold capitalize text-sky-400">
               + Add Semantic Graph Edge
             </span>
             <form onSubmit={handleAddRelation} className="space-y-1.5">
@@ -1067,7 +1067,7 @@ export const WikiView: React.FC = () => {
               />
               <button
                 type="submit"
-                className="w-full py-1 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-medium text-[11px] cursor-pointer flex items-center justify-center gap-1"
+                className="w-full py-1 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-medium text-xs cursor-pointer flex items-center justify-center gap-1"
               >
                 <Check className="w-3 h-3" />
                 Connect in Graph
@@ -1084,7 +1084,7 @@ export const WikiView: React.FC = () => {
             onSubmit={handleCreateEntity}
             className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4 shadow-2xl text-xs"
           >
-            <h3 className="text-base font-display font-semibold text-slate-100">
+            <h3 className="text-lg font-semibold text-slate-100">
               Create New Wiki Entry
             </h3>
             <div>
