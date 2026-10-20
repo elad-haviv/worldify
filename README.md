@@ -40,6 +40,23 @@
 
 ---
 
+## Importing an Obsidian vault
+
+Worldify can turn an Obsidian vault into a project. Each vault has a small config in `scripts/vaults/` that maps its folders to categories, worlds and a calendar.
+
+```bash
+npm run import:avalymia                         # uses the vault path in scripts/vaults/avalymia.config.mjs
+npm run import:avalymia -- "D:/path/to/avalymia" # or pass the vault folder explicitly
+```
+
+The importer only reads the vault. It writes `public/vaults/<name>/project.json` (plus compressed images), and the app adds the project to your library on next launch. If you re-import later, the project's Overview page shows **Newer import available — update**.
+
+What gets converted:
+- every note outside `99 Appendices/` becomes a wiki entry (category and template from its folder, aliases kept);
+- `[[links]]`, `[[alias]]`, `[[Note#Heading|label]]` and path links are rewritten to resolve; missing notes show as red links;
+- folder notes (`Ezob/Ezob.md`) become "Located in" / "Part of" connections in the graph;
+- embedded images are converted to WebP; planes become worlds; the vault's calendar becomes the project calendar.
+
 ## Getting Started
 
 ```bash
