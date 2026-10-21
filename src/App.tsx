@@ -226,7 +226,7 @@ export const App: React.FC = () => {
       </aside>
 
       {/* ── Main column ─────────────────────────────────────── */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col h-full min-h-0 overflow-hidden">
         {/* Top bar */}
         <header className="h-14 shrink-0 border-b border-slate-800 bg-slate-950 px-5 flex items-center gap-4 z-20">
           <h1 className="text-base font-semibold text-slate-100 shrink-0">{activeLabel}</h1>
@@ -305,8 +305,12 @@ export const App: React.FC = () => {
         </header>
 
         {/* Content + AI drawer */}
-        <div className="flex-1 flex min-h-0 overflow-hidden relative">
-          <main className="flex-1 min-w-0 h-full overflow-hidden">
+        <div className="flex-1 flex min-h-0 h-full overflow-hidden relative">
+          <main
+            className={`flex-1 min-w-0 h-full min-h-0 relative ${
+              activeModule === 'dashboard' ? 'overflow-y-auto' : 'overflow-hidden flex flex-col'
+            }`}
+          >
             {activeModule === 'dashboard' && <ProjectDashboardView />}
             {activeModule === 'travel' && <WorldTravelView />}
             {activeModule === 'wiki' && <WikiView />}

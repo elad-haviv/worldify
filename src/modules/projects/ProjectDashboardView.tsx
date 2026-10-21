@@ -144,8 +144,8 @@ export const ProjectDashboardView: React.FC = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-950">
-     <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
+    <div className="min-h-full w-full bg-slate-950">
+      <div className="max-w-7xl mx-auto px-8 py-8 pb-24 space-y-8">
       {/* Project header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
         <div className="space-y-3 max-w-3xl">
