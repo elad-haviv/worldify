@@ -3,6 +3,7 @@ import { useWorldifyStore } from '../../store/useWorldifyStore';
 import { EntityCategory, TemplateField, TemplateFieldType } from '../../types/worldify';
 import { Layers, Plus, Trash2, BookOpen } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { categoryLabel, getProjectCategories } from '../../utils/categories';
 
 export const TemplatesView: React.FC = () => {
   const { projects, activeProjectId, createTemplate, updateTemplate, setActiveModule } =
@@ -120,7 +121,7 @@ export const TemplatesView: React.FC = () => {
                   <span className="text-xs text-slate-400">{usageCount} entries</span>
                 </div>
                 <div className="text-xs capitalize text-slate-500">
-                  Category: {tpl.category} • {tpl.fields.length} schema fields
+                  Category: {categoryLabel(tpl.category, project)} • {tpl.fields.length} schema fields
                 </div>
               </button>
             );
@@ -297,13 +298,11 @@ export const TemplatesView: React.FC = () => {
                   onChange={(e) => setNewTplCategory(e.target.value as EntityCategory)}
                   className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-2 text-slate-100"
                 >
-                  <option value="character">Character</option>
-                  <option value="settlement">Settlement</option>
-                  <option value="faction">Faction</option>
-                  <option value="item">Item / Relic</option>
-                  <option value="deity">Deity</option>
-                  <option value="species">Species</option>
-                  <option value="magic_tech">Magic / Tech</option>
+                  {getProjectCategories(project).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

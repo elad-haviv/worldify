@@ -9,6 +9,7 @@ import {
   Calendar,
   Sparkles,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 
 export const GlobalTimelineBar: React.FC = () => {
@@ -18,11 +19,13 @@ export const GlobalTimelineBar: React.FC = () => {
     setCurrentTick,
     stepCurrentTick,
     setActiveModule,
+    setActiveCalendar,
   } = useWorldifyStore();
 
   const project = projects.find((p) => p.id === activeProjectId);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speedDaysPerStep, setSpeedDaysPerStep] = useState<number>(3);
+  const [showCalendarMenu, setShowCalendarMenu] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -56,17 +59,73 @@ export const GlobalTimelineBar: React.FC = () => {
 
   return (
     <div className="h-14 shrink-0 bg-slate-900 border-t border-slate-800 px-5 flex items-center justify-between gap-5 select-none z-30">
-      {/* Left: Current Custom Calendar Date & Era */}
-      <div className="flex items-center gap-3 min-w-0 shrink-0">
+      {/* Left: Current Custom Calendar Date & Era + Calendar Switcher */}
+      <div className="relative flex items-center gap-2 min-w-0 shrink-0">
         <button
           type="button"
           onClick={() => setActiveModule('timeline')}
           className="flex items-center gap-2 px-3 h-9 rounded-lg text-amber-200 hover:bg-slate-800 transition-colors cursor-pointer"
-          title="Open timeline"
+          title={`Open timeline — ${calendar.name}`}
         >
           <Calendar className="w-4 h-4 text-amber-400" />
           <span className="text-sm font-semibold">{formatted.displayShort}</span>
         </button>
+
+        {project.calendars.length > 1 && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowCalendarMenu((v) => !v)}
+              className="flex items-center gap-1 px-2 py-1 rounded bg-slate-950 border border-slate-800 text-xs text-slate-300 hover:text-amber-300 hover:border-slate-700 cursor-pointer"
+              title="Switch calendar / view comparative dates"
+            >
+              <span className="max-w-[90px] truncate">{calendar.name}</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </button>
+
+            {showCalendarMenu && (
+              <div
+                className="absolute bottom-11 left-0 w-72 bg-slate-900 border border-slate-700 rounded-xl p-2 shadow-2xl z-50 space-y-1.5"
+                onMouseLeave={() => setShowCalendarMenu(false)}
+              >
+                <div className="px-2 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  Project Calendars ({project.calendars.length})
+                </div>
+                {project.calendars.map((cal) => {
+                  const isSelected = cal.id === calendar.id;
+                  const calFormatted = formatTickToDate(cal, project.currentTick);
+                  return (
+                    <button
+                      key={cal.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveCalendar(cal.id);
+                        setShowCalendarMenu(false);
+                      }}
+                      className={`w-full text-left p-2 rounded-lg transition-all cursor-pointer flex flex-col gap-0.5 ${
+                        isSelected
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold'
+                          : 'hover:bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="truncate">{cal.name}</span>
+                        {isSelected && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 font-bold">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-normal truncate">
+                        {calFormatted.displayShort}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="hidden 2xl:flex items-center gap-2 text-sm text-slate-400">
           <span className="flex items-center gap-1.5">

@@ -459,3 +459,95 @@ export function generateProceduralMap(
     states,
   };
 }
+
+/**
+ * Renders a ProceduralMapData object onto an offscreen canvas at standard resolution
+ * and exports a clean PNG data URL for texture reprojections (globe, maps, reprojectors).
+ */
+export function renderProceduralMapToDataUrl(
+  data: ProceduralMapData,
+  width = 1000,
+  height = 1000
+): string {
+  if (typeof document === 'undefined') return '';
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+
+  const scaleX = width / 1000;
+  const scaleY = height / 1000;
+
+  // Ocean background
+  ctx.fillStyle = '#0a1e38';
+  ctx.fillRect(0, 0, width, height);
+
+  // Draw cells
+  for (const cell of data.cells) {
+    if (cell.polygon.length < 3) continue;
+    const biomeMeta = BIOME_METADATA[cell.biome] || BIOME_METADATA.grassland;
+
+    ctx.fillStyle = biomeMeta.color;
+    ctx.strokeStyle = biomeMeta.stroke;
+    ctx.lineWidth = 0.5 * scaleX;
+
+    ctx.beginPath();
+    ctx.moveTo(cell.polygon[0][0] * scaleX, cell.polygon[0][1] * scaleY);
+    for (let i = 1; i < cell.polygon.length; i++) {
+      ctx.lineTo(cell.polygon[i][0] * scaleX, cell.polygon[i][1] * scaleY);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Political state tinting
+    if (cell.stateId) {
+      const stateObj = data.states.find((s) => s.id === cell.stateId);
+      if (stateObj) {
+        ctx.fillStyle = stateObj.color;
+        ctx.globalAlpha = 0.22;
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+      }
+    }
+  }
+
+  // Draw rivers
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const river of data.rivers) {
+    if (river.points.length < 2) continue;
+    ctx.lineWidth = (river.width || 2) * scaleX;
+    ctx.beginPath();
+    ctx.moveTo(river.points[0][0] * scaleX, river.points[0][1] * scaleY);
+    for (let i = 1; i < river.points.length; i++) {
+      ctx.lineTo(river.points[i][0] * scaleX, river.points[i][1] * scaleY);
+    }
+    ctx.stroke();
+  }
+
+  // Draw burgs
+  for (const burg of data.burgs) {
+    const bx = burg.x * scaleX;
+    const by = burg.y * scaleY;
+    ctx.fillStyle = burg.isCapital ? '#fbbf24' : '#f8fafc';
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(bx, by, burg.isCapital ? 5 : 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    if (burg.isCapital) {
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(bx, by, 7.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  return canvas.toDataURL('image/png');
+}

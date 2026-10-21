@@ -2,14 +2,17 @@ import { create } from 'zustand';
 import {
   ActiveModule,
   AIMessage,
+  CharacterChatMessage,
   AIProposedAction,
   AISettings,
+  CategoryDef,
   CustomCalendar,
   Entity,
   EntityCategory,
   EntityRelation,
   EntitySpatialKeyframe,
   MapLabel,
+  MapLayer,
   MapMarker,
   MapPath,
   MapZone,
@@ -20,19 +23,88 @@ import {
   Story,
   StoryChapter,
   StoryScene,
+  SubcategoryDef,
   Template,
   TimelineEvent,
   World,
   WorldConnection,
   WorldMap,
   BundledVault,
+  TravelerState,
+  WorldTravelLogEntry,
 } from '../types/worldify';
+import { getProjectCategories } from '../utils/categories';
 import { createSeedProjects } from '../data/seedProjects';
 import { generateProceduralMap } from '../utils/proceduralMapGenerator';
 
 const STORAGE_KEY = 'worldify_vault_v1';
 const AI_SETTINGS_KEY = 'worldify_ai_settings_v1';
 const ACTIVE_PROJECT_KEY = 'worldify_active_project_v1';
+const CHARACTER_CHATS_KEY = 'worldify_character_chats_v1';
+const USER_PERSONA_KEY = 'worldify_user_persona_v1';
+
+function loadInitialUserPersona(): string {
+  try {
+    const raw = localStorage.getItem(USER_PERSONA_KEY);
+    if (raw && raw.trim() && raw !== 'A traveling chronicler & seeker of truth') {
+      return raw.trim();
+    }
+  } catch {
+    // ignore
+  }
+  return 'A stranger';
+}
+
+function saveUserPersona(persona: string) {
+  try {
+    localStorage.setItem(USER_PERSONA_KEY, persona);
+  } catch {
+    // ignore
+  }
+}
+
+function loadInitialCharacterChats(): Record<string, CharacterChatMessage[]> {
+  try {
+    const raw = localStorage.getItem(CHARACTER_CHATS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
+function saveCharacterChats(chats: Record<string, CharacterChatMessage[]>) {
+  try {
+    localStorage.setItem(CHARACTER_CHATS_KEY, JSON.stringify(chats));
+  } catch {
+    // ignore
+  }
+}
+
+const TRAVELER_STATE_KEY = 'worldify_traveler_state_v1';
+
+function loadInitialTravelerState(): TravelerState {
+  try {
+    const raw = localStorage.getItem(TRAVELER_STATE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // ignore
+  }
+  return {
+    mapId: null,
+    x: 500,
+    y: 500,
+    travelLog: [],
+  };
+}
+
+function saveTravelerState(state: TravelerState) {
+  try {
+    localStorage.setItem(TRAVELER_STATE_KEY, JSON.stringify(state));
+  } catch {
+    // ignore
+  }
+}
 
 function readActiveProjectId(): string | null {
   try {
@@ -52,12 +124,18 @@ function saveActiveProjectId(id: string) {
 
 const DEFAULT_AI_SETTINGS: AISettings = {
   activeProvider: 'local_synthesizer',
+  openrouterApiKey: '',
+  openrouterModel: 'anthropic/claude-3.5-sonnet',
   geminiApiKey: '',
   geminiModel: 'gemini-2.5-flash',
   openaiApiKey: '',
   openaiModel: 'gpt-4o-mini',
   anthropicApiKey: '',
   anthropicModel: 'claude-3-5-sonnet-latest',
+  customOpenAiBaseUrl: 'http://localhost:11434/v1',
+  customOpenAiApiKey: '',
+  customOpenAiModel: 'llama3',
+  temperature: 0.7,
   includeGraphNeighbors: true,
   includeTemporalContext: true,
   includeSpatialContext: true,
@@ -138,10 +216,11 @@ export interface WorldifyStoreState {
   addWorldConnection: (conn: Omit<WorldConnection, 'id' | 'projectId'>) => void;
   deleteWorldConnection: (connId: string) => void;
 
-  // Wiki Entity, Template & Relation CRUD
+  // Wiki Entity, Category, Template & Relation CRUD
   createEntity: (partial: {
     title: string;
     category: EntityCategory;
+    subcategory?: string;
     templateId?: string;
     worldId?: string | null;
     summary?: string;
@@ -153,9 +232,29 @@ export interface WorldifyStoreState {
   }) => Entity;
   updateEntity: (entityId: string, patch: Partial<Entity>) => void;
   deleteEntity: (entityId: string) => void;
+  addCategory: (cat: { label: string; plural?: string; color: string; icon: string }) => CategoryDef;
+  updateCategory: (
+    categoryId: string,
+    patch: Partial<Omit<CategoryDef, 'id' | 'subcategories'>>
+  ) => void;
+  deleteCategory: (categoryId: string, fallbackCategoryId?: string) => void;
+  addSubcategory: (
+    categoryId: string,
+    sub: { name: string; color?: string; icon?: string }
+  ) => SubcategoryDef;
+  updateSubcategory: (
+    categoryId: string,
+    subcategoryId: string,
+    patch: Partial<Omit<SubcategoryDef, 'id'>>
+  ) => void;
+  deleteSubcategory: (categoryId: string, subcategoryId: string) => void;
   addEntitySpatialKeyframe: (entityId: string, kf: Omit<EntitySpatialKeyframe, 'id'>) => void;
   deleteEntitySpatialKeyframe: (entityId: string, keyframeId: string) => void;
   addRelation: (rel: Omit<EntityRelation, 'id' | 'projectId'>) => void;
+  updateRelation: (
+    relId: string,
+    patch: Partial<Omit<EntityRelation, 'id' | 'projectId'>>
+  ) => void;
   deleteRelation: (relId: string) => void;
   createTemplate: (tpl: Omit<Template, 'id' | 'projectId'>) => void;
   updateTemplate: (templateId: string, patch: Partial<Template>) => void;
@@ -171,7 +270,9 @@ export interface WorldifyStoreState {
     seed?: number;
     template?: ProceduralTemplateType;
     rasterImageUrl?: string;
+    markerIconSet?: string;
   }) => WorldMap;
+  updateMap: (mapId: string, patch: Partial<WorldMap>) => void;
   regenerateProceduralMap: (
     mapId: string,
     seed: number,
@@ -186,15 +287,34 @@ export interface WorldifyStoreState {
   updateMapMarker: (mapId: string, markerId: string, patch: Partial<MapMarker>) => void;
   deleteMapMarker: (mapId: string, markerId: string) => void;
   addMapPath: (mapId: string, path: Omit<MapPath, 'id'>) => void;
+  updateMapPath: (mapId: string, pathId: string, patch: Partial<MapPath>) => void;
   deleteMapPath: (mapId: string, pathId: string) => void;
   addMapZone: (mapId: string, zone: Omit<MapZone, 'id'>) => void;
+  updateMapZone: (mapId: string, zoneId: string, patch: Partial<MapZone>) => void;
   deleteMapZone: (mapId: string, zoneId: string) => void;
   addMapLabel: (mapId: string, label: Omit<MapLabel, 'id'>) => void;
+  updateMapLabel: (mapId: string, labelId: string, patch: Partial<MapLabel>) => void;
   deleteMapLabel: (mapId: string, labelId: string) => void;
 
+  // Custom Map Layers
+  addMapLayer: (mapId: string, layer: Omit<MapLayer, 'id'>) => MapLayer;
+  updateMapLayer: (mapId: string, layerId: string, patch: Partial<MapLayer>) => void;
+  deleteMapLayer: (mapId: string, layerId: string, fallbackLayerId?: string) => void;
+  reorderMapLayers: (mapId: string, layerIds: string[]) => void;
+  moveMapObjectToLayer: (
+    mapId: string,
+    objectType: 'marker' | 'path' | 'zone' | 'label',
+    objectId: string,
+    targetLayerId: string
+  ) => void;
+
   // Calendar & Timeline Actions
+  createCalendar: (cal: Omit<CustomCalendar, 'id' | 'projectId'>) => CustomCalendar;
   updateCalendar: (calendarId: string, patch: Partial<CustomCalendar>) => void;
-  addTimelineEvent: (evt: Omit<TimelineEvent, 'id' | 'projectId' | 'calendarId'>) => TimelineEvent;
+  deleteCalendar: (calendarId: string) => void;
+  setActiveCalendar: (calendarId: string) => void;
+  duplicateCalendar: (calendarId: string) => CustomCalendar;
+  addTimelineEvent: (evt: Omit<TimelineEvent, 'id' | 'projectId' | 'calendarId'> & { calendarId?: string }) => TimelineEvent;
   updateTimelineEvent: (eventId: string, patch: Partial<TimelineEvent>) => void;
   deleteTimelineEvent: (eventId: string) => void;
 
@@ -214,6 +334,33 @@ export interface WorldifyStoreState {
   addAIMessage: (msg: Omit<AIMessage, 'id' | 'timestamp'>) => void;
   applyAIProposal: (messageId: string, proposalId: string) => void;
   clearAIChat: () => void;
+
+  // Character AI Roleplay & Dialogue Actions
+  copilotTab: 'copilot' | 'character_chat';
+  activeChatCharacterId: string | null;
+  chatParticipantIds: string[];
+  userChatPersona: string;
+  characterChatHistories: Record<string, CharacterChatMessage[]>;
+  setCopilotTab: (tab: 'copilot' | 'character_chat') => void;
+  openCharacterChat: (characterId: string) => void;
+  setActiveChatCharacterId: (id: string | null) => void;
+  setChatParticipantIds: (ids: string[]) => void;
+  addChatParticipant: (id: string) => void;
+  removeChatParticipant: (id: string) => void;
+  setUserChatPersona: (persona: string) => void;
+  addCharacterChatMessage: (
+    chatKey: string,
+    msg: Omit<CharacterChatMessage, 'id' | 'timestamp' | 'characterId'> & { characterId?: string }
+  ) => void;
+  clearCharacterChat: (chatKey: string) => void;
+
+  // World Travel & Exploration
+  travelerState: TravelerState;
+  setTravelerPosition: (mapId: string, x: number, y: number) => void;
+  addTravelLogEntry: (entry: WorldTravelLogEntry) => void;
+  markDiscoveryInserted: (logId: string, entityId: string) => void;
+  markEncounterNPCInserted: (logId: string, entityId: string) => void;
+  clearTravelLog: () => void;
 
   // Vault Import/Export
   /** Adds the given projects, replacing any with the same id. Other projects are kept. */
@@ -249,6 +396,12 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         timestamp: new Date().toISOString(),
       },
     ],
+    copilotTab: 'copilot',
+    activeChatCharacterId: null,
+    chatParticipantIds: [],
+    userChatPersona: loadInitialUserPersona(),
+    characterChatHistories: loadInitialCharacterChats(),
+    travelerState: loadInitialTravelerState(),
 
     setActiveModule: (module) => set({ activeModule: module }),
 
@@ -488,6 +641,7 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         worldId: partial.worldId !== undefined ? partial.worldId : proj.activeWorldId,
         templateId: matchedTemplate?.id || 'tpl-character',
         category: partial.category,
+        subcategory: partial.subcategory,
         slug: slug || `entry-${Date.now()}`,
         title: partial.title,
         subtitle: '',
@@ -552,6 +706,150 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         };
       }),
 
+    addCategory: (cat) => {
+      const state = get();
+      const proj = state.projects.find((p) => p.id === state.activeProjectId)!;
+      const current = getProjectCategories(proj);
+      const baseSlug =
+        cat.label
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '') || 'category';
+      let id = baseSlug;
+      let counter = 2;
+      while (current.some((c) => c.id === id)) {
+        id = `${baseSlug}_${counter++}`;
+      }
+      const newCat: CategoryDef = {
+        id,
+        label: cat.label.trim(),
+        plural: (cat.plural?.trim() || `${cat.label.trim()}s`),
+        color: cat.color || '#f59e0b',
+        icon: cat.icon || 'Folder',
+        subcategories: [],
+      };
+      set((s) => {
+        const projects = s.projects.map((p) =>
+          p.id === s.activeProjectId
+            ? { ...p, categories: [...getProjectCategories(p), newCat] }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      });
+      return newCat;
+    },
+
+    updateCategory: (categoryId, patch) =>
+      set((state) => {
+        const projects = state.projects.map((p) => {
+          if (p.id !== state.activeProjectId) return p;
+          const cats = getProjectCategories(p).map((c) =>
+            c.id === categoryId ? { ...c, ...patch } : c
+          );
+          return { ...p, categories: cats };
+        });
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    deleteCategory: (categoryId, fallbackCategoryId) =>
+      set((state) => {
+        const projects = state.projects.map((p) => {
+          if (p.id !== state.activeProjectId) return p;
+          const current = getProjectCategories(p);
+          if (current.length <= 1) return p; // Always keep at least one category
+          const remaining = current.filter((c) => c.id !== categoryId);
+          const fallback = fallbackCategoryId || remaining[0].id;
+          return {
+            ...p,
+            categories: remaining,
+            entities: p.entities.map((e) =>
+              e.category === categoryId ? { ...e, category: fallback, subcategory: '' } : e
+            ),
+            templates: p.templates.map((t) =>
+              t.category === categoryId ? { ...t, category: fallback } : t
+            ),
+          };
+        });
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    addSubcategory: (categoryId, sub) => {
+      const state = get();
+      const proj = state.projects.find((p) => p.id === state.activeProjectId)!;
+      const cats = getProjectCategories(proj);
+      const targetCat = cats.find((c) => c.id === categoryId);
+      const newSub: SubcategoryDef = {
+        id: `sub-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        name: sub.name.trim(),
+        color: sub.color || targetCat?.color || '#f59e0b',
+        icon: sub.icon || 'Folder',
+      };
+      set((s) => {
+        const projects = s.projects.map((p) => {
+          if (p.id !== s.activeProjectId) return p;
+          const updated = getProjectCategories(p).map((c) =>
+            c.id === categoryId ? { ...c, subcategories: [...c.subcategories, newSub] } : c
+          );
+          return { ...p, categories: updated };
+        });
+        saveProjectsToStorage(projects);
+        return { projects };
+      });
+      return newSub;
+    },
+
+    updateSubcategory: (categoryId, subcategoryId, patch) =>
+      set((state) => {
+        const projects = state.projects.map((p) => {
+          if (p.id !== state.activeProjectId) return p;
+          const updated = getProjectCategories(p).map((c) =>
+            c.id === categoryId
+              ? {
+                  ...c,
+                  subcategories: c.subcategories.map((sc) =>
+                    sc.id === subcategoryId ? { ...sc, ...patch } : sc
+                  ),
+                }
+              : c
+          );
+          return { ...p, categories: updated };
+        });
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    deleteSubcategory: (categoryId, subcategoryId) =>
+      set((state) => {
+        const projects = state.projects.map((p) => {
+          if (p.id !== state.activeProjectId) return p;
+          const updated = getProjectCategories(p).map((c) =>
+            c.id === categoryId
+              ? {
+                  ...c,
+                  subcategories: c.subcategories.filter((sc) => sc.id !== subcategoryId),
+                }
+              : c
+          );
+          return {
+            ...p,
+            categories: updated,
+            entities: p.entities.map((e) =>
+              e.category === categoryId &&
+              (e.subcategory === subcategoryId ||
+                (e.subcategory === undefined && e.templateId === subcategoryId))
+                ? { ...e, subcategory: '' }
+                : e
+            ),
+          };
+        });
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
     addEntitySpatialKeyframe: (entityId, kf) =>
       set((state) => {
         const newKf: EntitySpatialKeyframe = { ...kf, id: `kf-${Date.now()}` };
@@ -603,6 +901,22 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         };
         const projects = state.projects.map((p) =>
           p.id === state.activeProjectId ? { ...p, relations: [...p.relations, newRel] } : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    updateRelation: (relId, patch) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                relations: p.relations.map((r) =>
+                  r.id === relId ? { ...r, ...patch } : r
+                ),
+              }
+            : p
         );
         saveProjectsToStorage(projects);
         return { projects };
@@ -669,6 +983,7 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         totalWidthUnits: partial.totalWidthUnits,
         rasterImageUrl: partial.rasterImageUrl,
         proceduralData,
+        markerIconSet: partial.markerIconSet || 'fantasy',
         markers: [],
         paths: [],
         zones: [],
@@ -685,6 +1000,20 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
 
       return newMap;
     },
+
+    updateMap: (mapId, patch) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                maps: p.maps.map((m) => (m.id === mapId ? { ...m, ...patch } : m)),
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
 
     regenerateProceduralMap: (
       mapId,
@@ -897,6 +1226,29 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         return { projects };
       }),
 
+    updateMapPath: (mapId, pathId, patch) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                maps: p.maps.map((m) =>
+                  m.id === mapId
+                    ? {
+                        ...m,
+                        paths: m.paths.map((pt) =>
+                          pt.id === pathId ? { ...pt, ...patch } : pt
+                        ),
+                      }
+                    : m
+                ),
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
     deleteMapPath: (mapId, pathId) =>
       set((state) => {
         const projects = state.projects.map((p) =>
@@ -922,6 +1274,29 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
                 ...p,
                 maps: p.maps.map((m) =>
                   m.id === mapId ? { ...m, zones: [...m.zones, newZone] } : m
+                ),
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    updateMapZone: (mapId, zoneId, patch) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                maps: p.maps.map((m) =>
+                  m.id === mapId
+                    ? {
+                        ...m,
+                        zones: m.zones.map((z) =>
+                          z.id === zoneId ? { ...z, ...patch } : z
+                        ),
+                      }
+                    : m
                 ),
               }
             : p
@@ -963,6 +1338,29 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         return { projects };
       }),
 
+    updateMapLabel: (mapId, labelId, patch) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                maps: p.maps.map((m) =>
+                  m.id === mapId
+                    ? {
+                        ...m,
+                        labels: m.labels.map((l) =>
+                          l.id === labelId ? { ...l, ...patch } : l
+                        ),
+                      }
+                    : m
+                ),
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
     deleteMapLabel: (mapId, labelId) =>
       set((state) => {
         const projects = state.projects.map((p) =>
@@ -979,6 +1377,200 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         return { projects };
       }),
 
+    addMapLayer: (mapId, layerData) => {
+      const newLayer: MapLayer = {
+        ...layerData,
+        id: `layer-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        order: layerData.order ?? 0,
+        visible: layerData.visible !== undefined ? layerData.visible : true,
+      };
+
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                maps: p.maps.map((m) => {
+                  if (m.id !== mapId) return m;
+                  const currentLayers = m.customLayers || [];
+                  return {
+                    ...m,
+                    customLayers: [...currentLayers, newLayer],
+                  };
+                }),
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      });
+
+      return newLayer;
+    },
+
+    updateMapLayer: (mapId, layerId, patch) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                maps: p.maps.map((m) => {
+                  if (m.id !== mapId) return m;
+                  const currentLayers = m.customLayers || [];
+                  return {
+                    ...m,
+                    customLayers: currentLayers.map((lay) =>
+                      lay.id === layerId ? { ...lay, ...patch } : lay
+                    ),
+                  };
+                }),
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    deleteMapLayer: (mapId, layerId, fallbackLayerId) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                maps: p.maps.map((m) => {
+                  if (m.id !== mapId) return m;
+                  const currentLayers = m.customLayers || [];
+                  const remainingLayers = currentLayers.filter((lay) => lay.id !== layerId);
+
+                  // Reassign or clear layerId on objects in deleted layer
+                  const targetLayer = fallbackLayerId || remainingLayers[0]?.id || undefined;
+
+                  const markers = m.markers.map((mk) =>
+                    mk.layerId === layerId ? { ...mk, layerId: targetLayer } : mk
+                  );
+                  const paths = m.paths.map((pt) =>
+                    pt.layerId === layerId ? { ...pt, layerId: targetLayer } : pt
+                  );
+                  const zones = m.zones.map((z) =>
+                    z.layerId === layerId ? { ...z, layerId: targetLayer } : z
+                  );
+                  const labels = m.labels.map((l) =>
+                    l.layerId === layerId ? { ...l, layerId: targetLayer } : l
+                  );
+
+                  return {
+                    ...m,
+                    customLayers: remainingLayers,
+                    markers,
+                    paths,
+                    zones,
+                    labels,
+                  };
+                }),
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    reorderMapLayers: (mapId, layerIds) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                maps: p.maps.map((m) => {
+                  if (m.id !== mapId) return m;
+                  const currentLayers = m.customLayers || [];
+                  const reordered = layerIds
+                    .map((id, index) => {
+                      const found = currentLayers.find((l) => l.id === id);
+                      return found ? { ...found, order: index } : null;
+                    })
+                    .filter((l): l is MapLayer => l !== null);
+
+                  return {
+                    ...m,
+                    customLayers: reordered,
+                  };
+                }),
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    moveMapObjectToLayer: (mapId, objectType, objectId, targetLayerId) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                maps: p.maps.map((m) => {
+                  if (m.id !== mapId) return m;
+                  if (objectType === 'marker') {
+                    return {
+                      ...m,
+                      markers: m.markers.map((mk) =>
+                        mk.id === objectId ? { ...mk, layerId: targetLayerId } : mk
+                      ),
+                    };
+                  }
+                  if (objectType === 'path') {
+                    return {
+                      ...m,
+                      paths: m.paths.map((pt) =>
+                        pt.id === objectId ? { ...pt, layerId: targetLayerId } : pt
+                      ),
+                    };
+                  }
+                  if (objectType === 'zone') {
+                    return {
+                      ...m,
+                      zones: m.zones.map((z) =>
+                        z.id === objectId ? { ...z, layerId: targetLayerId } : z
+                      ),
+                    };
+                  }
+                  if (objectType === 'label') {
+                    return {
+                      ...m,
+                      labels: m.labels.map((l) =>
+                        l.id === objectId ? { ...l, layerId: targetLayerId } : l
+                      ),
+                    };
+                  }
+                  return m;
+                }),
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    createCalendar: (cal) => {
+      const state = get();
+      const proj = state.projects.find((p) => p.id === state.activeProjectId)!;
+      const newCal: CustomCalendar = {
+        ...cal,
+        id: `cal-${Date.now()}`,
+        projectId: proj.id,
+      };
+      set((s) => {
+        const projects = s.projects.map((p) =>
+          p.id === s.activeProjectId
+            ? { ...p, calendars: [...p.calendars, newCal], activeCalendarId: newCal.id }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      });
+      return newCal;
+    },
+
     updateCalendar: (calendarId, patch) =>
       set((state) => {
         const projects = state.projects.map((p) =>
@@ -993,6 +1585,57 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         return { projects };
       }),
 
+    deleteCalendar: (calendarId) =>
+      set((state) => {
+        const proj = state.projects.find((p) => p.id === state.activeProjectId);
+        if (!proj || proj.calendars.length <= 1) return state;
+        const remaining = proj.calendars.filter((c) => c.id !== calendarId);
+        const nextActiveId =
+          proj.activeCalendarId === calendarId ? remaining[0].id : proj.activeCalendarId;
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId
+            ? {
+                ...p,
+                calendars: remaining,
+                activeCalendarId: nextActiveId,
+              }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    setActiveCalendar: (calendarId) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === state.activeProjectId ? { ...p, activeCalendarId: calendarId } : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    duplicateCalendar: (calendarId) => {
+      const state = get();
+      const proj = state.projects.find((p) => p.id === state.activeProjectId)!;
+      const target = proj.calendars.find((c) => c.id === calendarId) || proj.calendars[0];
+      const copy: CustomCalendar = {
+        ...target,
+        id: `cal-${Date.now()}`,
+        name: `${target.name} (Copy)`,
+        months: target.months.map((m) => ({ ...m, id: `m-${Date.now()}-${Math.random().toString(36).substr(2, 4)}` })),
+        eras: target.eras.map((e) => ({ ...e, id: `e-${Date.now()}-${Math.random().toString(36).substr(2, 4)}` })),
+        moons: target.moons.map((m) => ({ ...m, id: `moon-${Date.now()}-${Math.random().toString(36).substr(2, 4)}` })),
+      };
+      set((s) => {
+        const projects = s.projects.map((p) =>
+          p.id === s.activeProjectId ? { ...p, calendars: [...p.calendars, copy] } : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      });
+      return copy;
+    },
+
     addTimelineEvent: (evt) => {
       const state = get();
       const proj = state.projects.find((p) => p.id === state.activeProjectId)!;
@@ -1000,7 +1643,7 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
         ...evt,
         id: `evt-${Date.now()}`,
         projectId: proj.id,
-        calendarId: proj.activeCalendarId,
+        calendarId: evt.calendarId || proj.activeCalendarId,
       };
       set((s) => {
         const projects = s.projects.map((p) =>
@@ -1349,6 +1992,127 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
             timestamp: new Date().toISOString(),
           },
         ],
+      }),
+
+    setCopilotTab: (tab) => set({ copilotTab: tab }),
+
+    openCharacterChat: (characterId) =>
+      set({
+        isAICopilotOpen: true,
+        copilotTab: 'character_chat',
+        activeChatCharacterId: characterId,
+        chatParticipantIds: [characterId],
+      }),
+
+    setActiveChatCharacterId: (id) => set({ activeChatCharacterId: id }),
+
+    setChatParticipantIds: (ids) =>
+      set({
+        chatParticipantIds: ids,
+        activeChatCharacterId: ids[0] || null,
+      }),
+
+    addChatParticipant: (id) =>
+      set((state) => {
+        if (state.chatParticipantIds.includes(id)) return state;
+        const next = [...state.chatParticipantIds, id];
+        return {
+          chatParticipantIds: next,
+          activeChatCharacterId: state.activeChatCharacterId || id,
+        };
+      }),
+
+    removeChatParticipant: (id) =>
+      set((state) => {
+        const next = state.chatParticipantIds.filter((p) => p !== id);
+        return {
+          chatParticipantIds: next,
+          activeChatCharacterId:
+            state.activeChatCharacterId === id ? next[0] || null : state.activeChatCharacterId,
+        };
+      }),
+
+    setUserChatPersona: (persona) => {
+      saveUserPersona(persona);
+      set({ userChatPersona: persona });
+    },
+
+    addCharacterChatMessage: (chatKey, msg) =>
+      set((state) => {
+        const existing = state.characterChatHistories[chatKey] || [];
+        const newMsg: CharacterChatMessage = {
+          ...msg,
+          id: `char-msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          characterId: msg.characterId || chatKey,
+          timestamp: new Date().toISOString(),
+        };
+        const next = {
+          ...state.characterChatHistories,
+          [chatKey]: [...existing, newMsg],
+        };
+        saveCharacterChats(next);
+        return { characterChatHistories: next };
+      }),
+
+    clearCharacterChat: (chatKey) =>
+      set((state) => {
+        const next = { ...state.characterChatHistories };
+        delete next[chatKey];
+        saveCharacterChats(next);
+        return { characterChatHistories: next };
+      }),
+
+    setTravelerPosition: (mapId, x, y) =>
+      set((state) => {
+        const next = {
+          ...state.travelerState,
+          mapId,
+          x: Math.max(0, Math.min(1000, Math.round(x))),
+          y: Math.max(0, Math.min(1000, Math.round(y))),
+        };
+        saveTravelerState(next);
+        return { travelerState: next };
+      }),
+
+    addTravelLogEntry: (entry) =>
+      set((state) => {
+        const next = {
+          ...state.travelerState,
+          travelLog: [entry, ...state.travelerState.travelLog],
+        };
+        saveTravelerState(next);
+        return { travelerState: next };
+      }),
+
+    markDiscoveryInserted: (logId, entityId) =>
+      set((state) => {
+        const nextLog = state.travelerState.travelLog.map((e) =>
+          e.id === logId && e.discovery
+            ? { ...e, discovery: { ...e.discovery, insertedEntityId: entityId } }
+            : e
+        );
+        const next = { ...state.travelerState, travelLog: nextLog };
+        saveTravelerState(next);
+        return { travelerState: next };
+      }),
+
+    markEncounterNPCInserted: (logId, entityId) =>
+      set((state) => {
+        const nextLog = state.travelerState.travelLog.map((e) =>
+          e.id === logId && e.encounter
+            ? { ...e, encounter: { ...e.encounter, insertedEntityId: entityId } }
+            : e
+        );
+        const next = { ...state.travelerState, travelLog: nextLog };
+        saveTravelerState(next);
+        return { travelerState: next };
+      }),
+
+    clearTravelLog: () =>
+      set((state) => {
+        const next = { ...state.travelerState, travelLog: [] };
+        saveTravelerState(next);
+        return { travelerState: next };
       }),
 
     importProjectVault: (incoming) => {

@@ -46,14 +46,19 @@ export function computeAllProjectRelations(project: Project): EntityRelation[] {
   const seenKeys = new Set<string>(
     project.relations.map((r) => `${r.sourceEntityId}->${r.targetEntityId}:${r.type}`)
   );
+  // Track pairs that already have explicit semantic connections so generic mentions don't duplicate them
+  const explicitPairs = new Set<string>(
+    project.relations.map((r) => `${r.sourceEntityId}->${r.targetEntityId}`)
+  );
 
   for (const entity of project.entities) {
     // 1. Markdown [[WikiLinks]]
     const links = extractWikiLinks(entity.contentMd, project.entities);
     for (const link of links) {
       if (link.resolvedEntity && link.resolvedEntity.id !== entity.id) {
-        const key = `${entity.id}->${link.resolvedEntity.id}:mention`;
-        if (!seenKeys.has(key)) {
+        const pairKey = `${entity.id}->${link.resolvedEntity.id}`;
+        const key = `${pairKey}:mention`;
+        if (!seenKeys.has(key) && !explicitPairs.has(pairKey)) {
           seenKeys.add(key);
           combined.push({
             id: `auto-mention-${entity.id}-${link.resolvedEntity.id}`,

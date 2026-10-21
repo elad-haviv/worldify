@@ -17,9 +17,18 @@ import {
   Layers,
   ArrowRight,
   Compass,
+  FolderArchive,
+  Printer,
+  FileText,
 } from 'lucide-react';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
 import { fetchBundledProject } from '../../utils/bundledVaults';
+import { ExportModal } from '../../components/ExportModal';
+import {
+  exportProjectToObsidianVaultZip,
+  exportProjectToBookWord,
+  exportProjectToBookPdf,
+} from '../../utils/exportService';
 
 export const ProjectDashboardView: React.FC = () => {
   const {
@@ -40,6 +49,7 @@ export const ProjectDashboardView: React.FC = () => {
 
   const [showNewProjModal, setShowNewProjModal] = useState(false);
   const [showVaultMenu, setShowVaultMenu] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [newProjName, setNewProjName] = useState('');
   const [newProjGenre, setNewProjGenre] = useState('High Fantasy / Planar Cosmology');
   const [newProjTagline, setNewProjTagline] = useState('');
@@ -178,8 +188,16 @@ export const ProjectDashboardView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
+            onClick={() => setShowExportModal(true)}
+            className="h-9 px-3.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
+          >
+            <Download className="w-4 h-4" />
+            Export Project
+          </button>
+          <button
+            type="button"
             onClick={() => setShowNewProjModal(true)}
-            className="h-9 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-sm flex items-center gap-2 transition-colors cursor-pointer"
+            className="h-9 px-3 rounded-lg border border-slate-800 hover:bg-slate-800 text-slate-200 text-sm flex items-center gap-2 transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             New project
@@ -190,23 +208,56 @@ export const ProjectDashboardView: React.FC = () => {
               onClick={() => setShowVaultMenu(!showVaultMenu)}
               className="h-9 px-3 rounded-lg border border-slate-800 hover:bg-slate-800 text-slate-300 text-sm flex items-center gap-2 cursor-pointer"
             >
-              <Download className="w-4 h-4" />
-              Import / export
+              <span>More</span>
             </button>
             {showVaultMenu && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setShowVaultMenu(false)} />
-                <div className="absolute right-0 mt-1 w-60 z-40 rounded-lg border border-slate-700 bg-slate-900 shadow-xl p-1 text-sm">
+                <div className="absolute right-0 mt-1 w-72 z-40 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl p-1.5 text-xs space-y-0.5">
+                  <div className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Publish & Export
+                  </div>
                   <button
                     type="button"
                     onClick={() => {
                       setShowVaultMenu(false);
-                      handleExportVault();
+                      exportProjectToObsidianVaultZip(project);
                     }}
-                    className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800 flex items-center gap-3 text-slate-200 cursor-pointer"
+                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-amber-500/10 hover:text-amber-300 flex items-center gap-2.5 text-slate-200 cursor-pointer"
                   >
-                    <Download className="w-4 h-4 text-slate-400" />
-                    Export everything (JSON)
+                    <FolderArchive className="w-4 h-4 text-amber-400" />
+                    <div>
+                      <div className="font-semibold">Obsidian Vault Archive (.zip)</div>
+                      <div className="text-[10px] text-slate-400">Full Avalymia-style folder structure</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowVaultMenu(false);
+                      exportProjectToBookPdf(project);
+                    }}
+                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-800 flex items-center gap-2.5 text-slate-200 cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-rose-400" />
+                    <div>
+                      <div className="font-semibold">World Book (PDF)</div>
+                      <div className="text-[10px] text-slate-400">Printable cover, table of contents & volumes</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowVaultMenu(false);
+                      exportProjectToBookWord(project);
+                    }}
+                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-800 flex items-center gap-2.5 text-slate-200 cursor-pointer"
+                  >
+                    <BookOpen className="w-4 h-4 text-blue-400" />
+                    <div>
+                      <div className="font-semibold">World Encyclopedia (.docx)</div>
+                      <div className="text-[10px] text-slate-400">Complete book in Microsoft Word format</div>
+                    </div>
                   </button>
                   <button
                     type="button"
@@ -214,14 +265,40 @@ export const ProjectDashboardView: React.FC = () => {
                       setShowVaultMenu(false);
                       handleExportMarkdownBundle();
                     }}
-                    className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800 flex items-center gap-3 text-slate-200 cursor-pointer"
+                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-800 flex items-center gap-2.5 text-slate-200 cursor-pointer"
                   >
-                    <Download className="w-4 h-4 text-slate-400" />
-                    Export wiki as Markdown
+                    <FileText className="w-4 h-4 text-purple-400" />
+                    <div>
+                      <div className="font-semibold">Concatenated Wiki (.md)</div>
+                      <div className="text-[10px] text-slate-400">Single aggregated markdown file</div>
+                    </div>
                   </button>
-                  <label className="w-full px-3 py-2 rounded-md hover:bg-slate-800 flex items-center gap-3 text-slate-200 cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowVaultMenu(false);
+                      handleExportVault();
+                    }}
+                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-800 flex items-center gap-2.5 text-slate-200 cursor-pointer"
+                  >
+                    <Layers className="w-4 h-4 text-slate-400" />
+                    <div>
+                      <div className="font-semibold">Studio Vault (.json)</div>
+                      <div className="text-[10px] text-slate-400">Lossless full database backup</div>
+                    </div>
+                  </button>
+
+                  <div className="my-1 border-t border-slate-800" />
+                  <div className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Vault Management
+                  </div>
+
+                  <label className="w-full px-2.5 py-2 rounded-lg hover:bg-slate-800 flex items-center gap-2.5 text-slate-200 cursor-pointer">
                     <Upload className="w-4 h-4 text-slate-400" />
-                    Import JSON…
+                    <div>
+                      <div className="font-semibold">Import JSON Vault…</div>
+                      <div className="text-[10px] text-slate-400">Restore or add projects from file</div>
+                    </div>
                     <input
                       type="file"
                       accept=".json"
@@ -232,17 +309,18 @@ export const ProjectDashboardView: React.FC = () => {
                       className="hidden"
                     />
                   </label>
-                  <div className="my-1 border-t border-slate-800" />
                   <button
                     type="button"
                     onClick={() => {
                       setShowVaultMenu(false);
                       resetVaultToDemo();
                     }}
-                    className="w-full text-left px-3 py-2 rounded-md hover:bg-rose-500/10 flex items-center gap-3 text-rose-300 cursor-pointer"
+                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-rose-500/10 flex items-center gap-2.5 text-rose-300 cursor-pointer"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    Reset to demo data
+                    <div>
+                      <div className="font-semibold">Reset to demo data</div>
+                    </div>
                   </button>
                 </div>
               </>
@@ -573,6 +651,15 @@ export const ProjectDashboardView: React.FC = () => {
             </div>
           </form>
         </div>
+      )}
+      {/* Project Export Modal */}
+      {project && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          project={project}
+          initialTab="project"
+        />
       )}
     </div>
   );

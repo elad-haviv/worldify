@@ -1,4 +1,4 @@
-export type EntityCategory =
+export type BuiltinEntityCategory =
   | 'character'
   | 'settlement'
   | 'faction'
@@ -9,6 +9,24 @@ export type EntityCategory =
   | 'event_lore'
   | 'magic_tech'
   | 'cosmology';
+
+export type EntityCategory = BuiltinEntityCategory | (string & {});
+
+export interface SubcategoryDef {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+}
+
+export interface CategoryDef {
+  id: EntityCategory;
+  label: string;
+  plural: string;
+  color: string;
+  icon: string;
+  subcategories: SubcategoryDef[];
+}
 
 export type TemplateFieldType =
   | 'text'
@@ -76,6 +94,7 @@ export interface Entity {
   worldId: string | null; // null if cosmic/multi-world
   templateId: string;
   category: EntityCategory;
+  subcategory?: string;
   slug: string;
   title: string;
   subtitle?: string;
@@ -176,6 +195,22 @@ export interface MoonCycle {
   phaseOffsetDays: number;
 }
 
+export interface CalendarRelationship {
+  referenceCalendarId?: string; // ID of the calendar this relates to (or undefined for project epoch)
+  epochTickOffset: number; // Global ticks (days) this calendar's tick 0 is shifted relative to project epoch 0
+  timeScale?: number; // Speed ratio, default 1.0 (1 day = 1 global tick)
+  syncDescription?: string; // e.g. "Year 1 of the Imperial Reckoning corresponds to Year 1240 of the Solar Calendar"
+  syncAnchor?: {
+    referenceCalendarId: string;
+    referenceYear: number;
+    referenceMonthIndex: number;
+    referenceDay: number;
+    thisYear: number;
+    thisMonthIndex: number;
+    thisDay: number;
+  };
+}
+
 export interface CustomCalendar {
   id: string;
   projectId: string;
@@ -186,10 +221,14 @@ export interface CustomCalendar {
   eras: CalendarEra[];
   moons: MoonCycle[];
   epochName: string; // Tick 0 event name
+  relationship?: CalendarRelationship;
+  isDefault?: boolean;
 }
 
 export interface FormattedCalendarDate {
   tick: number;
+  calendarId?: string;
+  calendarName?: string;
   year: number;
   era: CalendarEra;
   eraYear: number;
@@ -321,7 +360,7 @@ export interface ProceduralMapData {
 export interface MapMarker {
   id: string;
   name: string;
-  icon: 'castle' | 'city' | 'ruin' | 'battle' | 'portal' | 'mountain' | 'character' | 'artifact' | 'temple' | 'port';
+  icon: string;
   color: string;
   x: number; // 0-1000
   y: number; // 0-1000
@@ -329,6 +368,7 @@ export interface MapMarker {
   validFromTick?: number;
   validToTick?: number;
   notes?: string;
+  layerId?: string;
 }
 
 export interface MapPath {
@@ -342,6 +382,7 @@ export interface MapPath {
   linkedEntityId?: string;
   validFromTick?: number;
   validToTick?: number;
+  layerId?: string;
 }
 
 export interface MapZoneTemporalSnapshot {
@@ -362,6 +403,7 @@ export interface MapZone {
   linkedEntityId?: string;
   validFromTick?: number;
   validToTick?: number;
+  layerId?: string;
 }
 
 export interface MapLabel {
@@ -373,6 +415,18 @@ export interface MapLabel {
   rotation?: number;
   style: 'empire' | 'region' | 'ocean' | 'mountain_range' | 'note';
   color: string;
+  layerId?: string;
+}
+
+export interface MapLayer {
+  id: string;
+  name: string;
+  color?: string;
+  visible: boolean;
+  locked?: boolean;
+  opacity?: number; // 0 to 1
+  order: number;
+  isDefault?: boolean;
 }
 
 export interface MapLayerVisibility {
@@ -400,6 +454,8 @@ export interface WorldMap {
   totalWidthUnits: number; // e.g. 1000px = 2500 miles
   rasterImageUrl?: string; // Custom data URL or preset SVG/canvas style
   proceduralData?: ProceduralMapData;
+  markerIconSet?: string; // 'fantasy' | 'scifi' | 'eldritch' | 'tactical' | 'exploration'
+  customLayers?: MapLayer[];
   markers: MapMarker[];
   paths: MapPath[];
   zones: MapZone[];
@@ -455,16 +511,28 @@ export interface Story {
 // AI COPILOT & BYOK TYPES
 // ==========================================
 
-export type AIProvider = 'gemini' | 'openai' | 'anthropic' | 'local_synthesizer';
+export type AIProvider =
+  | 'local_synthesizer'
+  | 'openrouter'
+  | 'gemini'
+  | 'anthropic'
+  | 'openai'
+  | 'custom_openai';
 
 export interface AISettings {
   activeProvider: AIProvider;
+  openrouterApiKey: string;
+  openrouterModel: string;
   geminiApiKey: string;
   geminiModel: string;
   openaiApiKey: string;
   openaiModel: string;
   anthropicApiKey: string;
   anthropicModel: string;
+  customOpenAiBaseUrl: string;
+  customOpenAiApiKey: string;
+  customOpenAiModel: string;
+  temperature?: number;
   includeGraphNeighbors: boolean;
   includeTemporalContext: boolean;
   includeSpatialContext: boolean;
@@ -488,6 +556,15 @@ export interface AIMessage {
   proposals?: AIProposedAction[];
 }
 
+export interface CharacterChatMessage {
+  id: string;
+  characterId: string;
+  role: 'user' | 'character' | 'system';
+  speakerName: string;
+  content: string;
+  timestamp: string;
+}
+
 // ==========================================
 // PROJECT CONTAINER
 // ==========================================
@@ -504,6 +581,7 @@ export interface Project {
   worlds: World[];
   worldConnections: WorldConnection[];
   calendars: CustomCalendar[];
+  categories?: CategoryDef[];
   templates: Template[];
   entities: Entity[];
   relations: EntityRelation[];
@@ -528,11 +606,78 @@ export interface BundledVault {
   importedAt: string;
 }
 
+export interface WorldTravelDiscovery {
+  id: string;
+  title: string;
+  name?: string;
+  category: EntityCategory;
+  summary: string;
+  contentMd: string;
+  loreDetails?: string;
+  tags: string[];
+  locationNote?: string;
+  mapId: string;
+  x: number;
+  y: number;
+  tick: number;
+  relatedEntityId?: string;
+  relationType?: RelationType;
+  relationLabel?: string;
+  isInserted?: boolean;
+  insertedEntityId?: string;
+}
+
+export interface WorldTravelEncounter {
+  id: string;
+  title: string;
+  summary: string;
+  dangerLevel?: 'peaceful' | 'curious' | 'mysterious' | 'perilous';
+  npcName?: string;
+  npcRole?: string;
+  npcFactionOrAffiliation?: string;
+  disposition?: 'friendly' | 'neutral' | 'hostile' | 'mysterious' | 'fearful';
+  dialogueQuote?: string;
+  dialogueContext?: string;
+  insertedEntityId?: string;
+  npc?: {
+    name: string;
+    category: EntityCategory;
+    role: string;
+    personality: string;
+    greeting: string;
+    entityId?: string;
+    isInserted?: boolean;
+  };
+}
+
+export interface WorldTravelLogEntry {
+  id: string;
+  timestamp: string;
+  tick: number;
+  mapId: string;
+  x: number;
+  y: number;
+  actionPrompt: string;
+  actionType?: 'travel_step' | 'scout' | 'encounter' | 'custom';
+  locationName?: string;
+  narrative: string;
+  discovery?: WorldTravelDiscovery;
+  encounter?: WorldTravelEncounter;
+}
+
+export interface TravelerState {
+  mapId: string | null;
+  x: number;
+  y: number;
+  travelLog: WorldTravelLogEntry[];
+}
+
 export type ActiveModule =
   | 'dashboard'
   | 'wiki'
   | 'graph'
   | 'maps'
+  | 'travel'
   | 'timeline'
   | 'stories'
   | 'cosmology'

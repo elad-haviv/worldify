@@ -11,8 +11,10 @@ import { KnowledgeGraphView } from './modules/graph/KnowledgeGraphView';
 import { MapView } from './modules/maps/MapView';
 import { TimelineView } from './modules/timeline/TimelineView';
 import { StoryStudioView } from './modules/stories/StoryStudioView';
+import { WorldTravelView } from './modules/travel/WorldTravelView';
 import { GlobalTimelineBar } from './components/GlobalTimelineBar';
 import { AICopilotDrawer } from './components/AICopilotDrawer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { QuickSearchModal } from './components/QuickSearchModal';
 import {
   Compass,
@@ -23,13 +25,16 @@ import {
   Feather,
   Globe2,
   Layers,
+  Footprints,
   Search,
   Sparkles,
   CalendarDays,
   PanelLeftClose,
   PanelLeftOpen,
   ChevronDown,
+  Download,
 } from 'lucide-react';
+import { ExportModal } from './components/ExportModal';
 
 type NavItem = {
   id: ActiveModule;
@@ -49,6 +54,7 @@ const NAV_GROUPS: Array<{ label: string | null; items: NavItem[] }> = [
   {
     label: 'Explore',
     items: [
+      { id: 'travel', label: 'Travel', icon: Footprints },
       { id: 'maps', label: 'Maps', icon: MapIcon },
       { id: 'timeline', label: 'Timeline', icon: Clock },
       { id: 'graph', label: 'Graph', icon: Network },
@@ -64,7 +70,7 @@ const NAV_GROUPS: Array<{ label: string | null; items: NavItem[] }> = [
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 /** Screens where the world clock directly changes what you see. */
-const TIME_AWARE_MODULES = new Set<ActiveModule>(['maps', 'timeline', 'graph', 'cosmology']);
+const TIME_AWARE_MODULES = new Set<ActiveModule>(['travel', 'maps', 'timeline', 'graph', 'cosmology']);
 
 const SIDEBAR_KEY = 'worldify_sidebar_collapsed';
 
@@ -83,6 +89,7 @@ export const App: React.FC = () => {
   const {
     projects,
     activeProjectId,
+    selectedEntityId,
     activeModule,
     isAICopilotOpen,
     setActiveModule,
@@ -93,7 +100,9 @@ export const App: React.FC = () => {
   } = useWorldifyStore();
 
   const project = projects.find((p) => p.id === activeProjectId) || projects[0];
+  const activeEntity = project?.entities.find((e) => e.id === selectedEntityId) || null;
   const [collapsed, setCollapsed] = useState<boolean>(readSidebarPref);
+  const [showGlobalExportModal, setShowGlobalExportModal] = useState(false);
   // null = follow the screen's default; true/false = user choice for this screen
   const [timelineOverride, setTimelineOverride] = useState<boolean | null>(null);
 
@@ -273,6 +282,16 @@ export const App: React.FC = () => {
 
           <button
             type="button"
+            onClick={() => setShowGlobalExportModal(true)}
+            className="h-9 px-3 rounded-lg border border-slate-800 text-slate-300 hover:text-amber-300 hover:bg-slate-900 text-sm flex items-center gap-2 transition-colors cursor-pointer"
+            title="Export page or project (PDF, Word, Markdown, Obsidian Vault)"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden lg:inline">Export</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => toggleAICopilot()}
             className={`h-9 px-3 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${
               isAICopilotOpen
@@ -289,6 +308,7 @@ export const App: React.FC = () => {
         <div className="flex-1 flex min-h-0 overflow-hidden relative">
           <main className="flex-1 min-w-0 h-full overflow-hidden">
             {activeModule === 'dashboard' && <ProjectDashboardView />}
+            {activeModule === 'travel' && <WorldTravelView />}
             {activeModule === 'wiki' && <WikiView />}
             {activeModule === 'graph' && <KnowledgeGraphView />}
             {activeModule === 'maps' && <MapView />}
@@ -298,7 +318,9 @@ export const App: React.FC = () => {
             {activeModule === 'templates' && <TemplatesView />}
           </main>
 
-          <AICopilotDrawer />
+          <ErrorBoundary fallbackTitle="Worldify AI Intelligence encountered a render issue">
+            <AICopilotDrawer />
+          </ErrorBoundary>
         </div>
 
         {/* World clock – only where it matters, or when the user opens it */}
@@ -306,6 +328,15 @@ export const App: React.FC = () => {
       </div>
 
       <QuickSearchModal />
+      {project && (
+        <ExportModal
+          isOpen={showGlobalExportModal}
+          onClose={() => setShowGlobalExportModal(false)}
+          project={project}
+          activeEntity={activeModule === 'wiki' ? activeEntity : null}
+          initialTab={activeModule === 'wiki' && activeEntity ? 'page' : 'project'}
+        />
+      )}
     </div>
   );
 };

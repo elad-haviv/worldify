@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorldifyStore } from '../../store/useWorldifyStore';
-import { EntityCategory } from '../../types/worldify';
+import { EntityCategory, EntityRelation } from '../../types/worldify';
 import {
   computeAllProjectRelations,
   findShortestLorePath,
@@ -16,14 +16,13 @@ import {
   ZoomIn,
   ZoomOut,
   Plus,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
+import { EditConnectionModal } from '../../components/EditConnectionModal';
 import { SigmaGraph, SigmaGraphHandle, GraphNodeInput, GraphEdgeInput } from '../../components/SigmaGraph';
-import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
-
-const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
-  Object.entries(CATEGORY_META).map(([k, v]) => [k, v.color])
-);
+import { categoryLabel, categoryColor, getProjectCategories } from '../../utils/categories';
 
 export const KnowledgeGraphView: React.FC = () => {
   const {
@@ -32,6 +31,8 @@ export const KnowledgeGraphView: React.FC = () => {
     selectedEntityId,
     selectEntity,
     addRelation,
+    updateRelation,
+    deleteRelation,
   } = useWorldifyStore();
 
   const project = projects.find((p) => p.id === activeProjectId);
@@ -49,6 +50,7 @@ export const KnowledgeGraphView: React.FC = () => {
   // Quick Add Edge state
   const [newEdgeTargetId, setNewEdgeTargetId] = useState<string>('');
   const [newEdgeLabel, setNewEdgeLabel] = useState<string>('');
+  const [editingRelation, setEditingRelation] = useState<EntityRelation | null | undefined>(undefined);
 
   const [layoutVersion, setLayoutVersion] = useState<number>(0);
   const graphApi = useRef<SigmaGraphHandle>(null);
@@ -133,13 +135,14 @@ export const KnowledgeGraphView: React.FC = () => {
   });
 
   const activeEntity = project.entities.find((e) => e.id === selectedEntityId);
+  const projectCategories = getProjectCategories(project);
 
   const graphNodes: GraphNodeInput[] = useMemo(() => visibleNodes.map((n) => ({
     id: n.id,
     label: n.title,
-    color: CATEGORY_COLORS[n.category] || '#f59e0b',
+    color: categoryColor(n.category, project),
     size: Math.min(16, 3 + Math.sqrt(degreeMap.get(n.id) || 0) * 1.8),
-  })), [visibleNodes, visibleEdges]); // eslint-disable-line react-hooks/exhaustive-deps
+  })), [visibleNodes, visibleEdges, project]); // eslint-disable-line react-hooks/exhaustive-deps
   const graphEdges: GraphEdgeInput[] = useMemo(() => visibleEdges.map((e) => ({
     id: e.id,
     source: e.sourceEntityId,
@@ -201,12 +204,11 @@ export const KnowledgeGraphView: React.FC = () => {
               className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-slate-200"
             >
               <option value="all">All Categories ({project.entities.length})</option>
-              <option value="character">Characters</option>
-              <option value="settlement">Settlements</option>
-              <option value="faction">Factions</option>
-              <option value="item">Relics & Items</option>
-              <option value="deity">Deities</option>
-              <option value="location">Locations</option>
+              {projectCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.plural}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -310,13 +312,13 @@ export const KnowledgeGraphView: React.FC = () => {
             Category Legend
           </div>
           <div className="grid grid-cols-2 gap-1.5">
-            {Object.entries(CATEGORY_COLORS).map(([cat, col]) => (
-              <div key={cat} className="flex items-center gap-1.5 text-xs text-slate-300">
+            {projectCategories.map((cat) => (
+              <div key={cat.id} className="flex items-center gap-1.5 text-xs text-slate-300">
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: col }}
+                  style={{ backgroundColor: cat.color }}
                 />
-                <span className="capitalize">{cat.replace('_', ' ')}</span>
+                <span className="truncate">{cat.label}</span>
               </div>
             ))}
           </div>
@@ -373,7 +375,7 @@ export const KnowledgeGraphView: React.FC = () => {
         <SidePanel side="right" panelId="graph-details" label="Details" width="w-80" defaultOpen={true} className="p-4 overflow-y-auto space-y-4 text-sm">
           <div>
             <span className="text-xs capitalize px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
-              {categoryLabel(activeEntity.category)}
+              {categoryLabel(activeEntity.category, project)}
             </span>
             <h3 className="text-lg font-semibold text-slate-100 mt-1.5">
               {activeEntity.title}
@@ -451,16 +453,25 @@ export const KnowledgeGraphView: React.FC = () => {
 
           {/* Direct Neighbors List */}
           <div className="pt-2 border-t border-slate-800 space-y-2">
-            <div className="text-sm font-semibold text-slate-300">
-              Connections (
-              {
-                visibleEdges.filter(
-                  (e) =>
-                    e.sourceEntityId === activeEntity.id ||
-                    e.targetEntityId === activeEntity.id
-                ).length
-              }
-              )
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold text-slate-300">
+                Connections (
+                {
+                  visibleEdges.filter(
+                    (e) =>
+                      e.sourceEntityId === activeEntity.id ||
+                      e.targetEntityId === activeEntity.id
+                  ).length
+                }
+                )
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingRelation(null)}
+                className="text-xs text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3 h-3" /> Add
+              </button>
             </div>
             <div className="space-y-1.5">
               {visibleEdges
@@ -474,30 +485,88 @@ export const KnowledgeGraphView: React.FC = () => {
                   const otherId = isOut ? rel.targetEntityId : rel.sourceEntityId;
                   const other = project.entities.find((en) => en.id === otherId);
                   if (!other) return null;
+                  const isAuto = rel.id.startsWith('auto-');
                   return (
-                    <button
+                    <div
                       key={rel.id}
-                      type="button"
-                      onClick={() => selectEntity(other.id)}
-                      className="w-full p-2 rounded bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between cursor-pointer"
+                      className="w-full p-2 rounded bg-slate-950 hover:bg-slate-900 border border-slate-800 flex items-center justify-between gap-2"
                     >
-                      <div className="truncate">
-                        <div className="text-xs text-slate-400">
-                          {isOut ? `→ ${rel.label}` : `← ${rel.label}`}
+                      <button
+                        type="button"
+                        onClick={() => selectEntity(other.id)}
+                        className="text-left flex-1 min-w-0 cursor-pointer"
+                      >
+                        <div className="truncate">
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                            {rel.bidirectional ? (
+                              <span className="text-emerald-400">↔ {rel.label}</span>
+                            ) : isOut ? (
+                              <span className="text-amber-400">→ {rel.label}</span>
+                            ) : (
+                              <span className="text-sky-400">← {rel.label}</span>
+                            )}
+                            {isAuto && (
+                              <span className="px-1 py-0.2 rounded bg-slate-800 text-[9px] text-slate-400">
+                                auto
+                              </span>
+                            )}
+                          </div>
+                          <div className="font-semibold text-slate-200 truncate text-xs flex items-center gap-1.5 mt-0.5">
+                            <span
+                              className="w-1.5 h-1.5 rounded-full shrink-0"
+                              style={{ backgroundColor: categoryColor(other.category) }}
+                            />
+                            {other.title}
+                          </div>
                         </div>
-                        <div className="font-semibold text-slate-200 truncate">
-                          {other.title}
-                        </div>
+                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setEditingRelation(rel)}
+                          className="p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-slate-800 cursor-pointer transition-colors"
+                          title={isAuto ? 'Customize connection' : 'Edit connection'}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        {!isAuto && (
+                          <button
+                            type="button"
+                            onClick={() => deleteRelation(rel.id)}
+                            className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer transition-colors"
+                            title="Remove connection"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
-                      <span className="text-xs capitalize px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 whitespace-nowrap">
-                        {rel.type.replace('_', ' ')}
-                      </span>
-                    </button>
+                    </div>
                   );
                 })}
             </div>
           </div>
         </SidePanel>
+      )}
+
+      {/* Edit Connection Modal */}
+      {editingRelation !== undefined && activeEntity && project && (
+        <EditConnectionModal
+          isOpen={true}
+          onClose={() => setEditingRelation(undefined)}
+          project={project}
+          activeEntity={activeEntity}
+          relation={editingRelation}
+          onSave={(relData, existingId) => {
+            if (existingId && !existingId.startsWith('auto-')) {
+              updateRelation(existingId, relData);
+            } else {
+              addRelation(relData);
+            }
+          }}
+          onDelete={(relId) => {
+            deleteRelation(relId);
+          }}
+        />
       )}
     </div>
   );

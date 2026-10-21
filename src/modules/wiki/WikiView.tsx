@@ -3,6 +3,7 @@ import { useWorldifyStore } from '../../store/useWorldifyStore';
 import {
   CustomProperty,
   EntityCategory,
+  EntityRelation,
   RelationType,
 } from '../../types/worldify';
 import { MarkdownRenderer } from '../../components/MarkdownRenderer';
@@ -29,7 +30,11 @@ import {
   Check,
   Globe2,
   ChevronDown,
+  Download,
+  MessageSquare,
 } from 'lucide-react';
+import { ExportModal } from '../../components/ExportModal';
+import { EditConnectionModal } from '../../components/EditConnectionModal';
 import { SidePanel } from '../../components/SidePanel';
 import { CategoryTree } from '../../components/CategoryTree';
 import { CategoryPicker } from '../../components/CategoryPicker';
@@ -38,7 +43,12 @@ import { MarkdownToolbar, MarkdownToolbarHandle } from '../../components/Markdow
 import { MarkdownEditor, MarkdownEditorHandle } from '../../components/MarkdownEditor';
 import { collectProjectImages, saveImageAsset } from '../../utils/assetStore';
 import { AIToolsMenu } from '../../components/AIToolsMenu';
-import { CATEGORY_META, categoryLabel, categoryColor } from '../../utils/categories';
+import {
+  categoryColor,
+  categoryLabel,
+  getEntitySubcategory,
+} from '../../utils/categories';
+import { resolveCategoryIcon } from '../../utils/categoryIcons';
 
 export const WikiView: React.FC = () => {
   const {
@@ -50,6 +60,7 @@ export const WikiView: React.FC = () => {
     updateEntity,
     deleteEntity,
     addRelation,
+    updateRelation,
     deleteRelation,
     addEntitySpatialKeyframe,
     deleteEntitySpatialKeyframe,
@@ -57,6 +68,7 @@ export const WikiView: React.FC = () => {
     setCurrentTick,
     setActiveModule,
     aiSettings,
+    openCharacterChat,
   } = useWorldifyStore();
 
   const project = projects.find((p) => p.id === activeProjectId);
@@ -65,6 +77,7 @@ export const WikiView: React.FC = () => {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [worldFilter, setWorldFilter] = useState<string>('all');
   const [showCatPicker, setShowCatPicker] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('preview');
   const [isAiBusy, setIsAiBusy] = useState(false);
   const editorRef = useRef<MarkdownEditorHandle>(null);
@@ -74,6 +87,7 @@ export const WikiView: React.FC = () => {
   const [showNewModal, setShowNewModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newCat, setNewCat] = useState<EntityCategory>('character');
+  const [newSubcat, setNewSubcat] = useState<string>('');
   const [newTplId, setNewTplId] = useState('');
   const [newSummary, setNewSummary] = useState('');
 
@@ -86,6 +100,7 @@ export const WikiView: React.FC = () => {
   const [relTargetId, setRelTargetId] = useState('');
   const [relType, setRelType] = useState<RelationType>('allied_with');
   const [relLabel, setRelLabel] = useState('');
+  const [editingRelation, setEditingRelation] = useState<EntityRelation | null | undefined>(undefined);
 
   // New Spatial Keyframe Form
   const [kfMapId, setKfMapId] = useState('');
@@ -133,6 +148,9 @@ export const WikiView: React.FC = () => {
   const activeTemplate = activeEntity
     ? project.templates.find((t) => t.id === activeEntity.templateId)
     : undefined;
+  const activeSubcategory = activeEntity
+    ? getEntitySubcategory(activeEntity, project)
+    : undefined;
 
   const allRelations = computeAllProjectRelations(project);
   const entityRelations = activeEntity
@@ -156,11 +174,13 @@ export const WikiView: React.FC = () => {
     createEntity({
       title: newTitle.trim(),
       category: newCat,
+      subcategory: newSubcat || undefined,
       templateId: newTplId || undefined,
       summary: newSummary.trim() || undefined,
     });
     setNewTitle('');
     setNewSummary('');
+    setNewSubcat('');
     setShowNewModal(false);
   };
 
@@ -234,7 +254,7 @@ export const WikiView: React.FC = () => {
   return (
     <div className="h-full flex bg-slate-950 overflow-hidden">
       {/* Left Sidebar: Categories, Tags, Search & Entry List */}
-      <SidePanel side="left" panelId="wiki-entries" label="Entries" width="w-72" defaultOpen={true} className="flex flex-col">
+      <SidePanel side="left" panelId="wiki-entries" label="Entries" width="w-72 lg:w-80" defaultOpen={true} className="flex flex-col">
         <div className="p-3.5 border-b border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
@@ -316,13 +336,18 @@ export const WikiView: React.FC = () => {
         </div>
 
         {/* Entries, grouped by category */}
-        <div className="flex-1 overflow-y-auto pt-2">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-2">
           <CategoryTree
             projectId={project.id}
             entities={filteredEntities}
             templates={project.templates}
             activeId={activeEntity?.id ?? null}
             onSelect={(id) => selectEntity(id)}
+            onRequestNewEntry={(cat, subId) => {
+              setNewCat(cat);
+              setNewSubcat(subId || '');
+              setShowNewModal(true);
+            }}
             forceOpen={!!searchQuery.trim() || !!selectedTag}
           />
         </div>
@@ -339,26 +364,66 @@ export const WikiView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowCatPicker(!showCatPicker)}
-                    title="Change category"
+                    title="Change category or subcategory"
                     className="flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-md hover:bg-slate-800 cursor-pointer"
                   >
                     <CategoryIcon category={activeEntity.category} size="sm" />
-                    <span className="font-medium" style={{ color: CATEGORY_META[activeEntity.category]?.color }}>
-                      {categoryLabel(activeEntity.category)}
+                    <span
+                      className="font-medium"
+                      style={{ color: categoryColor(activeEntity.category, project) }}
+                    >
+                      {categoryLabel(activeEntity.category, project)}
                     </span>
+                    {activeSubcategory && (
+                      <>
+                        <span className="text-slate-600">/</span>
+                        <span className="flex items-center gap-1.5 text-slate-200">
+                          {(() => {
+                            const SubIcon = resolveCategoryIcon(activeSubcategory.icon || 'Folder');
+                            return (
+                              <span
+                                className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+                                style={{
+                                  backgroundColor: `${activeSubcategory.color}22`,
+                                  color: activeSubcategory.color,
+                                  boxShadow: `inset 0 0 0 1px ${activeSubcategory.color}40`,
+                                }}
+                              >
+                                <SubIcon className="w-2.5 h-2.5" />
+                              </span>
+                            );
+                          })()}
+                          {activeSubcategory.name}
+                        </span>
+                      </>
+                    )}
                     <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
                   </button>
                   {showCatPicker && (
                     <>
                       <div className="fixed inset-0 z-30" onClick={() => setShowCatPicker(false)} />
-                      <div className="absolute left-0 top-full mt-1 z-40 w-[26rem] p-3 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
-                        <div className="text-xs text-slate-400 mb-2">Change category</div>
+                      <div className="absolute left-0 top-full mt-1 z-40 w-[28rem] p-3.5 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-slate-300">
+                            Category & Subcategory
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowCatPicker(false)}
+                            className="text-xs text-amber-400 hover:text-amber-300 cursor-pointer"
+                          >
+                            Done
+                          </button>
+                        </div>
                         <CategoryPicker
                           value={activeEntity.category}
+                          subcategoryValue={activeSubcategory?.id ?? ''}
                           counts={categoryCounts}
                           onChange={(c) => {
-                            updateEntity(activeEntity.id, { category: c });
-                            setShowCatPicker(false);
+                            updateEntity(activeEntity.id, { category: c, subcategory: '' });
+                          }}
+                          onSubcategoryChange={(subId) => {
+                            updateEntity(activeEntity.id, { subcategory: subId });
                           }}
                         />
                       </div>
@@ -463,6 +528,43 @@ export const WikiView: React.FC = () => {
                 </button>
               </div>
 
+              {/* In-World Character Chat Action */}
+              {(activeEntity.category === 'character' ||
+                activeEntity.category === 'deity' ||
+                activeEntity.category === 'species') && (
+                <button
+                  type="button"
+                  onClick={() => openCharacterChat(activeEntity.id)}
+                  className="h-9 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm shadow-amber-500/10"
+                  title={`Initiate an AI dialogue with ${activeEntity.title}`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Chat with {activeEntity.title}</span>
+                </button>
+              )}
+
+              {/* Connections Action */}
+              <button
+                type="button"
+                onClick={() => setEditingRelation(null)}
+                className="h-9 px-3 rounded-lg border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800 text-slate-300 hover:text-amber-300 text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                title="Manage and add connections for this entry"
+              >
+                <Network className="w-3.5 h-3.5 text-amber-400" />
+                <span>Connections ({entityRelations.length})</span>
+              </button>
+
+              {/* Export Page Action */}
+              <button
+                type="button"
+                onClick={() => setShowExportModal(true)}
+                className="h-9 px-3 rounded-lg border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800 text-slate-300 hover:text-amber-300 text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                title="Export page to PDF, Word (.docx), or Markdown (.md)"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => deleteEntity(activeEntity.id)}
@@ -541,53 +643,106 @@ export const WikiView: React.FC = () => {
                       <Network className="w-4 h-4 text-slate-400" />
                       Connections ({entityRelations.length})
                     </h3>
-                    <button
-                      type="button"
-                      onClick={() => setActiveModule('graph')}
-                      className="text-xs text-amber-400 hover:text-amber-300 cursor-pointer"
-                    >
-                      Open in graph →
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditingRelation(null)}
+                        className="px-2.5 py-1 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Connection</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveModule('graph')}
+                        className="text-xs text-slate-400 hover:text-amber-300 cursor-pointer"
+                      >
+                        Open in graph →
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {entityRelations.map((rel) => {
-                      const isOutgoing = rel.sourceEntityId === activeEntity.id;
-                      const otherId = isOutgoing ? rel.targetEntityId : rel.sourceEntityId;
-                      const other = project.entities.find((e) => e.id === otherId);
-                      if (!other) return null;
+                  {entityRelations.length === 0 ? (
+                    <div className="p-4 rounded-lg bg-slate-900/40 border border-dashed border-slate-800 text-center space-y-2">
+                      <p className="text-xs text-slate-500">No connections linked to this entry yet.</p>
+                      <button
+                        type="button"
+                        onClick={() => setEditingRelation(null)}
+                        className="text-xs text-amber-400 hover:text-amber-300 font-medium inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Link to another entry</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {entityRelations.map((rel) => {
+                        const isOutgoing = rel.sourceEntityId === activeEntity.id;
+                        const otherId = isOutgoing ? rel.targetEntityId : rel.sourceEntityId;
+                        const other = project.entities.find((e) => e.id === otherId);
+                        if (!other) return null;
+                        const isAuto = rel.id.startsWith('auto-');
 
-                      return (
-                        <div
-                          key={rel.id}
-                          className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-2 text-xs"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => selectEntity(other.id)}
-                            className="text-left min-w-0 flex-1 cursor-pointer group"
+                        return (
+                          <div
+                            key={rel.id}
+                            className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-colors flex items-center justify-between gap-2 text-xs group/card"
                           >
-                            <div className="text-xs text-slate-400">
-                              {isOutgoing ? `→ ${rel.label}` : `← ${rel.label} (from)`}
-                            </div>
-                            <div className="font-semibold text-slate-200 group-hover:text-amber-300 truncate">
-                              {other.title}
-                            </div>
-                          </button>
-                          {!rel.id.startsWith('auto-') && (
                             <button
                               type="button"
-                              onClick={() => deleteRelation(rel.id)}
-                              className="p-1 text-slate-500 hover:text-rose-400 cursor-pointer"
-                              title="Remove semantic relation"
+                              onClick={() => selectEntity(other.id)}
+                              className="text-left min-w-0 flex-1 cursor-pointer group"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
+                                {rel.bidirectional ? (
+                                  <span className="text-emerald-400 font-medium">↔ {rel.label}</span>
+                                ) : isOutgoing ? (
+                                  <span className="text-amber-400 font-medium">→ {rel.label}</span>
+                                ) : (
+                                  <span className="text-sky-400 font-medium">← {rel.label} (from)</span>
+                                )}
+                                {isAuto && (
+                                  <span
+                                    className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] text-slate-400 border border-slate-700/60"
+                                    title="Auto-extracted from wiki mentions or properties"
+                                  >
+                                    Auto
+                                  </span>
+                                )}
+                              </div>
+                              <div className="font-semibold text-slate-200 group-hover:text-amber-300 truncate mt-0.5 flex items-center gap-1.5">
+                                <span
+                                  className="w-2 h-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: categoryColor(other.category) }}
+                                />
+                                {other.title}
+                              </div>
                             </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setEditingRelation(rel)}
+                                className="p-1.5 rounded text-slate-400 hover:text-amber-300 hover:bg-slate-800 cursor-pointer transition-colors"
+                                title={isAuto ? 'Customize connection' : 'Edit connection'}
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              {!isAuto && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteRelation(rel.id)}
+                                  className="p-1.5 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer transition-colors"
+                                  title="Remove connection"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                </div>
               </div>
@@ -991,12 +1146,83 @@ export const WikiView: React.FC = () => {
             </form>
           </div>
 
-          {/* Add Explicit Semantic Relationship */}
-          <div className="pt-3 border-t border-slate-800 space-y-2">
-            <span className="block text-xs font-semibold text-slate-300">
-              + Add Semantic Graph Edge
-            </span>
-            <form onSubmit={handleAddRelation} className="space-y-1.5">
+          {/* Connections Section in SidePanel */}
+          <div className="pt-3 border-t border-slate-800 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <Network className="w-3.5 h-3.5 text-amber-400" />
+                Connections ({entityRelations.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => setEditingRelation(null)}
+                className="text-[11px] text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3 h-3" /> Add
+              </button>
+            </div>
+
+            {/* Existing connections in inspector */}
+            {entityRelations.length > 0 && (
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+                {entityRelations.map((rel) => {
+                  const isOutgoing = rel.sourceEntityId === activeEntity.id;
+                  const otherId = isOutgoing ? rel.targetEntityId : rel.sourceEntityId;
+                  const other = project.entities.find((e) => e.id === otherId);
+                  if (!other) return null;
+                  const isAuto = rel.id.startsWith('auto-');
+
+                  return (
+                    <div
+                      key={rel.id}
+                      className="px-2 py-1.5 rounded bg-slate-950/80 border border-slate-800/80 flex items-center justify-between gap-1.5 text-xs"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => selectEntity(other.id)}
+                        className="text-left min-w-0 flex-1 cursor-pointer truncate"
+                        title={other.title}
+                      >
+                        <div className="text-[10px] text-slate-400 truncate">
+                          {rel.bidirectional ? `↔ ${rel.label}` : isOutgoing ? `→ ${rel.label}` : `← ${rel.label}`}
+                        </div>
+                        <div className="font-medium text-slate-200 truncate text-[11px] flex items-center gap-1">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: categoryColor(other.category) }}
+                          />
+                          {other.title}
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setEditingRelation(rel)}
+                          className="p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-slate-800 cursor-pointer transition-colors"
+                          title={isAuto ? 'Customize connection' : 'Edit connection'}
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+                        {!isAuto && (
+                          <button
+                            type="button"
+                            onClick={() => deleteRelation(rel.id)}
+                            className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer transition-colors"
+                            title="Remove connection"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Quick Connect Form */}
+            <form onSubmit={handleAddRelation} className="space-y-1.5 pt-1">
+              <span className="block text-[11px] text-slate-400 font-medium">Quick Link:</span>
               <select
                 value={relType}
                 onChange={(e) => setRelType(e.target.value as RelationType)}
@@ -1010,6 +1236,7 @@ export const WikiView: React.FC = () => {
                 <option value="wields">Wields / Holds</option>
                 <option value="created_by">Created / Forged By</option>
                 <option value="parent_of">Parent / Predecessor Of</option>
+                <option value="connected_portal">Connected Portal</option>
               </select>
               <select
                 value={
@@ -1070,8 +1297,14 @@ export const WikiView: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-slate-300 mb-1.5">Category</label>
-              <CategoryPicker value={newCat} onChange={setNewCat} counts={categoryCounts} />
+              <label className="block text-slate-300 mb-1.5">Category & Subcategory</label>
+              <CategoryPicker
+                value={newCat}
+                onChange={setNewCat}
+                subcategoryValue={newSubcat}
+                onSubcategoryChange={setNewSubcat}
+                counts={categoryCounts}
+              />
             </div>
             <div>
               <div>
@@ -1117,6 +1350,37 @@ export const WikiView: React.FC = () => {
             </div>
           </form>
         </div>
+      )}
+      {/* Export Page & Project Modal */}
+      {project && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          project={project}
+          activeEntity={activeEntity}
+          initialTab="page"
+        />
+      )}
+
+      {/* Edit / Add Connection Modal */}
+      {editingRelation !== undefined && activeEntity && project && (
+        <EditConnectionModal
+          isOpen={true}
+          onClose={() => setEditingRelation(undefined)}
+          project={project}
+          activeEntity={activeEntity}
+          relation={editingRelation}
+          onSave={(relData, existingId) => {
+            if (existingId && !existingId.startsWith('auto-')) {
+              updateRelation(existingId, relData);
+            } else {
+              addRelation(relData);
+            }
+          }}
+          onDelete={(relId) => {
+            deleteRelation(relId);
+          }}
+        />
       )}
     </div>
   );

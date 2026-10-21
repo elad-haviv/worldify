@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWorldifyStore } from '../../store/useWorldifyStore';
 import {
   CalendarEra,
   CalendarMonth,
+  CustomCalendar,
   MoonCycle,
   TimelineEventCategory,
 } from '../../types/worldify';
 import {
+  CALENDAR_PRESETS,
+  calculateEpochOffsetFromSyncAnchor,
   dateComponentsToTick,
   formatTickDuration,
   formatTickToDate,
@@ -24,6 +27,13 @@ import {
   Moon,
   Sun,
   Compass,
+  Copy,
+  Check,
+  Link2,
+  ArrowRightLeft,
+  ChevronDown,
+  Layers,
+  RotateCcw,
 } from 'lucide-react';
 import { SidePanel } from '../../components/SidePanel';
 
@@ -47,7 +57,11 @@ export const TimelineView: React.FC = () => {
     setCurrentTick,
     addTimelineEvent,
     deleteTimelineEvent,
+    createCalendar,
     updateCalendar,
+    deleteCalendar,
+    setActiveCalendar,
+    duplicateCalendar,
     selectEntity,
     selectMap,
   } = useWorldifyStore();
@@ -56,8 +70,12 @@ export const TimelineView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'timeline' | 'calendar_builder'>('timeline');
   const [categoryFilter, setCategoryFilter] = useState<TimelineEventCategory | 'all'>('all');
 
+  // Selected calendar for viewing / editing in the timeline
+  const [selectedCalendarId, setSelectedCalendarId] = useState<string>('');
+
   // New Event Modal State
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [evtCalendarId, setEvtCalendarId] = useState<string>('');
   const [evtTitle, setEvtTitle] = useState('');
   const [evtSummary, setEvtSummary] = useState('');
   const [evtCategory, setEvtCategory] = useState<TimelineEventCategory>('political_treaty');
@@ -71,9 +89,14 @@ export const TimelineView: React.FC = () => {
   const [evtMapX, setEvtMapX] = useState<number>(500);
   const [evtMapY, setEvtMapY] = useState<number>(500);
 
-  // Calendar Builder Forms
+  // New Calendar Modal State
+  const [showNewCalendarModal, setShowNewCalendarModal] = useState(false);
+  const [newCalPresetId, setNewCalPresetId] = useState<string>('solar_365');
+  const [newCalName, setNewCalName] = useState('');
+
+  // Calendar Builder Sub-Forms (Month, Era, Moon)
   const [newMonthName, setNewMonthName] = useState('');
-  const [newMonthDays, setNewMonthDays] = useState(45);
+  const [newMonthDays, setNewMonthDays] = useState(30);
   const [newMonthSeason, setNewMonthSeason] = useState<CalendarMonth['season']>('Spring');
   const [newMonthIntercalary, setNewMonthIntercalary] = useState(false);
 
@@ -86,30 +109,71 @@ export const TimelineView: React.FC = () => {
   const [newMoonPeriod, setNewMoonPeriod] = useState(30);
   const [newMoonColor, setNewMoonColor] = useState('#38bdf8');
 
+  // Calendar Synchronization Editor State
+  const [syncRefCalId, setSyncRefCalId] = useState<string>('');
+  const [syncRefYear, setSyncRefYear] = useState<number>(1000);
+  const [syncRefMonthIdx, setSyncRefMonthIdx] = useState<number>(0);
+  const [syncRefDay, setSyncRefDay] = useState<number>(1);
+  const [syncThisYear, setSyncThisYear] = useState<number>(1);
+  const [syncThisMonthIdx, setSyncThisMonthIdx] = useState<number>(0);
+  const [syncThisDay, setSyncThisDay] = useState<number>(1);
+  const [syncTimeScale, setSyncTimeScale] = useState<number>(1.0);
+  const [syncNote, setSyncNote] = useState<string>('');
+
   if (!project) return null;
-  const calendar =
+
+  const activeCalendar =
     project.calendars.find((c) => c.id === project.activeCalendarId) || project.calendars[0];
+  const calendar =
+    project.calendars.find((c) => c.id === (selectedCalendarId || project.activeCalendarId)) ||
+    activeCalendar;
+
   if (!calendar) return null;
 
-  const formattedNow = formatTickToDate(calendar, project.currentTick);
+  const otherCalendars = project.calendars.filter((c) => c.id !== calendar.id);
   const daysPerYear = getTotalDaysPerYear(calendar);
+  const formattedNow = formatTickToDate(calendar, project.currentTick);
+
+  // Sync alignment helper state when viewed calendar changes
+  useEffect(() => {
+    if (calendar.relationship) {
+      setSyncRefCalId(calendar.relationship.referenceCalendarId || otherCalendars[0]?.id || '');
+      setSyncTimeScale(calendar.relationship.timeScale ?? 1.0);
+      setSyncNote(calendar.relationship.syncDescription ?? '');
+      if (calendar.relationship.syncAnchor) {
+        setSyncRefYear(calendar.relationship.syncAnchor.referenceYear);
+        setSyncRefMonthIdx(calendar.relationship.syncAnchor.referenceMonthIndex);
+        setSyncRefDay(calendar.relationship.syncAnchor.referenceDay);
+        setSyncThisYear(calendar.relationship.syncAnchor.thisYear);
+        setSyncThisMonthIdx(calendar.relationship.syncAnchor.thisMonthIndex);
+        setSyncThisDay(calendar.relationship.syncAnchor.thisDay);
+      }
+    } else {
+      setSyncRefCalId(otherCalendars[0]?.id || '');
+      setSyncTimeScale(1.0);
+      setSyncNote('');
+    }
+  }, [calendar.id]);
 
   const sortedEvents = project.timelineEvents
     .filter((ev) => categoryFilter === 'all' || ev.category === categoryFilter)
     .slice()
     .sort((a, b) => a.startTick - b.startTick);
 
+  // Add Event handler
   const handleCreateEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!evtTitle.trim()) return;
+    const targetCal = project.calendars.find((c) => c.id === evtCalendarId) || calendar;
     const computedStartTick = dateComponentsToTick(
-      calendar,
+      targetCal,
       evtYear,
       evtMonthIdx,
       evtDay
     );
     addTimelineEvent({
       worldId: project.activeWorldId,
+      calendarId: targetCal.id,
       title: evtTitle.trim(),
       summary: evtSummary.trim() || 'Historical milestone.',
       category: evtCategory,
@@ -127,11 +191,67 @@ export const TimelineView: React.FC = () => {
     setShowAddEvent(false);
   };
 
+  // Add Calendar from Preset
+  const handleCreateNewCalendar = (e: React.FormEvent) => {
+    e.preventDefault();
+    const preset = CALENDAR_PRESETS.find((p) => p.id === newCalPresetId) || CALENDAR_PRESETS[0];
+    const nameToUse = newCalName.trim() || preset.name;
+    const created = createCalendar({
+      ...preset.calendar,
+      name: nameToUse,
+    });
+    setSelectedCalendarId(created.id);
+    setNewCalName('');
+    setShowNewCalendarModal(false);
+  };
+
+  // Apply Synchronization Alignment
+  const handleApplySync = () => {
+    const refCal = project.calendars.find((c) => c.id === syncRefCalId);
+    if (!refCal) return;
+    const computedOffset = calculateEpochOffsetFromSyncAnchor(
+      refCal,
+      calendar,
+      syncRefYear,
+      syncRefMonthIdx,
+      syncRefDay,
+      syncThisYear,
+      syncThisMonthIdx,
+      syncThisDay,
+      syncTimeScale
+    );
+    updateCalendar(calendar.id, {
+      relationship: {
+        referenceCalendarId: refCal.id,
+        epochTickOffset: computedOffset,
+        timeScale: syncTimeScale,
+        syncDescription: syncNote.trim() || undefined,
+        syncAnchor: {
+          referenceCalendarId: refCal.id,
+          referenceYear: syncRefYear,
+          referenceMonthIndex: syncRefMonthIdx,
+          referenceDay: syncRefDay,
+          thisYear: syncThisYear,
+          thisMonthIndex: syncThisMonthIdx,
+          thisDay: syncThisDay,
+        },
+      },
+    });
+  };
+
+  // Remove Synchronization Alignment
+  const handleClearSync = () => {
+    updateCalendar(calendar.id, {
+      relationship: undefined,
+    });
+  };
+
   return (
     <div className="h-full flex flex-col bg-slate-950 overflow-hidden">
       {/* Top Sub-Header */}
       <div className="px-6 py-3.5 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
+          {/* Module Tab Switcher */}
           <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-1">
             <button
               type="button"
@@ -143,7 +263,7 @@ export const TimelineView: React.FC = () => {
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              Events
+              Chronicle Events
             </button>
             <button
               type="button"
@@ -155,12 +275,29 @@ export const TimelineView: React.FC = () => {
               }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
-              Calendar
+              Calendar Designer
             </button>
+          </div>
+
+          {/* Viewing Calendar Selector */}
+          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1">
+            <CalendarIcon className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-xs text-slate-400 hidden sm:inline">Calendar:</span>
+            <select
+              value={calendar.id}
+              onChange={(e) => setSelectedCalendarId(e.target.value)}
+              className="bg-transparent text-xs text-slate-200 font-semibold focus:outline-none cursor-pointer"
+            >
+              {project.calendars.map((c) => (
+                <option key={c.id} value={c.id} className="bg-slate-900 text-slate-100">
+                  {c.name} {c.id === project.activeCalendarId ? '★ (Active)' : ''}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {activeTab === 'timeline' && (
+        {activeTab === 'timeline' ? (
           <div className="flex items-center gap-2">
             <select
               value={categoryFilter}
@@ -180,6 +317,7 @@ export const TimelineView: React.FC = () => {
             <button
               type="button"
               onClick={() => {
+                setEvtCalendarId(calendar.id);
                 setEvtYear(formattedNow.year);
                 setEvtMonthIdx(formattedNow.monthIndex);
                 setEvtDay(formattedNow.dayOfMonth);
@@ -188,7 +326,18 @@ export const TimelineView: React.FC = () => {
               className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add event
+              Add Event
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowNewCalendarModal(true)}
+              className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New Calendar
             </button>
           </div>
         )}
@@ -271,16 +420,32 @@ export const TimelineView: React.FC = () => {
                         <span className="text-sm tabular-nums font-semibold text-amber-300">
                           {evDate.displayShort}
                         </span>
+
                         <span
                           className={`text-xs px-2 py-0.5 rounded border capitalize font-medium ${catStyle.bg}`}
                         >
                           {catStyle.label}
                         </span>
+
                         {ev.endTick && ev.endTick > ev.startTick && (
                           <span className="text-xs text-slate-400">
                             Duration: {formatTickDuration(calendar, ev.endTick - ev.startTick)}
                           </span>
                         )}
+
+                        {/* Multi-Calendar Cross-Reference Date Pills */}
+                        {otherCalendars.map((otherCal) => {
+                          const otherDate = formatTickToDate(otherCal, ev.startTick);
+                          return (
+                            <span
+                              key={otherCal.id}
+                              title={`${otherCal.name}: ${otherDate.displayFull}`}
+                              className="text-[11px] px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800"
+                            >
+                              ≈ {otherCal.name.split(' ')[0]}: {otherDate.displayShort}
+                            </span>
+                          );
+                        })}
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -360,7 +525,7 @@ export const TimelineView: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-slate-300 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  Current date
+                  Current date ({calendar.name})
                 </span>
                 <span className="text-sm tabular-nums text-slate-500">
                   Tick {project.currentTick}
@@ -369,6 +534,24 @@ export const TimelineView: React.FC = () => {
               <div className="text-base font-semibold text-slate-100">
                 {formattedNow.displayFull}
               </div>
+
+              {/* Comparative Dates in Other Calendars */}
+              {otherCalendars.length > 0 && (
+                <div className="pt-2 border-t border-slate-800/80 space-y-1">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                    Also Corresponds To:
+                  </span>
+                  {otherCalendars.map((otherCal) => {
+                    const otherDate = formatTickToDate(otherCal, project.currentTick);
+                    return (
+                      <div key={otherCal.id} className="text-xs text-slate-300 flex items-center justify-between">
+                        <span className="text-slate-400 font-medium">{otherCal.name}:</span>
+                        <span className="font-semibold text-amber-300/90">{otherDate.displayShort}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Moon Phases at Current Cursor */}
               <div className="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2">
@@ -447,9 +630,97 @@ export const TimelineView: React.FC = () => {
           </SidePanel>
         </div>
       ) : (
-        /* TAB 2: CUSTOM CALENDAR DESIGNER */
+        /* TAB 2: CUSTOM CALENDAR DESIGNER & RELATIONSHIP SYNCHRONIZER */
         <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900 border border-slate-800 rounded-xl p-5">
+          {/* Calendar Management Header Bar */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1">
+                Project Calendars:
+              </span>
+              {project.calendars.map((cal) => {
+                const isSelected = cal.id === calendar.id;
+                const isPrimary = cal.id === project.activeCalendarId;
+                return (
+                  <button
+                    key={cal.id}
+                    type="button"
+                    onClick={() => setSelectedCalendarId(cal.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-amber-500 text-slate-950 shadow-md'
+                        : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    <span>{cal.name}</span>
+                    {isPrimary && (
+                      <span className={`text-[10px] px-1 py-0.2 rounded font-bold ${
+                        isSelected ? 'bg-slate-950 text-amber-400' : 'bg-amber-500/20 text-amber-300'
+                      }`}>
+                        ★ Active
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={() => setShowNewCalendarModal(true)}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-dashed border-slate-700 hover:border-amber-400 text-slate-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer transition-colors"
+                title="Create or preset another calendar"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Calendar</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {calendar.id !== project.activeCalendarId && (
+                <button
+                  type="button"
+                  onClick={() => setActiveCalendar(calendar.id)}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-medium cursor-pointer flex items-center gap-1.5"
+                  title="Make this calendar the primary reference for the project"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Set as Active Default
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  const duplicated = duplicateCalendar(calendar.id);
+                  setSelectedCalendarId(duplicated.id);
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium cursor-pointer flex items-center gap-1"
+                title="Duplicate this calendar"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                Duplicate
+              </button>
+
+              {project.calendars.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Delete calendar "${calendar.name}"?`)) {
+                      deleteCalendar(calendar.id);
+                    }
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-medium cursor-pointer flex items-center gap-1"
+                  title="Delete this calendar"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Calendar General Properties */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900 border border-slate-800 rounded-xl p-5">
             <div>
               <label className="block text-slate-400 mb-1">Calendar Name</label>
               <input
@@ -471,8 +742,21 @@ export const TimelineView: React.FC = () => {
               />
             </div>
             <div>
+              <label className="block text-slate-400 mb-1">Hours per Day</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={calendar.hoursPerDay || 24}
+                onChange={(e) =>
+                  updateCalendar(calendar.id, { hoursPerDay: Number(e.target.value) })
+                }
+                className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100 font-mono"
+              />
+            </div>
+            <div>
               <label className="block text-slate-400 mb-1">
-                Weekdays (Comma-separated • {calendar.weekdays.length} days/week)
+                Weekdays ({calendar.weekdays.length} days/week)
               </label>
               <input
                 type="text"
@@ -490,6 +774,244 @@ export const TimelineView: React.FC = () => {
             </div>
           </div>
 
+          {/* CALENDAR RELATIONSHIP & HISTORICAL SYNCHRONIZATION */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <ArrowRightLeft className="w-4 h-4 text-amber-400" />
+                <h3 className="text-base font-semibold text-slate-100">
+                  Historical Synchronization & Relationship
+                </h3>
+              </div>
+              {calendar.relationship ? (
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-medium">
+                  Synchronized with {project.calendars.find((c) => c.id === calendar.relationship?.referenceCalendarId)?.name || 'Reference Calendar'}
+                </span>
+              ) : (
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-medium">
+                  Direct Global Epoch Anchor (Offset = 0)
+                </span>
+              )}
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Define how this calendar anchors to the universal timeline or synchronizes with another civilization's calendar.
+              You can align any specific date (e.g. <em>"Year 1 of the Imperial Reckoning begins on Year 1240 of the Common Solar Era"</em>) and Worldify will calculate the mathematical tick offset automatically.
+            </p>
+
+            {otherCalendars.length === 0 ? (
+              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-400 italic">
+                Add at least one more calendar to establish mutual synchronization and cross-calendar alignments.
+              </div>
+            ) : (
+              <div className="space-y-4 pt-2">
+                {/* Synchronization Alignment Helper Form */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                      <Link2 className="w-3.5 h-3.5" />
+                      Date Alignment Helper
+                    </span>
+                    {calendar.relationship && (
+                      <button
+                        type="button"
+                        onClick={handleClearSync}
+                        className="text-xs text-rose-400 hover:text-rose-300 cursor-pointer flex items-center gap-1"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Reset to Global Epoch
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Left: Reference Calendar Anchor Date */}
+                    <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-slate-300">
+                          When Reference Calendar Date is:
+                        </label>
+                        <select
+                          value={syncRefCalId}
+                          onChange={(e) => setSyncRefCalId(e.target.value)}
+                          className="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-300 font-medium"
+                        >
+                          {otherCalendars.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {(() => {
+                        const refCal = project.calendars.find((c) => c.id === syncRefCalId) || otherCalendars[0];
+                        if (!refCal) return null;
+                        return (
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <span className="text-[10px] text-slate-400 block mb-0.5">Year</span>
+                              <input
+                                type="number"
+                                value={syncRefYear}
+                                onChange={(e) => setSyncRefYear(Number(e.target.value))}
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 font-mono"
+                              />
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block mb-0.5">Month</span>
+                              <select
+                                value={syncRefMonthIdx}
+                                onChange={(e) => setSyncRefMonthIdx(Number(e.target.value))}
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100"
+                              >
+                                {refCal.months.map((m, idx) => (
+                                  <option key={m.id} value={idx}>
+                                    {m.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block mb-0.5">Day</span>
+                              <input
+                                type="number"
+                                min={1}
+                                max={refCal.months[syncRefMonthIdx]?.days || 45}
+                                value={syncRefDay}
+                                onChange={(e) => setSyncRefDay(Number(e.target.value))}
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 font-mono"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Right: This Calendar Anchor Date */}
+                    <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-slate-300">
+                          This Calendar ({calendar.name}) reads:
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block mb-0.5">Year</span>
+                          <input
+                            type="number"
+                            value={syncThisYear}
+                            onChange={(e) => setSyncThisYear(Number(e.target.value))}
+                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block mb-0.5">Month</span>
+                          <select
+                            value={syncThisMonthIdx}
+                            onChange={(e) => setSyncThisMonthIdx(Number(e.target.value))}
+                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100"
+                          >
+                            {calendar.months.map((m, idx) => (
+                              <option key={m.id} value={idx}>
+                                {m.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block mb-0.5">Day</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={calendar.months[syncThisMonthIdx]?.days || 45}
+                            value={syncThisDay}
+                            onChange={(e) => setSyncThisDay(Number(e.target.value))}
+                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <label className="text-[11px] text-slate-400 block mb-1">
+                        Time Flow Scaling Ratio (Default: 1.0 = standard 1 day/tick)
+                      </label>
+                      <input
+                        type="number"
+                        step={0.1}
+                        min={0.1}
+                        max={10}
+                        value={syncTimeScale}
+                        onChange={(e) => setSyncTimeScale(Number(e.target.value))}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-400 block mb-1">
+                        Alignment Lore Note (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={syncNote}
+                        onChange={(e) => setSyncNote(e.target.value)}
+                        placeholder="e.g., Year 1 was founded upon the Fall of the High Citadel"
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="text-xs text-slate-400">
+                      {calendar.relationship ? (
+                        <span>Current Calculated Offset: <strong className="text-amber-300 font-mono">{calendar.relationship.epochTickOffset}</strong> days relative to epoch</span>
+                      ) : (
+                        <span>No offset active (Year 0 = Tick 0)</span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleApplySync}
+                      className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold cursor-pointer shadow-md transition-colors"
+                    >
+                      Calculate & Apply Alignment
+                    </button>
+                  </div>
+                </div>
+
+                {/* Live Cross-Calendar Conversion Preview */}
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                      Live Verification at Current Cursor (Global Tick {project.currentTick}):
+                    </span>
+                    <div className="text-xs text-slate-200 flex flex-wrap items-center gap-3 pt-0.5">
+                      {syncRefCalId && (() => {
+                        const rCal = project.calendars.find((c) => c.id === syncRefCalId);
+                        if (!rCal) return null;
+                        const rDate = formatTickToDate(rCal, project.currentTick);
+                        return (
+                          <span className="text-slate-300">
+                            <strong>{rCal.name}:</strong> <span className="text-amber-300">{rDate.displayShort}</span>
+                          </span>
+                        );
+                      })()}
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500" />
+                      <span className="text-slate-300">
+                        <strong>{calendar.name}:</strong> <span className="text-amber-300">{formatTickToDate(calendar, project.currentTick).displayShort}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Grid of Months, Eras and Moons */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Months & Intercalary Festivals */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
@@ -807,6 +1329,31 @@ export const TimelineView: React.FC = () => {
             <h3 className="text-lg font-semibold text-slate-100">
               Record Canonical Timeline Event
             </h3>
+
+            {/* Calendar Selection for Event */}
+            <div>
+              <label className="block text-slate-300 mb-1">Record in Calendar</label>
+              <select
+                value={evtCalendarId}
+                onChange={(e) => {
+                  const newCalId = e.target.value;
+                  setEvtCalendarId(newCalId);
+                  const target = project.calendars.find((c) => c.id === newCalId) || calendar;
+                  const targetFormatted = formatTickToDate(target, project.currentTick);
+                  setEvtYear(targetFormatted.year);
+                  setEvtMonthIdx(targetFormatted.monthIndex);
+                  setEvtDay(targetFormatted.dayOfMonth);
+                }}
+                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-slate-100 font-medium"
+              >
+                {project.calendars.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.id === project.activeCalendarId ? '★ (Active)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block text-slate-300 mb-1">Event Title *</label>
               <input
@@ -819,42 +1366,64 @@ export const TimelineView: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="block text-slate-300 mb-1">Epoch Year</label>
-                <input
-                  type="number"
-                  value={evtYear}
-                  onChange={(e) => setEvtYear(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-300 mb-1">Custom Month</label>
-                <select
-                  value={evtMonthIdx}
-                  onChange={(e) => setEvtMonthIdx(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-slate-100"
-                >
-                  {calendar.months.map((m, idx) => (
-                    <option key={m.id} value={idx}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-300 mb-1">Day of Month</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={calendar.months[evtMonthIdx]?.days || 45}
-                  value={evtDay}
-                  onChange={(e) => setEvtDay(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono"
-                />
-              </div>
-            </div>
+            {(() => {
+              const targetCal = project.calendars.find((c) => c.id === evtCalendarId) || calendar;
+              const previewTick = dateComponentsToTick(targetCal, evtYear, evtMonthIdx, evtDay);
+              const previewFormatted = formatTickToDate(targetCal, previewTick);
+
+              return (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-slate-300 mb-1">Epoch Year</label>
+                      <input
+                        type="number"
+                        value={evtYear}
+                        onChange={(e) => setEvtYear(Number(e.target.value))}
+                        className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 mb-1">Month</label>
+                      <select
+                        value={evtMonthIdx}
+                        onChange={(e) => setEvtMonthIdx(Number(e.target.value))}
+                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-slate-100"
+                      >
+                        {targetCal.months.map((m, idx) => (
+                          <option key={m.id} value={idx}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 mb-1">Day of Month</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={targetCal.months[evtMonthIdx]?.days || 45}
+                        value={evtDay}
+                        onChange={(e) => setEvtDay(Number(e.target.value))}
+                        className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Live Date Conversion Badge */}
+                  <div className="p-2 rounded bg-slate-950 border border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+                    <span>
+                      Date in {targetCal.name.split(' ')[0]}: <strong className="text-amber-300">{previewFormatted.displayShort}</strong>
+                    </span>
+                    {targetCal.id !== activeCalendar.id && (
+                      <span className="text-slate-400 truncate max-w-[200px]">
+                        ≈ {activeCalendar.name.split(' ')[0]}: {formatTickToDate(activeCalendar, previewTick).displayShort}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="grid grid-cols-3 gap-2">
               <div>
@@ -906,7 +1475,7 @@ export const TimelineView: React.FC = () => {
                 <select
                   value={evtMapId}
                   onChange={(e) => setEvtMapId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-slate-100"
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-slate-100"
                 >
                   <option value="">— No Map Pin —</option>
                   {project.maps.map((m) => (
@@ -923,7 +1492,7 @@ export const TimelineView: React.FC = () => {
                   disabled={!evtMapId}
                   value={evtMapX}
                   onChange={(e) => setEvtMapX(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-slate-100 disabled:opacity-40"
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 disabled:opacity-40"
                 />
               </div>
               <div>
@@ -933,7 +1502,7 @@ export const TimelineView: React.FC = () => {
                   disabled={!evtMapId}
                   value={evtMapY}
                   onChange={(e) => setEvtMapY(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-slate-100 disabled:opacity-40"
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 disabled:opacity-40"
                 />
               </div>
             </div>
@@ -962,6 +1531,88 @@ export const TimelineView: React.FC = () => {
                 className="px-4 py-1.5 rounded bg-amber-500 text-slate-950 font-semibold cursor-pointer"
               >
                 Add to Timeline
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Create New Calendar Modal with Presets */}
+      {showNewCalendarModal && (
+        <div className="fixed inset-0 bg-slate-950/80 flex items-center justify-center z-50 p-4">
+          <form
+            onSubmit={handleCreateNewCalendar}
+            className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4 shadow-2xl text-xs"
+          >
+            <h3 className="text-lg font-semibold text-slate-100">
+              Create New Custom Calendar
+            </h3>
+            <p className="text-xs text-slate-400">
+              Choose an astronomical preset or start with an archetype, then customize its months, eras, and moons.
+            </p>
+
+            <div>
+              <label className="block text-slate-300 mb-1.5 font-medium">Calendar Preset Archetype</label>
+              <div className="space-y-2">
+                {CALENDAR_PRESETS.map((preset) => {
+                  const isSelected = newCalPresetId === preset.id;
+                  return (
+                    <div
+                      key={preset.id}
+                      onClick={() => {
+                        setNewCalPresetId(preset.id);
+                        if (!newCalName || CALENDAR_PRESETS.some((p) => p.name === newCalName)) {
+                          setNewCalName(preset.name);
+                        }
+                      }}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-amber-500/15 border-amber-500/60 ring-1 ring-amber-500/30'
+                          : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className={`font-semibold ${isSelected ? 'text-amber-300' : 'text-slate-200'}`}>
+                          {preset.name}
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {preset.calendar.months.length} months • {preset.calendar.eras.length} eras
+                        </span>
+                      </div>
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        {preset.description}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-300 mb-1 font-medium">Calendar Name *</label>
+              <input
+                type="text"
+                required
+                value={newCalName}
+                onChange={(e) => setNewCalName(e.target.value)}
+                placeholder="e.g., Elven Moon Reckoning"
+                className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100 font-semibold"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowNewCalendarModal(false)}
+                className="px-3 py-1.5 rounded bg-slate-800 text-slate-300 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 rounded bg-amber-500 text-slate-950 font-semibold cursor-pointer"
+              >
+                Create Calendar
               </button>
             </div>
           </form>
