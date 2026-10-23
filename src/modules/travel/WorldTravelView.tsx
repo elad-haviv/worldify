@@ -107,6 +107,34 @@ export const WorldTravelView: React.FC = () => {
   }, [activeMap, project]);
 
   // Nearest landmark to traveler
+  // Dynamic aspect ratio for raster maps (same approach as LivingWorldMapCanvas):
+  // the SVG canvas height follows the raster's natural proportions so the image
+  // is never stretched (all y-coordinates stay 0-1000 normalized and are scaled
+  // by canvasHeight at render time).
+  const [rasterNaturalSize, setRasterNaturalSize] = useState<{ width: number; height: number } | null>(null);
+  useEffect(() => {
+    if (activeMap?.rasterImageUrl) {
+      const img = new Image();
+      img.onload = () => {
+        setRasterNaturalSize({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+      };
+      img.src = activeMap.rasterImageUrl;
+      if (img.complete && (img.naturalWidth || img.width)) {
+        setRasterNaturalSize({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+      }
+    } else {
+      setRasterNaturalSize(null);
+    }
+  }, [activeMap?.id, activeMap?.rasterImageUrl]);
+
+  const canvasHeight = useMemo(() => {
+    if (!activeMap?.rasterImageUrl) return 750;
+    if (rasterNaturalSize && rasterNaturalSize.width > 0 && rasterNaturalSize.height > 0) {
+      return Math.max(200, Math.min(2000, Math.round((750 * rasterNaturalSize.height) / rasterNaturalSize.width)));
+    }
+    return 750;
+  }, [activeMap, rasterNaturalSize]);
+
   const nearestLandmark = useMemo(() => {
     if (!landmarks.length) return null;
     let closest = landmarks[0];
@@ -131,7 +159,7 @@ export const WorldTravelView: React.FC = () => {
     if (!ctm) return;
     const local = pt.matrixTransform(ctm.inverse());
     const x = Math.max(20, Math.min(980, Math.round(local.x)));
-    const y = Math.max(20, Math.min(980, Math.round((local.y / 750) * 1000)));
+    const y = Math.max(20, Math.min(980, Math.round((local.y / canvasHeight) * 1000)));
 
     setTravelerPosition(activeMap.id, x, y);
   };
@@ -370,7 +398,7 @@ export const WorldTravelView: React.FC = () => {
             {activeMap ? (
               <svg
                 ref={mapSvgRef}
-                viewBox="0 0 1000 750"
+                viewBox={`0 0 1000 ${canvasHeight}`}
                 onClick={handleMapClick}
                 className="w-full h-full object-contain cursor-crosshair max-h-[55vh] lg:max-h-full"
               >
@@ -386,15 +414,15 @@ export const WorldTravelView: React.FC = () => {
                     />
                   </pattern>
                 </defs>
-                <rect width="1000" height="750" fill="#090d16" />
-                <rect width="1000" height="750" fill="url(#travelGrid)" />
+                <rect width="1000" height={canvasHeight} fill="#090d16" />
+                <rect width="1000" height={canvasHeight} fill="url(#travelGrid)" />
 
                 {/* Raster Background if any */}
                 {activeMap.rasterImageUrl && (
                   <image
                     href={activeMap.rasterImageUrl}
                     width="1000"
-                    height="750"
+                    height={canvasHeight}
                     preserveAspectRatio="none"
                     opacity="0.75"
                   />
@@ -405,8 +433,8 @@ export const WorldTravelView: React.FC = () => {
                   const dStr = p.points.reduce(
                     (acc, pt, idx) =>
                       idx === 0
-                        ? `M ${pt[0]} ${(pt[1] / 1000) * 750}`
-                        : `${acc} L ${pt[0]} ${(pt[1] / 1000) * 750}`,
+                        ? `M ${pt[0]} ${(pt[1] / 1000) * canvasHeight}`
+                        : `${acc} L ${pt[0]} ${(pt[1] / 1000) * canvasHeight}`,
                     ''
                   );
                   return (
@@ -424,7 +452,7 @@ export const WorldTravelView: React.FC = () => {
 
                 {/* Known Landmarks & Burgs */}
                 {landmarks.map((lm) => {
-                  const cy = (lm.y / 1000) * 750;
+                  const cy = (lm.y / 1000) * canvasHeight;
                   return (
                     <g key={lm.id} transform={`translate(${lm.x}, ${cy})`}>
                       <circle
@@ -450,7 +478,7 @@ export const WorldTravelView: React.FC = () => {
 
                 {/* Traveler Token */}
                 <g
-                  transform={`translate(${travelerState.x}, ${(travelerState.y / 1000) * 750})`}
+                  transform={`translate(${travelerState.x}, ${(travelerState.y / 1000) * canvasHeight})`}
                   className="transition-all duration-300"
                 >
                   {/* Ping Animation */}
