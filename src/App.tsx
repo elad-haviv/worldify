@@ -12,6 +12,7 @@ import { MapView } from './modules/maps/MapView';
 import { TimelineView } from './modules/timeline/TimelineView';
 import { StoryStudioView } from './modules/stories/StoryStudioView';
 import { WorldTravelView } from './modules/travel/WorldTravelView';
+import { LivingWorldView } from './modules/livingWorld/LivingWorldView';
 import { GlobalTimelineBar } from './components/GlobalTimelineBar';
 import { AICopilotDrawer } from './components/AICopilotDrawer';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -26,6 +27,7 @@ import {
   Globe2,
   Layers,
   Footprints,
+  HeartPulse,
   Search,
   Sparkles,
   CalendarDays,
@@ -62,6 +64,10 @@ const NAV_GROUPS: Array<{ label: string | null; items: NavItem[] }> = [
     ],
   },
   {
+    label: 'Live',
+    items: [{ id: 'living_world', label: 'Living World', icon: HeartPulse }],
+  },
+  {
     label: 'Setup',
     items: [{ id: 'templates', label: 'Templates', icon: Layers }],
   },
@@ -70,7 +76,7 @@ const NAV_GROUPS: Array<{ label: string | null; items: NavItem[] }> = [
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 /** Screens where the world clock directly changes what you see. */
-const TIME_AWARE_MODULES = new Set<ActiveModule>(['travel', 'maps', 'timeline', 'graph', 'cosmology']);
+const TIME_AWARE_MODULES = new Set<ActiveModule>(['travel', 'maps', 'timeline', 'graph', 'cosmology', 'living_world']);
 
 const SIDEBAR_KEY = 'worldify_sidebar_collapsed';
 
@@ -309,6 +315,7 @@ export const App: React.FC = () => {
           <main className="flex-1 min-w-0 h-full overflow-hidden">
             {activeModule === 'dashboard' && <ProjectDashboardView />}
             {activeModule === 'travel' && <WorldTravelView />}
+            {activeModule === 'living_world' && <LivingWorldView />}
             {activeModule === 'wiki' && <WikiView />}
             {activeModule === 'graph' && <KnowledgeGraphView />}
             {activeModule === 'maps' && <MapView />}

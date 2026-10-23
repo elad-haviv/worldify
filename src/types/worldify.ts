@@ -680,5 +680,6 @@ export type ActiveModule =
   | 'travel'
   | 'timeline'
   | 'stories'
+  | 'living_world'
   | 'cosmology'
   | 'templates';
