@@ -38,6 +38,8 @@ import {
 } from 'lucide-react';
 import { ExportModal } from './components/ExportModal';
 
+declare const __COMMIT_HASH__: string;
+
 type NavItem = {
   id: ActiveModule;
   label: string;
@@ -164,9 +166,17 @@ export const App: React.FC = () => {
             W
           </button>
           {!collapsed && (
-            <span className="font-display font-bold text-lg text-slate-100 tracking-wide">
-              Worldify
-            </span>
+            <div className="flex items-baseline gap-2 min-w-0">
+              <span className="font-display font-bold text-lg text-slate-100 tracking-wide">
+                Worldify
+              </span>
+              <span
+                className="text-[11px] font-mono text-slate-500 select-all"
+                title="Current Git commit"
+              >
+                {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'dev'}
+              </span>
+            </div>
           )}
         </div>
 
