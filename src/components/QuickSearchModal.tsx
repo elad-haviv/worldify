@@ -9,6 +9,7 @@ import {
   Globe2,
   X,
   ArrowRight,
+  FolderOpen,
 } from 'lucide-react';
 import { CATEGORY_META, categoryLabel, categoryColor } from '../utils/categories';
 
@@ -24,6 +25,7 @@ export const QuickSearchModal: React.FC = () => {
     setCurrentTick,
     setActiveModule,
     setActiveWorld,
+    setActiveProject,
   } = useWorldifyStore();
 
   const [query, setQuery] = useState('');
@@ -70,6 +72,14 @@ export const QuickSearchModal: React.FC = () => {
     (w) => !q || w.name.toLowerCase().includes(q)
   );
 
+  const matchedProjects = projects.filter(
+    (p) =>
+      !q ||
+      p.name.toLowerCase().includes(q) ||
+      p.tagline.toLowerCase().includes(q) ||
+      p.genre.toLowerCase().includes(q)
+  );
+
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-start justify-center pt-20 z-50 px-4">
       <div className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
@@ -80,7 +90,7 @@ export const QuickSearchModal: React.FC = () => {
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search wiki entries, tags (#sun-forged), maps, timeline events, or worlds..."
+            placeholder="Switch projects, or search wiki entries, tags (#sun-forged), maps, timeline events, or worlds..."
             className="flex-1 bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none"
           />
           <button
@@ -93,6 +103,50 @@ export const QuickSearchModal: React.FC = () => {
         </div>
 
         <div className="max-h-[420px] overflow-y-auto p-3 space-y-4">
+          {/* Quick project switching */}
+          {matchedProjects.length > 0 && (
+            <div>
+              <div className="text-sm font-semibold text-slate-300 px-2 mb-1.5">
+                Projects ({matchedProjects.length})
+              </div>
+              <div className="space-y-1">
+                {matchedProjects.slice(0, 8).map((pr) => (
+                  <button
+                    key={pr.id}
+                    type="button"
+                    onClick={() => {
+                      if (pr.id !== activeProjectId) setActiveProject(pr.id);
+                      toggleQuickSearch(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors cursor-pointer group ${
+                      pr.id === activeProjectId
+                        ? 'bg-amber-500/10 border border-amber-500/30'
+                        : 'hover:bg-slate-800/90 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <FolderOpen className="w-4 h-4 text-amber-400 shrink-0" />
+                      <div className="truncate">
+                        <div className="text-xs font-semibold text-slate-100 group-hover:text-amber-300">
+                          {pr.name}
+                          {pr.id === activeProjectId && (
+                            <span className="ml-2 text-[10px] uppercase tracking-wide text-amber-400">current</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-400 truncate">
+                          {pr.tagline || pr.description}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap shrink-0 ml-2">
+                      {pr.genre}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Wiki Entities */}
           {matchedEntities.length > 0 && (
             <div>
