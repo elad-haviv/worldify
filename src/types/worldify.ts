@@ -76,6 +76,7 @@ export interface EntitySpatialKeyframe {
   endY?: number;
   pathId?: string; // Optional MapPath ID to interpolate along from tick -> endTick
   statusNote?: string; // e.g., "Leading the Siege of Vaelor", "Forged in the Star-Kiln"
+  branchId?: string; // Present when generated on a simulation branch; undefined = Canon
 }
 
 export interface EntityTemporalState {
@@ -86,6 +87,7 @@ export interface EntityTemporalState {
   status?: string; // e.g., "Alive", "Corrupted", "Crowned Emperor", "Shattered"
   allegianceEntityId?: string;
   notes?: string;
+  branchId?: string; // Present when generated on a simulation branch; undefined = Canon
 }
 
 export interface Entity {
@@ -133,6 +135,7 @@ export interface EntityRelation {
   validFromTick?: number;
   validToTick?: number;
   bidirectional?: boolean;
+  branchId?: string; // Present when generated on a simulation branch; undefined = Canon
 }
 
 export type WorldType = 'planet' | 'continent' | 'plane' | 'moon' | 'pocket_dimension' | 'star_system';
@@ -271,6 +274,22 @@ export interface TimelineEvent {
   mapX?: number;
   mapY?: number;
   wikiEntityId?: string; // Optional link to full wiki entry
+  // Living World simulation extensions (undefined branchId = Canon)
+  branchId?: string;
+  source?: 'manual' | 'simulation' | 'intervention';
+  effects?: SimEventEffect[];
+  seed?: number;
+  luckRoll?: {
+    difficultyLabel: string;
+    chancePercent: number;
+    rolledValue: number;
+    succeeded: boolean;
+  };
+  dialogues?: Array<{
+    speakerId: string;
+    speakerName: string;
+    line: string;
+  }>;
 }
 
 // ==========================================
@@ -672,12 +691,190 @@ export interface TravelerState {
   travelLog: WorldTravelLogEntry[];
 }
 
+// ==========================================
+// LIVING WORLD SIMULATION ENGINE TYPES
+// ==========================================
+
+export type SimTickInterval = '1d' | '7d' | '30d' | '1y' | '10y';
+
+export type SimScopeMode = 'local' | 'regional' | 'global' | 'custom_cast';
+
+export type SimResolutionLevel = 'focused' | 'balanced' | 'detailed' | 'chronicle';
+
+export type SimLanguageMode = 'he' | 'en' | 'entity_match';
+
+export type CharacterTier = 'protagonist' | 'secondary' | 'background';
+
+export interface SimEventEffect {
+  type:
+    | 'move_entity'
+    | 'update_status'
+    | 'add_relation'
+    | 'break_relation'
+    | 'zone_shift'
+    | 'promote_tier'
+    | 'draft_entity';
+  entityId?: string;
+  targetEntityId?: string;
+  mapId?: string;
+  x?: number;
+  y?: number;
+  status?: string;
+  titleOverride?: string;
+  allegianceEntityId?: string;
+  relationType?: RelationType;
+  relationLabel?: string;
+  draftEntityTitle?: string;
+  draftEntityCategory?: EntityCategory;
+  draftEntitySummary?: string;
+  description: string;
+}
+
+export interface SimBranch {
+  id: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  parentBranchId: string | null; // null = forked directly from Canon
+  forkedAtTick: number;
+  currentTick: number;
+  status: 'active' | 'paused' | 'merged' | 'discarded';
+  budgetUsd: number;
+  spentUsd: number;
+  tickSize: SimTickInterval;
+  scopeMode: SimScopeMode;
+  focusMapId?: string | null;
+  focusLocationEntityId?: string | null;
+  focusCharacterIds?: string[];
+  resolutionLevel: SimResolutionLevel;
+  minImportanceThreshold?: 1 | 2 | 3;
+  languageMode: SimLanguageMode;
+  tickCount: number;
+  tickHistory: number[]; // Stack of ticks for 1-click Undo ("בטל טיק")
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CharacterGoal {
+  id: string;
+  description: string;
+  priority: 1 | 2 | 3; // 1 = highest priority
+  status: 'active' | 'achieved' | 'abandoned';
+  createdAtTick: number;
+}
+
+export interface CharacterInternalRelation {
+  targetEntityId: string;
+  targetName: string;
+  trust: number; // -100 to 100
+  hostility: number; // 0 to 100
+  debtOrBond: string;
+}
+
+export interface CharacterIntentOutput {
+  intent: string;
+  action: 'move' | 'speak' | 'scheme' | 'investigate' | 'fight' | 'build' | 'ritual' | 'wait';
+  targets: string[];
+  targetDestination?: string;
+  reasoning: string;
+  inner_note: string;
+}
+
+export interface CharacterMemory {
+  id: string;
+  projectId: string;
+  branchId: string;
+  entityId: string;
+  tick: number;
+  locationName?: string;
+  participantIds: string[];
+  content: string; // Subjective memory from the character's point of view
+  innerNote?: string; // Private inner diary note ("זהב לכתיבה")
+  importance: 1 | 2 | 3 | 4 | 5;
+  isReflection?: boolean;
+  isWhisperFromCreator?: boolean;
+  createdAt: string;
+}
+
+export interface CharacterMind {
+  id: string; // `${branchId}:${entityId}`
+  projectId: string;
+  branchId: string;
+  entityId: string;
+  tier: CharacterTier;
+  goals: CharacterGoal[];
+  beliefs: string[];
+  internalRelations: CharacterInternalRelation[];
+  memoryBankId: string;
+  lastReflectedAtTick: number;
+  ticksSinceReflection: number;
+  latestIntent?: CharacterIntentOutput;
+  updatedAt: string;
+}
+
+export interface SimProposal {
+  id: string;
+  projectId: string;
+  branchId: string;
+  tick: number;
+  eventId?: string;
+  entityId?: string;
+  kind: 'major_event' | 'character_evolution' | 'new_entity_draft' | 'world_rule_conflict';
+  title: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+  payload: Record<string, unknown>;
+  contradictsCanon?: string[];
+  createdAt: string;
+}
+
+export interface AgentRun {
+  id: string;
+  projectId: string;
+  branchId: string;
+  tick: number;
+  step: 'intent' | 'encounter' | 'historian' | 'narrator' | 'conflict_check' | 'reflection';
+  role: string;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  costUsd: number;
+  seed?: number;
+  outputJson?: string;
+  createdAt: string;
+}
+
+export interface WorldRuleEntry {
+  id: string;
+  projectId: string;
+  title: string;
+  ruleText: string;
+  enforcement: 'hard' | 'soft';
+  category: 'magic' | 'physics' | 'politics' | 'mortality' | 'travel';
+}
+
+export interface BranchOverlayRecord {
+  id: string;
+  projectId: string;
+  branchId: string;
+  tick: number;
+  kind: 'temporal_state' | 'spatial_keyframe' | 'relation' | 'zone_snapshot';
+  entityId?: string;
+  mapId?: string;
+  zoneId?: string;
+  temporalState?: EntityTemporalState;
+  spatialKeyframe?: EntitySpatialKeyframe;
+  relation?: EntityRelation;
+  zoneSnapshot?: MapZoneTemporalSnapshot;
+}
+
 export type ActiveModule =
   | 'dashboard'
   | 'wiki'
   | 'graph'
   | 'maps'
   | 'travel'
+  | 'simulation'
   | 'timeline'
   | 'stories'
   | 'cosmology'

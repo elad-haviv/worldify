@@ -12,6 +12,7 @@ import { MapView } from './modules/maps/MapView';
 import { TimelineView } from './modules/timeline/TimelineView';
 import { StoryStudioView } from './modules/stories/StoryStudioView';
 import { WorldTravelView } from './modules/travel/WorldTravelView';
+import { LivingWorldView } from './modules/simulation/LivingWorldView';
 import { GlobalTimelineBar } from './components/GlobalTimelineBar';
 import { AICopilotDrawer } from './components/AICopilotDrawer';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -26,6 +27,7 @@ import {
   Globe2,
   Layers,
   Footprints,
+  Activity,
   Search,
   Sparkles,
   CalendarDays,
@@ -54,6 +56,7 @@ const NAV_GROUPS: Array<{ label: string | null; items: NavItem[] }> = [
   {
     label: 'Explore',
     items: [
+      { id: 'simulation', label: 'Living World · עולם חי', icon: Activity },
       { id: 'travel', label: 'Travel', icon: Footprints },
       { id: 'maps', label: 'Maps', icon: MapIcon },
       { id: 'timeline', label: 'Timeline', icon: Clock },
@@ -70,7 +73,13 @@ const NAV_GROUPS: Array<{ label: string | null; items: NavItem[] }> = [
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 /** Screens where the world clock directly changes what you see. */
-const TIME_AWARE_MODULES = new Set<ActiveModule>(['travel', 'maps', 'timeline', 'graph', 'cosmology']);
+const TIME_AWARE_MODULES = new Set<ActiveModule>([
+  'travel',
+  'maps',
+  'timeline',
+  'graph',
+  'cosmology',
+]);
 
 const SIDEBAR_KEY = 'worldify_sidebar_collapsed';
 
@@ -123,8 +132,13 @@ export const App: React.FC = () => {
   }, [collapsed]);
 
   const showTimeline = timelineOverride ?? TIME_AWARE_MODULES.has(activeModule);
-  const calendar = project?.calendars.find((c) => c.id === project.activeCalendarId) || project?.calendars[0];
-  const dateLabel = project && calendar ? formatTickToDate(calendar, project.currentTick).displayShort : null;
+  const calendar =
+    project?.calendars.find((c) => c.id === project.activeCalendarId) ||
+    project?.calendars[0];
+  const dateLabel =
+    project && calendar
+      ? formatTickToDate(calendar, project.currentTick).displayShort
+      : null;
   const activeLabel = ALL_ITEMS.find((i) => i.id === activeModule)?.label ?? '';
 
   return (
@@ -136,7 +150,11 @@ export const App: React.FC = () => {
         } shrink-0 h-full bg-slate-900 border-r border-slate-800 flex flex-col transition-[width] duration-200 z-30`}
       >
         {/* Brand */}
-        <div className={`h-16 flex items-center gap-3 ${collapsed ? 'justify-center px-0' : 'px-5'}`}>
+        <div
+          className={`h-16 flex items-center gap-3 ${
+            collapsed ? 'justify-center px-0' : 'px-5'
+          }`}
+        >
           <button
             type="button"
             onClick={() => setActiveModule('dashboard')}
@@ -146,7 +164,9 @@ export const App: React.FC = () => {
             W
           </button>
           {!collapsed && (
-            <span className="font-display font-bold text-lg text-slate-100 tracking-wide">Worldify</span>
+            <span className="font-display font-bold text-lg text-slate-100 tracking-wide">
+              Worldify
+            </span>
           )}
         </div>
 
@@ -177,9 +197,13 @@ export const App: React.FC = () => {
           {NAV_GROUPS.map((group, gi) => (
             <div key={gi}>
               {group.label && !collapsed && (
-                <div className="px-3 pb-1.5 text-xs font-medium text-slate-500">{group.label}</div>
+                <div className="px-3 pb-1.5 text-xs font-medium text-slate-500">
+                  {group.label}
+                </div>
               )}
-              {group.label && collapsed && <div className="mx-3 mb-2 border-t border-slate-800" />}
+              {group.label && collapsed && (
+                <div className="mx-3 mb-2 border-t border-slate-800" />
+              )}
               <ul className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
@@ -219,7 +243,11 @@ export const App: React.FC = () => {
             }`}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <PanelLeftClose className="w-[18px] h-[18px]" />}
+            {collapsed ? (
+              <PanelLeftOpen className="w-[18px] h-[18px]" />
+            ) : (
+              <PanelLeftClose className="w-[18px] h-[18px]" />
+            )}
             {!collapsed && <span>Collapse</span>}
           </button>
         </div>
@@ -229,7 +257,9 @@ export const App: React.FC = () => {
       <div className="flex-1 min-w-0 flex flex-col h-full min-h-0 overflow-hidden">
         {/* Top bar */}
         <header className="h-14 shrink-0 border-b border-slate-800 bg-slate-950 px-5 flex items-center gap-4 z-20">
-          <h1 className="text-base font-semibold text-slate-100 shrink-0">{activeLabel}</h1>
+          <h1 className="text-base font-semibold text-slate-100 shrink-0">
+            {activeLabel}
+          </h1>
 
           {project && project.worlds.length > 1 && (
             <div className="relative hidden md:block">
@@ -308,10 +338,13 @@ export const App: React.FC = () => {
         <div className="flex-1 flex min-h-0 h-full overflow-hidden relative">
           <main
             className={`flex-1 min-w-0 h-full min-h-0 relative ${
-              activeModule === 'dashboard' ? 'overflow-y-auto' : 'overflow-hidden flex flex-col'
+              activeModule === 'dashboard'
+                ? 'overflow-y-auto'
+                : 'overflow-hidden flex flex-col'
             }`}
           >
             {activeModule === 'dashboard' && <ProjectDashboardView />}
+            {activeModule === 'simulation' && <LivingWorldView />}
             {activeModule === 'travel' && <WorldTravelView />}
             {activeModule === 'wiki' && <WikiView />}
             {activeModule === 'graph' && <KnowledgeGraphView />}

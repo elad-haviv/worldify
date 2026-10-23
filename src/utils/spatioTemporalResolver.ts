@@ -5,6 +5,10 @@ import {
   Project,
   Story,
   CustomCalendar,
+  SimBranch,
+  TimelineEvent,
+  BranchOverlayRecord,
+  WorldRuleEntry,
 } from '../types/worldify';
 import { getTotalDaysPerYear, formatTickToDate } from './calendarEngine';
 
@@ -19,6 +23,8 @@ export interface ResolvedEntityPosition {
   lifecycleState: 'unborn' | 'active' | 'ended';
   ageYears?: number;
   activeTitle: string;
+  activeStatus?: string;
+  trailPoints?: Array<{ x: number; y: number; tick: number; isBranch?: boolean }>;
 }
 
 export interface ContinuityIssue {
@@ -30,6 +36,141 @@ export interface ContinuityIssue {
   entityTitle?: string;
   message: string;
   detail: string;
+}
+
+/**
+ * Checks whether a record belongs to Canon (no branchId) or an active branch ancestry.
+ */
+export function isRecordVisibleInBranch(
+  recordBranchId: string | undefined,
+  allowedBranchIds?: Set<string>
+): boolean {
+  if (!recordBranchId) return true; // Canon is always visible
+  if (!allowedBranchIds) return false;
+  return allowedBranchIds.has(recordBranchId);
+}
+
+/**
+ * Computes the set of ancestor branch IDs (including the target branch itself)
+ * and their maximum valid tick cutoff (forkedAtTick of the child).
+ */
+export function getBranchAncestryCutoffs(
+  branchId: string | null,
+  allBranches: SimBranch[]
+): Map<string, number> {
+  const cutoffs = new Map<string, number>();
+  if (!branchId) return cutoffs;
+
+  const byId = new Map(allBranches.map((b) => [b.id, b]));
+  let current = byId.get(branchId);
+  let childForkTick = Infinity;
+
+  while (current) {
+    cutoffs.set(current.id, childForkTick);
+    childForkTick = current.forkedAtTick;
+    current = current.parentBranchId ? byId.get(current.parentBranchId) : undefined;
+  }
+
+  return cutoffs;
+}
+
+/**
+ * Constructs a composite Project view for a specific SimBranch by layering
+ * the branch's (and its ancestors') events, temporal states, spatial keyframes,
+ * relations, and zone snapshots on top of Canon.
+ */
+export function buildBranchWorldView(
+  project: Project,
+  activeBranch: SimBranch | null,
+  allBranches: SimBranch[],
+  branchEvents: TimelineEvent[],
+  branchOverlays: BranchOverlayRecord[]
+): Project {
+  if (!activeBranch) return project;
+
+  const cutoffs = getBranchAncestryCutoffs(activeBranch.id, allBranches);
+
+  const isOverlayActive = (branchId: string | undefined, tick: number) => {
+    if (!branchId) return true;
+    const maxTick = cutoffs.get(branchId);
+    return maxTick !== undefined && tick <= maxTick;
+  };
+
+  const validOverlays = branchOverlays.filter((o) => isOverlayActive(o.branchId, o.tick));
+
+  // Layer entity temporalStates and spatialKeyframes
+  const entities = project.entities.map((ent) => {
+    const extraStates = validOverlays
+      .filter((o) => o.kind === 'temporal_state' && o.entityId === ent.id && o.temporalState)
+      .map((o) => ({ ...o.temporalState!, branchId: o.branchId }));
+    const extraKeyframes = validOverlays
+      .filter((o) => o.kind === 'spatial_keyframe' && o.entityId === ent.id && o.spatialKeyframe)
+      .map((o) => ({ ...o.spatialKeyframe!, branchId: o.branchId }));
+
+    // Check if an overlay marked the entity as deceased in this branch
+    const deathState = extraStates.find(
+      (s) =>
+        s.status &&
+        (s.status.toLowerCase().includes('dead') ||
+          s.status.toLowerCase().includes('deceased') ||
+          s.status.includes('מת') ||
+          s.status.includes('נהרג') ||
+          s.status.includes('נפל'))
+    );
+
+    return {
+      ...ent,
+      lifecycleEndTick:
+        deathState && (ent.lifecycleEndTick === undefined || deathState.fromTick < ent.lifecycleEndTick)
+          ? deathState.fromTick
+          : ent.lifecycleEndTick,
+      temporalStates: [...(ent.temporalStates || []).filter((s) => !s.branchId), ...extraStates],
+      spatialKeyframes: [...(ent.spatialKeyframes || []).filter((k) => !k.branchId), ...extraKeyframes],
+    };
+  });
+
+  // Layer relations
+  const extraRelations = validOverlays
+    .filter((o) => o.kind === 'relation' && o.relation)
+    .map((o) => ({ ...o.relation!, branchId: o.branchId }));
+
+  // Layer events
+  const activeBranchEvents = branchEvents.filter((ev) =>
+    isOverlayActive(ev.branchId, ev.startTick)
+  );
+
+  // Layer map zone snapshots
+  const maps = project.maps.map((m) => {
+    const zoneOverlays = validOverlays.filter(
+      (o) => o.kind === 'zone_snapshot' && o.mapId === m.id && o.zoneSnapshot
+    );
+    if (zoneOverlays.length === 0) return m;
+    return {
+      ...m,
+      zones: m.zones.map((z) => {
+        const snaps = zoneOverlays
+          .filter((o) => o.zoneId === z.id && o.zoneSnapshot)
+          .map((o) => o.zoneSnapshot!);
+        if (snaps.length === 0) return z;
+        return {
+          ...z,
+          temporalSnapshots: [...(z.temporalSnapshots || []), ...snaps],
+        };
+      }),
+    };
+  });
+
+  return {
+    ...project,
+    currentTick: activeBranch.currentTick,
+    entities,
+    relations: [...project.relations.filter((r) => !r.branchId), ...extraRelations],
+    timelineEvents: [
+      ...project.timelineEvents.filter((e) => !e.branchId),
+      ...activeBranchEvents,
+    ].sort((a, b) => a.startTick - b.startTick),
+    maps,
+  };
 }
 
 /**
@@ -74,11 +215,13 @@ export function interpolateAlongPolyline(
 
 /**
  * Resolves an Entity's lifecycle state, age, and temporal status at a given tick.
+ * Supports an optional branch filter (`allowedBranchIds`).
  */
 export function resolveEntityTemporalStatus(
   entity: Entity,
   tick: number,
-  calendar?: CustomCalendar
+  calendar?: CustomCalendar,
+  allowedBranchIds?: Set<string>
 ) {
   let lifecycleState: 'unborn' | 'active' | 'ended' = 'active';
   if (entity.lifecycleStartTick !== undefined && tick < entity.lifecycleStartTick) {
@@ -95,15 +238,27 @@ export function resolveEntityTemporalStatus(
     ageYears = Math.floor((effectiveTick - entity.lifecycleStartTick) / daysPerYear);
   }
 
-  // Find active temporal state override
-  const sortedStates = [...(entity.temporalStates || [])].sort(
-    (a, b) => a.fromTick - b.fromTick
+  // Find active temporal state override (filtering by branch visibility if provided)
+  const visibleStates = (entity.temporalStates || []).filter((st) =>
+    allowedBranchIds ? isRecordVisibleInBranch(st.branchId, allowedBranchIds) : true
   );
+  const sortedStates = [...visibleStates].sort((a, b) => a.fromTick - b.fromTick);
   let activeState = undefined;
   for (const st of sortedStates) {
     if (tick >= st.fromTick && (st.toTick === undefined || tick <= st.toTick)) {
       activeState = st;
     }
+  }
+
+  // Check if activeState marks death
+  if (
+    activeState?.status &&
+    (activeState.status.toLowerCase().includes('dead') ||
+      activeState.status.toLowerCase().includes('deceased') ||
+      activeState.status.includes('מת') ||
+      activeState.status.includes('נהרג'))
+  ) {
+    lifecycleState = 'ended';
   }
 
   return {
@@ -118,34 +273,42 @@ export function resolveEntityTemporalStatus(
           ? 'Deceased / Destroyed'
           : 'Active'),
     activeNotes: activeState?.notes,
+    activeAllegianceId: activeState?.allegianceEntityId,
   };
 }
 
 /**
  * Resolves all Entity positions on a specific WorldMap at a given AbsoluteTick.
+ * Also computes recent movement trail points (`trailPoints`) for Living World visualization.
  */
 export function resolveEntityMapPositionsAtTick(
   project: Project,
   map: WorldMap,
-  tick: number
+  tick: number,
+  allowedBranchIds?: Set<string>
 ): ResolvedEntityPosition[] {
   const calendar = project.calendars.find((c) => c.id === project.activeCalendarId);
   const results: ResolvedEntityPosition[] = [];
 
   for (const entity of project.entities) {
     const mapKeyframes = (entity.spatialKeyframes || [])
-      .filter((kf) => kf.mapId === map.id)
+      .filter(
+        (kf) =>
+          kf.mapId === map.id &&
+          (allowedBranchIds ? isRecordVisibleInBranch(kf.branchId, allowedBranchIds) : true)
+      )
       .sort((a, b) => a.tick - b.tick);
 
     if (mapKeyframes.length === 0) continue;
 
-    const { lifecycleState, ageYears, activeTitle } = resolveEntityTemporalStatus(
+    const { lifecycleState, ageYears, activeTitle, activeStatus } = resolveEntityTemporalStatus(
       entity,
       tick,
-      calendar
+      calendar,
+      allowedBranchIds
     );
 
-    // If entity is not yet born/created at this tick, don't show on map unless user wants ghosts
+    // If entity is not yet born/created at this tick, don't show on map
     if (lifecycleState === 'unborn') continue;
 
     // Find the active keyframe or interpolate between keyframes
@@ -156,11 +319,6 @@ export function resolveEntityMapPositionsAtTick(
       } else {
         break;
       }
-    }
-
-    // If tick is before even the first keyframe and entity has a start tick after tick, skip
-    if (tick < mapKeyframes[0].tick && entity.lifecycleStartTick === undefined) {
-      // Still show at first keyframe if within reasonable window, or skip if strictly future
     }
 
     let x = chosenKf.x;
@@ -199,7 +357,6 @@ export function resolveEntityMapPositionsAtTick(
         }
       }
     } else {
-      // Check if there is a next keyframe we should smoothly interpolate toward if they are close
       const idx = mapKeyframes.indexOf(chosenKf);
       if (idx >= 0 && idx < mapKeyframes.length - 1) {
         const nextKf = mapKeyframes[idx + 1];
@@ -214,6 +371,21 @@ export function resolveEntityMapPositionsAtTick(
       }
     }
 
+    // Build trail points up to current tick (up to last 6 keyframes)
+    const pastKeyframes = mapKeyframes.filter((kf) => kf.tick <= tick).slice(-6);
+    const trailPoints = pastKeyframes.map((kf) => ({
+      x: kf.x,
+      y: kf.y,
+      tick: kf.tick,
+      isBranch: Boolean(kf.branchId),
+    }));
+    if (trailPoints.length > 0) {
+      const last = trailPoints[trailPoints.length - 1];
+      if (Math.hypot(last.x - x, last.y - y) > 2) {
+        trailPoints.push({ x, y, tick, isBranch: Boolean(chosenKf.branchId) });
+      }
+    }
+
     results.push({
       entity,
       x,
@@ -225,6 +397,8 @@ export function resolveEntityMapPositionsAtTick(
       lifecycleState,
       ageYears,
       activeTitle,
+      activeStatus,
+      trailPoints,
     });
   }
 
@@ -274,7 +448,6 @@ export function auditStoryContinuity(project: Project, story: Story): Continuity
     .sort((a, b) => a.order - b.order)
     .flatMap((ch) => ch.scenes.slice().sort((a, b) => a.order - b.order));
 
-  // Track last scene appearance of each entity to check travel speed and time ordering
   const lastAppearance = new Map<
     string,
     { sceneTitle: string; tick: number; mapId?: string; x?: number; y?: number }
@@ -288,7 +461,6 @@ export function auditStoryContinuity(project: Project, story: Story): Continuity
       const entity = project.entities.find((e) => e.id === entityId);
       if (!entity) continue;
 
-      // 1. Check birth/creation tick
       if (entity.lifecycleStartTick !== undefined && scene.startTick < entity.lifecycleStartTick) {
         const birthDate = calendar
           ? formatTickToDate(calendar, entity.lifecycleStartTick).displayShort
@@ -308,7 +480,6 @@ export function auditStoryContinuity(project: Project, story: Story): Continuity
         });
       }
 
-      // 2. Check death/destruction tick
       if (entity.lifecycleEndTick !== undefined && scene.startTick > entity.lifecycleEndTick) {
         const deathDate = calendar
           ? formatTickToDate(calendar, entity.lifecycleEndTick).displayShort
@@ -328,7 +499,6 @@ export function auditStoryContinuity(project: Project, story: Story): Continuity
         });
       }
 
-      // 3. Check travel distance & speed from previous scene
       const prev = lastAppearance.get(entity.id);
       if (
         prev &&
@@ -373,4 +543,216 @@ export function auditStoryContinuity(project: Project, story: Story): Continuity
   }
 
   return issues;
+}
+
+/**
+ * Audits simulation branch events against entity mortality, spatial travel limits,
+ * simultaneous conflicting locations, and hard WorldRuleEntry constraints.
+ */
+export function auditBranchEventsContinuity(
+  projectView: Project,
+  candidateEvents: TimelineEvent[],
+  worldRules: WorldRuleEntry[] = []
+): ContinuityIssue[] {
+  const issues: ContinuityIssue[] = [];
+  const calendar = projectView.calendars.find((c) => c.id === projectView.activeCalendarId);
+
+  // Track entity locations within the same tick to prevent being in two places at once
+  const tickEntityLocation = new Map<string, { eventTitle: string; x: number; y: number }>();
+
+  for (const ev of candidateEvents) {
+    // 1. Check hard world rules against event title & summary
+    for (const rule of worldRules.filter((r) => r.enforcement === 'hard')) {
+      const ruleLower = rule.ruleText.toLowerCase();
+      const textLower = `${ev.title} ${ev.summary}`.toLowerCase();
+      // If rule defines explicit forbidden terms (e.g. "אסור: תחיית מתים" or "forbidden: resurrection")
+      const forbiddenMatch = ruleLower.match(/(?:אסור|forbidden|never|לעולם לא)[:\s]+([^.;,\n]+)/i);
+      if (forbiddenMatch) {
+        const keyword = forbiddenMatch[1].trim().toLowerCase();
+        if (keyword.length >= 3 && textLower.includes(keyword)) {
+          issues.push({
+            id: `rule-${ev.id}-${rule.id}`,
+            severity: 'error',
+            sceneId: ev.id,
+            sceneTitle: ev.title,
+            message: `הפרת חוק עולם קשיח (${rule.title})`,
+            detail: `האירוע "${ev.title}" מפר את החוק הקשיח: "${rule.ruleText}".`,
+          });
+        }
+      }
+    }
+
+    for (const entityId of ev.linkedEntityIds) {
+      const entity = projectView.entities.find((e) => e.id === entityId);
+      if (!entity) continue;
+
+      const statusAtStart = resolveEntityTemporalStatus(entity, ev.startTick - 0.01, calendar);
+
+      // 2. Dead entities cannot act or speak (unless the event itself is a memorial)
+      if (statusAtStart.lifecycleState === 'ended' && ev.category !== 'birth_death') {
+        const spoke = ev.dialogues?.some((d) => d.speakerId === entity.id);
+        issues.push({
+          id: `sim-dead-${ev.id}-${entity.id}`,
+          severity: 'error',
+          sceneId: ev.id,
+          sceneTitle: ev.title,
+          entityId: entity.id,
+          entityTitle: entity.title,
+          message: `דמות שאינה בחיים (${entity.title}) פועלת או מדברת באירוע.`,
+          detail: `${entity.title} כבר אינה בחיים בטיק ${ev.startTick}${spoke ? ' (מופיעה בדיאלוג)' : ''}. מתים לא מדברים או פועלים.`,
+        });
+      }
+
+      // 3. Unborn entities cannot act
+      if (statusAtStart.lifecycleState === 'unborn' && ev.category !== 'birth_death') {
+        issues.push({
+          id: `sim-unborn-${ev.id}-${entity.id}`,
+          severity: 'error',
+          sceneId: ev.id,
+          sceneTitle: ev.title,
+          entityId: entity.id,
+          entityTitle: entity.title,
+          message: `${entity.title} טרם נולדה/נוצרה בטיק ${ev.startTick}.`,
+          detail: `תאריך לידה/יצירה קנוני הוא טיק ${entity.lifecycleStartTick}.`,
+        });
+      }
+
+      // 4. Simultaneous two-places-at-once check & travel speed check
+      if (ev.mapX !== undefined && ev.mapY !== undefined) {
+        const locKey = `${entity.id}:${ev.startTick}`;
+        const existingLoc = tickEntityLocation.get(locKey);
+        if (existingLoc && Math.hypot(existingLoc.x - ev.mapX, existingLoc.y - ev.mapY) > 120) {
+          issues.push({
+            id: `sim-dual-loc-${ev.id}-${entity.id}`,
+            severity: 'error',
+            sceneId: ev.id,
+            sceneTitle: ev.title,
+            entityId: entity.id,
+            entityTitle: entity.title,
+            message: `${entity.title} נמצאת בשני מקומות מרוחקים בו-זמנית.`,
+            detail: `מופיעה גם ב-"${existingLoc.eventTitle}" וגם ב-"${ev.title}" באותו טיק.`,
+          });
+        } else {
+          tickEntityLocation.set(locKey, { eventTitle: ev.title, x: ev.mapX, y: ev.mapY });
+        }
+
+        // Check travel speed from latest keyframe
+        const prevKf = (entity.spatialKeyframes || [])
+          .filter((k) => k.tick < ev.startTick && (!ev.mapId || k.mapId === ev.mapId))
+          .sort((a, b) => b.tick - a.tick)[0];
+        if (prevKf) {
+          const map = projectView.maps.find((m) => m.id === prevKf.mapId);
+          if (map) {
+            const distNorm = Math.hypot(ev.mapX - prevKf.x, ev.mapY - prevKf.y);
+            const distUnits = (distNorm / 1000) * map.totalWidthUnits;
+            const days = Math.max(1, ev.startTick - prevKf.tick);
+            const speed = distUnits / days;
+            if (distUnits > 150 && speed > 100) {
+              issues.push({
+                id: `sim-speed-${ev.id}-${entity.id}`,
+                severity: 'warning',
+                sceneId: ev.id,
+                sceneTitle: ev.title,
+                entityId: entity.id,
+                entityTitle: entity.title,
+                message: `מהירות מסע חריגה עבור ${entity.title} (${Math.round(distUnits)} ${map.scaleUnit} ב-${days} ימים).`,
+                detail: `נדרש הסבר או תיקון מיקום (למשל שער קסם או קיצור מרחק).`,
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return issues;
+}
+
+/**
+ * Checks if merging a branch TimelineEvent into Canon contradicts any existing
+ * canonical TimelineEvents, StoryScenes, or Entity lifecycle bounds.
+ */
+export function detectCanonContradictionsForMerge(
+  canonProject: Project,
+  branchEvent: TimelineEvent
+): string[] {
+  const contradictions: string[] = [];
+  const calendar = canonProject.calendars.find((c) => c.id === canonProject.activeCalendarId);
+
+  // Check if this event kills an entity that appears alive in later canonical events or stories
+  const fatalEffects = (branchEvent.effects || []).filter(
+    (ef) =>
+      ef.type === 'update_status' &&
+      ef.status &&
+      (ef.status.toLowerCase().includes('dead') ||
+        ef.status.toLowerCase().includes('deceased') ||
+        ef.status.includes('מת') ||
+        ef.status.includes('נהרג'))
+  );
+
+  for (const eff of fatalEffects) {
+    if (!eff.entityId) continue;
+    const ent = canonProject.entities.find((e) => e.id === eff.entityId);
+    if (!ent) continue;
+
+    // 1. Canonical death tick mismatch
+    if (
+      ent.lifecycleEndTick !== undefined &&
+      Math.abs(ent.lifecycleEndTick - branchEvent.startTick) > 5
+    ) {
+      const canonDeath = calendar
+        ? formatTickToDate(calendar, ent.lifecycleEndTick).displayShort
+        : `Tick ${ent.lifecycleEndTick}`;
+      contradictions.push(
+        `דף ה-Wiki של [[${ent.title}]] קובע מוות/סיום קנוני ב-${canonDeath}, בעוד האירוע בענף ממית אותה בטיק ${branchEvent.startTick}.`
+      );
+    }
+
+    // 2. Appears in later canonical TimelineEvents
+    const laterCanonEvents = canonProject.timelineEvents.filter(
+      (ce) =>
+        !ce.branchId &&
+        ce.startTick > branchEvent.startTick &&
+        ce.linkedEntityIds.includes(ent.id)
+    );
+    for (const lce of laterCanonEvents) {
+      contradictions.push(
+        `[[${ent.title}]] מתה באירוע זה, אך מופיעה באירוע קנוני מאוחר יותר: "${lce.title}" (טיק ${lce.startTick}).`
+      );
+    }
+
+    // 3. Appears in later canonical StoryScenes
+    for (const story of canonProject.stories) {
+      for (const ch of story.chapters) {
+        for (const sc of ch.scenes) {
+          if (
+            sc.startTick > branchEvent.startTick &&
+            (sc.participatingEntityIds.includes(ent.id) || sc.povEntityId === ent.id)
+          ) {
+            contradictions.push(
+              `[[${ent.title}]] מתה באירוע זה, אך משתתפת בסצנה קנונית מאוחרת יותר: "${sc.title}" בסיפור "${story.title}" (טיק ${sc.startTick}).`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // Check if any linked entity is not yet born or already dead in Canon at branchEvent.startTick
+  for (const entityId of branchEvent.linkedEntityIds) {
+    const ent = canonProject.entities.find((e) => e.id === entityId);
+    if (!ent) continue;
+    if (ent.lifecycleEndTick !== undefined && branchEvent.startTick > ent.lifecycleEndTick) {
+      contradictions.push(
+        `[[${ent.title}]] כבר מתה בקנון (טיק ${ent.lifecycleEndTick}) לפני מועד האירוע (${branchEvent.startTick}).`
+      );
+    }
+    if (ent.lifecycleStartTick !== undefined && branchEvent.startTick < ent.lifecycleStartTick) {
+      contradictions.push(
+        `[[${ent.title}]] טרם נולדה בקנון (טיק לידה ${ent.lifecycleStartTick}) במועד האירוע (${branchEvent.startTick}).`
+      );
+    }
+  }
+
+  return contradictions;
 }
