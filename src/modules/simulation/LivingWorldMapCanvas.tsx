@@ -86,9 +86,9 @@ export const LivingWorldMapCanvas: React.FC<LivingWorldMapCanvasProps> = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 text-slate-400 p-8 text-center">
         <Compass className="w-12 h-12 text-amber-500/50 mb-3" />
-        <p className="text-base font-medium text-slate-200">אין מפה פעילה בפרויקט</p>
+        <p className="text-base font-medium text-slate-200">No active map in project</p>
         <p className="text-xs text-slate-500 mt-1">
-          העולם החי יכול לרוץ גם ללא מפה, אך הוספת מפה במודול Maps תאפשר לראות את תנועת הדמויות ושובלי המסלול שלהן.
+          The living world can run without a map, but adding one in the Maps module lets you see character movement and their route trails.
         </p>
       </div>
     );
@@ -115,7 +115,7 @@ export const LivingWorldMapCanvas: React.FC<LivingWorldMapCanvasProps> = ({
             ))}
           </select>
           <span className="text-[11px] text-slate-400 border-r border-slate-700 pr-2 mr-1">
-            {entityPositions.length} ישויות על המפה
+            {entityPositions.length} entities on map
           </span>
         </div>
 
@@ -129,7 +129,7 @@ export const LivingWorldMapCanvas: React.FC<LivingWorldMapCanvasProps> = ({
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            שובלי תנועה
+            Movement trails
           </button>
           <button
             type="button"
@@ -140,7 +140,7 @@ export const LivingWorldMapCanvas: React.FC<LivingWorldMapCanvasProps> = ({
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            מוקדי אירועים
+            Event hotspots
           </button>
         </div>
       </div>
@@ -415,20 +415,20 @@ export const LivingWorldMapCanvas: React.FC<LivingWorldMapCanvasProps> = ({
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
-            גיבור סוכן פעיל (לחץ לפתיחת כרטיס דמות מורחב)
+            Active hero agent (click to open extended character card)
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
-            דמות משנית / ישות
+            Secondary character / entity
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-4 border-t-2 border-dashed border-emerald-400 inline-block" />
-            שובל מסלול בענף
+            Branch route trail
           </span>
         </div>
         <div className="flex items-center gap-1 text-slate-500">
           <Eye className="w-3.5 h-3.5" />
-          <span>לחץ על כל דמות על המפה לצפייה ביומן הפנימי ולשיחה איתה</span>
+          <span>Click any character on the map to view their inner journal and chat with them</span>
         </div>
       </div>
     </div>

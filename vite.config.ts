@@ -8,7 +8,11 @@ function getCommitHash(): string {
     process.env.VERCEL_GIT_COMMIT_SHA ||
     process.env.CF_PAGES_COMMIT_SHA ||
     process.env.GITHUB_SHA ||
-    process.env.COMMIT_REF;
+    process.env.COMMIT_REF ||
+    // Coolify injects SOURCE_COMMIT into the build environment (nixpacks builds
+    // have no .git directory, so the git fallback below never fires there).
+    process.env.SOURCE_COMMIT ||
+    process.env.COOLIFY_COMMIT;
   if (envSha) return envSha.slice(0, 7);
   try {
     return execSync('git rev-parse --short HEAD').toString().trim();

@@ -231,7 +231,7 @@ export const LivingWorldView: React.FC = () => {
     setIsRunningTick(true);
     setTickError(null);
     setTickProgressStep(1);
-    setTickProgressLabel('מתחיל מחזור טיק...');
+    setTickProgressLabel('Starting tick cycle...');
 
     try {
       const result = await executeSimulationTick(
@@ -260,7 +260,7 @@ export const LivingWorldView: React.FC = () => {
     }
   };
 
-  // Re-roll last tick with a new seed ("שחזור: מריצים את אותו טיק עם seed אחר")
+  // Re-roll last tick with a new seed (runs the same tick again with a different seed)
   const handleRerollLastTickWithNewSeed = async () => {
     if (!activeBranch || !snapshot || activeBranch.tickHistory.length <= 1 || isRunningTick)
       return;
@@ -281,7 +281,7 @@ export const LivingWorldView: React.FC = () => {
         {
           seed: Math.floor(Math.random() * 900_000_000) + 100_000_000,
           onStepProgress: (label, step) => {
-            setTickProgressLabel(`שחזור ב-Seed חדש · ${label}`);
+            setTickProgressLabel(`Re-roll with new Seed · ${label}`);
             setTickProgressStep(step);
           },
         }
@@ -297,7 +297,7 @@ export const LivingWorldView: React.FC = () => {
     }
   };
 
-  // Undo last tick ("בטל טיק")
+  // Undo last tick
   const handleUndoLastTick = async () => {
     if (!activeBranch || !snapshot || activeBranch.tickHistory.length <= 1 || isRunningTick)
       return;
@@ -305,7 +305,7 @@ export const LivingWorldView: React.FC = () => {
     await reloadSnapshot();
   };
 
-  // Fork a new branch ("פיצול ענף")
+  // Fork a new branch
   const handleForkBranch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canonProject || !snapshot || !forkName.trim()) return;
@@ -314,7 +314,7 @@ export const LivingWorldView: React.FC = () => {
       activeBranch,
       activeBranch ? activeBranch.currentTick : canonProject.currentTick,
       forkName.trim(),
-      forkDesc.trim() || 'פיצול מהעולם החי',
+      forkDesc.trim() || 'Forked from the living world',
       snapshot
     );
     await reloadSnapshot();
@@ -324,7 +324,7 @@ export const LivingWorldView: React.FC = () => {
     setForkDesc('');
   };
 
-  // Merge selected branch events into Canon ("מיזוג = הסרת branchId")
+  // Merge selected branch events into Canon (merge = removing branchId)
   const handleMergeEventsToCanon = async (
     eventsToMerge: TimelineEvent[],
     markBranchMerged: boolean = false
@@ -466,8 +466,8 @@ export const LivingWorldView: React.FC = () => {
 
     const conclusion =
       charMems.length > 0
-        ? `רפלקציה בטיק ${activeBranch.currentTick}: מתוך האירועים האחרונים (${charMems[charMems.length - 1].content.slice(0, 70)}...), הבנתי שעליי לפעול בנחישות רבה יותר ולהיזהר מהבטחות סרק.`
-        : `רפלקציה בטיק ${activeBranch.currentTick}: עליי לבצר את מעמדי לקראת הבאות.`;
+        ? `Reflection at tick ${activeBranch.currentTick}: From the recent events (${charMems[charMems.length - 1].content.slice(0, 70)}...), I understand I must act with greater resolve and beware of empty promises.`
+        : `Reflection at tick ${activeBranch.currentTick}: I must fortify my standing for what is to come.`;
 
     const reflMem: CharacterMemory = {
       id: `mem-refl-${activeBranch.id}-${Date.now()}`,
@@ -497,12 +497,12 @@ export const LivingWorldView: React.FC = () => {
       tick: activeBranch.currentTick,
       entityId: entity.id,
       kind: 'character_evolution',
-      title: `שינוי אופי מוצע מרפלקציה: ${entity.title}`,
+      title: `Proposed character evolution from reflection: ${entity.title}`,
       description: conclusion,
       status: 'pending',
       payload: {
         entityId: entity.id,
-        markdownAppend: `\n\n### תובנת רפלקציה (טיק ${activeBranch.currentTick})\n${conclusion}`,
+        markdownAppend: `\n\n### Reflection Insight (Tick ${activeBranch.currentTick})\n${conclusion}`,
       },
       createdAt: new Date().toISOString(),
     };
@@ -516,7 +516,7 @@ export const LivingWorldView: React.FC = () => {
   if (!canonProject || !snapshot || !activeBranch) {
     return (
       <div className="flex-1 flex items-center justify-center bg-slate-950 text-slate-400">
-        טוען את מנוע העולם החי מ-IndexedDB...
+        Loading the living world engine from IndexedDB...
       </div>
     );
   }
@@ -525,7 +525,7 @@ export const LivingWorldView: React.FC = () => {
   const currentIntervalInfo = resolveTickIntervalInfo(activeBranch.tickSize, daysPerYear);
 
   return (
-    <div dir="rtl" className="flex-1 min-h-0 flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
+    <div dir="ltr" className="flex-1 min-h-0 flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
       {/* ═══════════════════════════════════════════════════════════════
           1. TOP CONTROL BAR: Branch, Clock, Tick Engine, Interval, Scope/Resolution & Budget
          ═══════════════════════════════════════════════════════════════ */}
@@ -541,20 +541,20 @@ export const LivingWorldView: React.FC = () => {
             >
               {snapshot.branches.map((b) => (
                 <option key={b.id} value={b.id} className="bg-slate-900 text-slate-100">
-                  {b.name} {b.status === 'merged' ? '(מוזג)' : b.status === 'discarded' ? '(נזרק)' : ''}
+                  {b.name} {b.status === 'merged' ? '(merged)' : b.status === 'discarded' ? '(discarded)' : ''}
                 </option>
               ))}
             </select>
             <button
               type="button"
               onClick={() => {
-                setForkName(`ענף מתפצל מטיק ${activeBranch.currentTick}`);
+                setForkName(`Branch forked at tick ${activeBranch.currentTick}`);
                 setShowForkModal(true);
               }}
               className="text-[11px] text-amber-400 hover:text-amber-300 border-r border-slate-800 pr-2 mr-1 font-medium cursor-pointer"
-              title="פצל ענף חדש מנקודה זו"
+              title="Fork a new branch from this point"
             >
-              + פיצול
+              + Fork
             </button>
           </div>
 
@@ -562,25 +562,25 @@ export const LivingWorldView: React.FC = () => {
           <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5 text-xs">
             <Clock className="w-3.5 h-3.5 text-amber-400" />
             <span className="font-semibold text-amber-200">
-              {formattedBranchDate ? formattedBranchDate.displayFull : `טיק ${activeBranch.currentTick}`}
+              {formattedBranchDate ? formattedBranchDate.displayFull : `Tick ${activeBranch.currentTick}`}
             </span>
             <span className="text-slate-500 font-mono text-[11px]">
-              (טיק {activeBranch.currentTick} · {activeBranch.tickCount} הרצות)
+              (Tick {activeBranch.currentTick} · {activeBranch.tickCount} runs)
             </span>
           </div>
         </div>
 
         {/* Center Group: Tick Execution Controls, Interval Picker, Scope/Resolution, Undo & Re-roll */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Interval Picker ("גודל טיק משתנה: מיום ועד עשור") */}
+          {/* Interval Picker (variable tick size: from a day up to a decade) */}
           <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-0.5 text-xs">
             {(
               [
-                { id: '1d', label: 'יום' },
-                { id: '7d', label: 'שבוע' },
-                { id: '30d', label: 'חודש' },
-                { id: '1y', label: 'שנה' },
-                { id: '10y', label: 'עשור' },
+                { id: '1d', label: 'Day' },
+                { id: '7d', label: 'Week' },
+                { id: '30d', label: 'Month' },
+                { id: '1y', label: 'Year' },
+                { id: '10y', label: 'Decade' },
               ] as const
             ).map((iv) => (
               <button
@@ -608,45 +608,45 @@ export const LivingWorldView: React.FC = () => {
             <Play className="w-4 h-4 fill-current" />
             <span>
               {isRunningTick
-                ? `מריץ (${tickProgressStep}/7)...`
-                : `הרץ טיק (+${currentIntervalInfo.hebrewLabel})`}
+                ? `Running (${tickProgressStep}/7)...`
+                : `Run Tick (+${currentIntervalInfo.hebrewLabel})`}
             </span>
           </button>
 
-          {/* Intervene Button ("התערבות: מזריק אירוע וממשיכים לרוץ") */}
+          {/* Intervene Button (injects an event, then the world keeps running) */}
           <button
             type="button"
             disabled={isRunningTick}
             onClick={() => setShowInterventionModal(true)}
             className="h-9 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
-            title="התערבות: הזרק אירוע דרמטי לעולם והרץ טיק"
+            title="Intervention: inject a dramatic event into the world and run a tick"
           >
             <Zap className="w-3.5 h-3.5" />
-            <span>התערבות</span>
+            <span>Intervene</span>
           </button>
 
-          {/* Re-roll with new Seed ("שחזור עם seed אחר") */}
+          {/* Re-roll with a different seed */}
           <button
             type="button"
             disabled={isRunningTick || activeBranch.tickHistory.length <= 1}
             onClick={handleRerollLastTickWithNewSeed}
             className="h-9 px-2.5 rounded-xl border border-slate-800 hover:bg-slate-800 disabled:opacity-40 text-slate-300 text-xs flex items-center gap-1.5 cursor-pointer"
-            title="שחזור: הרץ מחדש את הטיק האחרון עם Seed הגרלה אחר"
+            title="Re-roll: run the last tick again with a different random Seed"
           >
             <Dices className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden xl:inline">שחזור Seed</span>
+            <span className="hidden xl:inline">Re-roll Seed</span>
           </button>
 
-          {/* Undo 1 Tick ("בטל טיק") */}
+          {/* Undo 1 Tick */}
           <button
             type="button"
             disabled={isRunningTick || activeBranch.tickHistory.length <= 1}
             onClick={handleUndoLastTick}
             className="h-9 px-2.5 rounded-xl border border-slate-800 hover:bg-slate-800 disabled:opacity-40 text-slate-300 text-xs flex items-center gap-1.5 cursor-pointer"
-            title="בטל: גלגל את הענף טיק אחד אחורה"
+            title="Undo: roll the branch back one tick"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">בטל</span>
+            <span className="hidden xl:inline">Undo</span>
           </button>
 
           {/* Scope & Resolution Settings Popover Trigger */}
@@ -659,16 +659,16 @@ export const LivingWorldView: React.FC = () => {
                   ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
                   : 'border-slate-800 hover:bg-slate-800 text-slate-300'
               }`}
-              title="הגדרות היקף (Scope) ורזולוציית אירועים (Resolution)"
+              title="Scope & event resolution (Resolution) settings"
             >
               <Sliders className="w-3.5 h-3.5" />
-              <span>היקף ורזולוציה</span>
+              <span>Scope & Resolution</span>
             </button>
 
             {showScopeSettings && (
               <div className="absolute left-0 top-11 w-80 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 space-y-4 z-50 text-xs">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <span className="font-bold text-slate-100">היקף (Scope) ורזולוציית טיק</span>
+                  <span className="font-bold text-slate-100">Scope & Tick Resolution</span>
                   <button
                     type="button"
                     onClick={() => setShowScopeSettings(false)}
@@ -680,7 +680,7 @@ export const LivingWorldView: React.FC = () => {
 
                 <div className="space-y-1.5">
                   <label className="block font-semibold text-slate-300">
-                    1. היקף גיאוגרפי וסיפורי (Scope):
+                    1. Geographic & narrative scope (Scope):
                   </label>
                   <select
                     value={activeBranch.scopeMode}
@@ -689,16 +689,16 @@ export const LivingWorldView: React.FC = () => {
                     }
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100"
                   >
-                    <option value="local">מקומי — ממוקד במפה/זירה אחת</option>
-                    <option value="regional">אזורי — גיבורים וסיעות באזור הפעיל</option>
-                    <option value="global">עולמי — כלל העולם והממלכות</option>
-                    <option value="custom_cast">קאסט מותאם אישית בלבד</option>
+                    <option value="local">Local — focused on a single map/arena</option>
+                    <option value="regional">Regional — heroes and factions in the active region</option>
+                    <option value="global">Global — the whole world and its kingdoms</option>
+                    <option value="custom_cast">Custom cast only</option>
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block font-semibold text-slate-300">
-                    2. רזולוציה וצפיפות אירועים לטיק (Resolution):
+                    2. Event resolution & density per tick (Resolution):
                   </label>
                   <select
                     value={activeBranch.resolutionLevel}
@@ -709,16 +709,16 @@ export const LivingWorldView: React.FC = () => {
                     }
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100"
                   >
-                    <option value="focused">ממוקד (1–2 אירועי שיא בלבד)</option>
-                    <option value="balanced">מאוזן (2–4 אירועים משמעותיים + דיאלוג)</option>
-                    <option value="detailed">מפורט (4–6 אירועים, תנועות ודיאלוגים)</option>
-                    <option value="chronicle">כרוניקה היסטורית (3–7 תמורות מקרו)</option>
+                    <option value="focused">Focused (1–2 peak events only)</option>
+                    <option value="balanced">Balanced (2–4 significant events + dialogue)</option>
+                    <option value="detailed">Detailed (4–6 events, movements and dialogues)</option>
+                    <option value="chronicle">Historical chronicle (3–7 macro developments)</option>
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block font-semibold text-slate-300">
-                    3. סף חשיבות לתור האישורים:
+                    3. Importance threshold for the approval queue:
                   </label>
                   <select
                     value={activeBranch.minImportanceThreshold ?? 2}
@@ -729,15 +729,15 @@ export const LivingWorldView: React.FC = () => {
                     }
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100"
                   >
-                    <option value={1}>כל האירועים (חשיבות 1 ומעלה)</option>
-                    <option value={2}>אירועים בולטים (חשיבות 2 ומעלה — מומלץ)</option>
-                    <option value={3}>אירועים מכונני-עידן בלבד (חשיבות 3)</option>
+                    <option value={1}>All events (importance 1 and up)</option>
+                    <option value={2}>Notable events (importance 2 and up — recommended)</option>
+                    <option value={3}>Only era-defining events (importance 3)</option>
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block font-semibold text-slate-300">
-                    4. שפת כתיבת העולם:
+                    4. World writing language:
                   </label>
                   <select
                     value={activeBranch.languageMode}
@@ -748,8 +748,8 @@ export const LivingWorldView: React.FC = () => {
                     }
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100"
                   >
-                    <option value="he">עברית תמיד (ברירת מחדל)</option>
-                    <option value="entity_match">לפי שפת דף ה-Wiki של הדמות</option>
+                    <option value="he">Always Hebrew (default)</option>
+                    <option value="entity_match">Match the character's Wiki page language</option>
                     <option value="en">English</option>
                   </select>
                 </div>
@@ -763,10 +763,10 @@ export const LivingWorldView: React.FC = () => {
           <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-0.5 text-xs">
             {(
               [
-                { id: 'map_live', label: 'מפה חיה', icon: MapIcon },
-                { id: 'cast_minds', label: 'סוכני דמויות', icon: Users },
-                { id: 'compare_merge', label: 'השוואה ומיזוג', icon: GitCompare },
-                { id: 'world_rules', label: 'חוקי עולם', icon: ShieldCheck },
+                { id: 'map_live', label: 'Living Map', icon: MapIcon },
+                { id: 'cast_minds', label: 'Character Agents', icon: Users },
+                { id: 'compare_merge', label: 'Compare & Merge', icon: GitCompare },
+                { id: 'world_rules', label: 'World Rules', icon: ShieldCheck },
               ] as const
             ).map((tab) => {
               const Icon = tab.icon;
@@ -794,7 +794,7 @@ export const LivingWorldView: React.FC = () => {
               type="button"
               onClick={() => setShowBudgetPopover(!showBudgetPopover)}
               className="h-9 px-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-xs flex items-center gap-1.5 cursor-pointer"
-              title="מד תקציב ענף ומעקב קריאות מודל (AgentRun)"
+              title="Branch budget meter & model call tracking (AgentRun)"
             >
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
               <span className="font-mono text-slate-200">
@@ -805,7 +805,7 @@ export const LivingWorldView: React.FC = () => {
             {showBudgetPopover && (
               <div className="absolute left-0 top-11 w-80 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 space-y-3 z-50 text-xs">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <span className="font-bold text-slate-100">בקרת תקציב וקריאות (AgentRun)</span>
+                  <span className="font-bold text-slate-100">Budget & Call Control (AgentRun)</span>
                   <button
                     type="button"
                     onClick={() => setShowBudgetPopover(false)}
@@ -815,7 +815,7 @@ export const LivingWorldView: React.FC = () => {
                   </button>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-slate-300">תקרת תקציב לענף ($ USD):</span>
+                  <span className="text-slate-300">Branch budget cap ($ USD):</span>
                   <input
                     type="number"
                     step="0.5"
@@ -829,7 +829,7 @@ export const LivingWorldView: React.FC = () => {
                 </div>
                 <div className="space-y-1 max-h-44 overflow-y-auto pt-1">
                   <div className="text-[11px] text-slate-400 font-semibold">
-                    קריאות אחרונות בענף ({snapshot.agentRuns.filter((r) => r.branchId === activeBranch.id).length}):
+                    Recent calls on branch ({snapshot.agentRuns.filter((r) => r.branchId === activeBranch.id).length}):
                   </div>
                   {snapshot.agentRuns
                     .filter((r) => r.branchId === activeBranch.id)
@@ -840,7 +840,7 @@ export const LivingWorldView: React.FC = () => {
                         className="flex items-center justify-between bg-slate-950 px-2.5 py-1.5 rounded-lg text-[11px]"
                       >
                         <span className="text-slate-300 truncate max-w-[150px]">
-                          [טיק {r.tick}] {r.role}
+                          [Tick {r.tick}] {r.role}
                         </span>
                         <span className="font-mono text-emerald-400">
                           {r.tokensIn + r.tokensOut} tok · ${r.costUsd.toFixed(4)}
@@ -882,7 +882,7 @@ export const LivingWorldView: React.FC = () => {
               onClick={() => setTickError(null)}
               className="text-rose-300 hover:text-white cursor-pointer"
             >
-              סגור
+              Close
             </button>
           )}
         </div>
@@ -922,10 +922,10 @@ export const LivingWorldView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-bold text-slate-100">
-                      סוכני הדמויות והיומנים הפנימיים בענף ({activeBranchMinds.length})
+                      Character agents & inner journals on branch ({activeBranchMinds.length})
                     </h2>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      רק דמויות בשכבת "גיבור" מקבלות מודל שפה וזיכרון אישי בכל טיק. לחץ על כל דמות לפתיחת הכרטיס הדו-שכבתי או לשיחה איתה.
+                      Only characters in the "hero" tier get a language model and personal memory every tick. Click any character to open its dual-layer card or to chat with it.
                     </p>
                   </div>
                 </div>
@@ -981,10 +981,10 @@ export const LivingWorldView: React.FC = () => {
                               }`}
                             >
                               {mind.tier === 'protagonist'
-                                ? 'גיבור (סוכן מלא)'
+                                ? 'Hero (full agent)'
                                 : mind.tier === 'secondary'
-                                  ? 'משנית'
-                                  : 'רקע'}
+                                  ? 'Secondary'
+                                  : 'Background'}
                             </span>
                           </div>
 
@@ -992,7 +992,7 @@ export const LivingWorldView: React.FC = () => {
                           {mind.goals[0] && (
                             <div className="text-xs text-slate-300 bg-slate-950/70 rounded-xl p-2.5 border border-slate-800/80">
                               <span className="text-[10px] text-amber-400 font-bold block mb-0.5">
-                                מטרה מובילה:
+                                Leading goal:
                               </span>
                               {mind.goals[0].description}
                             </div>
@@ -1002,11 +1002,11 @@ export const LivingWorldView: React.FC = () => {
                           {mind.latestIntent && (
                             <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-1">
                               <div className="text-[11px] text-slate-200 font-medium">
-                                <strong>כוונה:</strong> "{mind.latestIntent.intent}"
+                                <strong>Intent:</strong> "{mind.latestIntent.intent}"
                               </div>
                               {mind.latestIntent.inner_note && (
                                 <div className="text-[11px] text-amber-200/90 italic">
-                                  💭 יומן פנימי: "{mind.latestIntent.inner_note}"
+                                  💭 Inner journal: "{mind.latestIntent.inner_note}"
                                 </div>
                               )}
                             </div>
@@ -1014,10 +1014,10 @@ export const LivingWorldView: React.FC = () => {
                         </div>
 
                         <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                          <span>{charMems.length} זיכרונות בבנק</span>
+                          <span>{charMems.length} memories in bank</span>
                           <span className="text-emerald-400 font-medium flex items-center gap-1">
                             <Eye className="w-3.5 h-3.5" />
-                            <span>פתח כרטיס ושיחה</span>
+                            <span>Open card & chat</span>
                           </span>
                         </div>
                       </div>
@@ -1032,10 +1032,10 @@ export const LivingWorldView: React.FC = () => {
                 <div className="max-w-3xl space-y-2">
                   <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-amber-400" />
-                    <span>חוקי העולם כנתונים (קשיחים ורכים)</span>
+                    <span>World rules as data (hard & soft)</span>
                   </h2>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    חוקים <strong>קשיחים</strong> נאכפים בקוד על ידי בודק הקונפליקטים אחרי כל טיק (אירוע שמפר אותם נפסל או נשלח לתיקון). חוקים <strong>רכים</strong> מוזרקים כהנחיות מחייבות לסוכני הדמויות ולמספר.
+                    <strong>Hard</strong> rules are enforced in code by the conflict checker after every tick (an event that violates them is vetoed or sent for revision). <strong>Soft</strong> rules are injected as binding directives to the character agents and the narrator.
                   </p>
                 </div>
 
@@ -1058,13 +1058,13 @@ export const LivingWorldView: React.FC = () => {
                   }}
                   className="max-w-3xl p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3"
                 >
-                  <div className="text-xs font-bold text-slate-200">הוספת חוק עולם חדש</div>
+                  <div className="text-xs font-bold text-slate-200">Add a new world rule</div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <input
                       type="text"
                       value={newRuleTitle}
                       onChange={(e) => setNewRuleTitle(e.target.value)}
-                      placeholder="שם החוק (למשל: מגבלת קסם דם)"
+                      placeholder="Rule name (e.g. blood magic limit)"
                       className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100"
                     />
                     <select
@@ -1074,8 +1074,8 @@ export const LivingWorldView: React.FC = () => {
                       }
                       className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100"
                     >
-                      <option value="hard">חוק קשיח (נאכף בקוד ובבודק הקונפליקטים)</option>
-                      <option value="soft">חוק רך (הנחיה למספר ולדמויות)</option>
+                      <option value="hard">Hard rule (enforced in code and by the conflict checker)</option>
+                      <option value="soft">Soft rule (directive to the narrator and characters)</option>
                     </select>
                     <select
                       value={newRuleCategory}
@@ -1084,11 +1084,11 @@ export const LivingWorldView: React.FC = () => {
                       }
                       className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100"
                     >
-                      <option value="magic">קסם ומטאפיזיקה</option>
-                      <option value="physics">פיזיקה וטבע</option>
-                      <option value="mortality">מוות ותוחלת חיים</option>
-                      <option value="travel">מסע ומרחקים</option>
-                      <option value="politics">פוליטיקה וחברה</option>
+                      <option value="magic">Magic & metaphysics</option>
+                      <option value="physics">Physics & nature</option>
+                      <option value="mortality">Death & lifespan</option>
+                      <option value="travel">Travel & distances</option>
+                      <option value="politics">Politics & society</option>
                     </select>
                   </div>
                   <div className="flex gap-2">
@@ -1096,7 +1096,7 @@ export const LivingWorldView: React.FC = () => {
                       type="text"
                       value={newRuleText}
                       onChange={(e) => setNewRuleText(e.target.value)}
-                      placeholder='נסח את החוק (למשל: "אסור: תחיית מתים" או "כל הטלת לחש דורשת אבן תהודה")...'
+                      placeholder='Phrase the rule (e.g. "Forbidden: raising the dead" or "every spell casting requires a resonance stone")...'
                       className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100"
                     />
                     <button
@@ -1104,7 +1104,7 @@ export const LivingWorldView: React.FC = () => {
                       className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
-                      <span>הוסף חוק</span>
+                      <span>Add Rule</span>
                     </button>
                   </div>
                 </form>
@@ -1124,7 +1124,7 @@ export const LivingWorldView: React.FC = () => {
                                 : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                             }`}
                           >
-                            {rule.enforcement === 'hard' ? 'קשיח (נאכף בקוד)' : 'רך (הנחיית מודל)'}
+                            {rule.enforcement === 'hard' ? 'Hard (enforced in code)' : 'Soft (model directive)'}
                           </span>
                           <span className="text-sm font-bold text-slate-100">{rule.title}</span>
                         </div>
@@ -1137,7 +1137,7 @@ export const LivingWorldView: React.FC = () => {
                           await reloadSnapshot();
                         }}
                         className="text-slate-500 hover:text-rose-400 p-1 cursor-pointer"
-                        title="מחק חוק"
+                        title="Delete rule"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1158,10 +1158,10 @@ export const LivingWorldView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
                     <Sparkles className="w-4 h-4" />
-                    <span>ממתין לאישורך לקנון ({pendingProposals.length})</span>
+                    <span>Awaiting your approval for canon ({pendingProposals.length})</span>
                   </div>
                   <span className="text-[10px] text-amber-200/70">
-                    אישור מסיר branchId וממזג לקנון
+                    Approving removes branchId and merges into canon
                   </span>
                 </div>
 
@@ -1174,15 +1174,15 @@ export const LivingWorldView: React.FC = () => {
                       <div>
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 ml-1.5">
                           {prop.kind === 'major_event'
-                            ? 'אירוע מרכזי'
+                            ? 'Major event'
                             : prop.kind === 'character_evolution'
-                              ? 'שינוי אופי מרפלקציה'
-                              : 'טיוטת ישות חדשה'}
+                              ? 'Character evolution from reflection'
+                              : 'New entity draft'}
                         </span>
                         <span className="text-xs font-bold text-slate-100">{prop.title}</span>
                       </div>
                       <span className="text-[10px] font-mono text-slate-400 shrink-0">
-                        טיק {prop.tick}
+                        Tick {prop.tick}
                       </span>
                     </div>
 
@@ -1192,7 +1192,7 @@ export const LivingWorldView: React.FC = () => {
                       <div className="p-2 rounded-lg bg-rose-500/15 border border-rose-500/40 text-[11px] text-rose-200 space-y-0.5">
                         <div className="font-bold text-rose-300 flex items-center gap-1">
                           <AlertTriangle className="w-3.5 h-3.5" />
-                          <span>סתירה אפשרית מול הקנון:</span>
+                          <span>Possible contradiction with canon:</span>
                         </div>
                         {prop.contradictsCanon.map((c, i) => (
                           <div key={i}>• {c}</div>
@@ -1207,7 +1207,7 @@ export const LivingWorldView: React.FC = () => {
                         className="px-2.5 py-1 rounded-lg border border-slate-800 hover:bg-slate-800 text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 cursor-pointer"
                       >
                         <X className="w-3.5 h-3.5" />
-                        <span>דחה</span>
+                        <span>Reject</span>
                       </button>
                       <button
                         type="button"
@@ -1215,7 +1215,7 @@ export const LivingWorldView: React.FC = () => {
                         className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 cursor-pointer"
                       >
                         <Check className="w-3.5 h-3.5" />
-                        <span>אשר ומזג לקנון</span>
+                        <span>Approve & Merge to Canon</span>
                       </button>
                     </div>
                   </div>
@@ -1228,7 +1228,7 @@ export const LivingWorldView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <ScrollText className="w-4 h-4 text-emerald-400" />
                 <h3 className="text-xs font-bold text-slate-100">
-                  יומן אירועים חי בענף ({activeBranchEvents.length})
+                  Live event log on branch ({activeBranchEvents.length})
                 </h3>
               </div>
               <span className="text-[11px] text-slate-500">{activeBranch.name}</span>
@@ -1239,17 +1239,17 @@ export const LivingWorldView: React.FC = () => {
                 <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center space-y-2">
                   <Sparkles className="w-8 h-8 text-amber-400/50 mx-auto" />
                   <p className="text-xs font-bold text-slate-200">
-                    העולם עומד בטיק {activeBranch.currentTick} וממתין לך
+                    The world stands at tick {activeBranch.currentTick}, waiting for you
                   </p>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
-                    בחר מרווח זמן בסרגל העליון (יום, שבוע, חודש, שנה או עשור) ולחץ על <strong>"הרץ טיק"</strong> כדי שסוכני הדמויות יצהירו על כוונותיהם ומנוע העולם יכריע מה התרחש.
+                    Pick a time interval in the top bar (day, week, month, year or decade) and hit <strong>"Run Tick"</strong> so the character agents declare their intentions and the world engine decides what happened.
                   </p>
                 </div>
               ) : (
                 activeBranchEvents.map((ev) => {
                   const dateLabel = calendar
                     ? formatTickToDate(calendar, ev.startTick).displayShort
-                    : `טיק ${ev.startTick}`;
+                    : `Tick ${ev.startTick}`;
 
                   return (
                     <div
@@ -1264,7 +1264,7 @@ export const LivingWorldView: React.FC = () => {
                             </span>
                             {ev.source === 'intervention' && (
                               <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold">
-                                ⚡ התערבות
+                                ⚡ Intervention
                               </span>
                             )}
                             <span className="text-xs font-bold text-slate-100">
@@ -1273,7 +1273,7 @@ export const LivingWorldView: React.FC = () => {
                           </div>
                         </div>
                         <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-amber-300 shrink-0">
-                          חשיבות {ev.importance}
+                          Importance {ev.importance}
                         </span>
                       </div>
 
@@ -1284,15 +1284,15 @@ export const LivingWorldView: React.FC = () => {
                         <div className="flex items-center gap-2 text-[11px] bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1">
                           <Dices className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                           <span className="text-slate-300">
-                            הגרלת מזל (Seed {ev.seed}): {ev.luckRoll.difficultyLabel} (
-                            {ev.luckRoll.chancePercent}%) · הוגרל{' '}
+                            Luck roll (Seed {ev.seed}): {ev.luckRoll.difficultyLabel} (
+                            {ev.luckRoll.chancePercent}%) · Rolled{' '}
                             <strong>{ev.luckRoll.rolledValue}</strong> ⬅{' '}
                             <strong
                               className={
                                 ev.luckRoll.succeeded ? 'text-emerald-400' : 'text-rose-400'
                               }
                             >
-                              {ev.luckRoll.succeeded ? 'הצלחה' : 'סיבוך / כישלון'}
+                              {ev.luckRoll.succeeded ? 'Success' : 'Complication / Failure'}
                             </strong>
                           </span>
                         </div>
@@ -1339,14 +1339,14 @@ export const LivingWorldView: React.FC = () => {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════
-          3. BOTTOM BAR: Interactive Branch Tree ("עץ הענפים עם סמן של הטיק הנוכחי")
+          3. BOTTOM BAR: Interactive Branch Tree (with a marker for the current tick)
          ═══════════════════════════════════════════════════════════════ */}
       <div className="h-14 shrink-0 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between gap-4 overflow-x-auto">
         <div className="flex items-center gap-2 shrink-0">
           <GitBranch className="w-4 h-4 text-amber-400" />
-          <span className="text-xs font-bold text-slate-200">עץ הענפים (מולטיורס):</span>
+          <span className="text-xs font-bold text-slate-200">Branch tree (multiverse):</span>
           <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
-            ★ קנון (טיק {canonProject.currentTick})
+            ★ Canon (Tick {canonProject.currentTick})
           </span>
         </div>
 
@@ -1389,9 +1389,9 @@ export const LivingWorldView: React.FC = () => {
               type="button"
               onClick={() => updateActiveBranch({ status: 'discarded' })}
               className="text-[11px] text-slate-400 hover:text-rose-300 px-2.5 py-1 rounded-lg border border-slate-800 cursor-pointer"
-              title="ענף שנזרק מסומן ככזה ולא נמחק — נשמר כחומר למולטיורס"
+              title="A discarded branch is marked, not deleted — kept as multiverse material"
             >
-              סמן ענף כנזרק (ארכיון מולטיורס)
+              Mark branch as discarded (multiverse archive)
             </button>
           )}
         </div>
@@ -1425,7 +1425,7 @@ export const LivingWorldView: React.FC = () => {
         />
       )}
 
-      {/* Intervention Modal ("התערבות: מזריק אירוע וממשיכים לרוץ") */}
+      {/* Intervention Modal (injects an event, then the world keeps running) */}
       {showInterventionModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <form
@@ -1442,7 +1442,7 @@ export const LivingWorldView: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-rose-400 font-bold text-base">
                 <Zap className="w-5 h-5" />
-                <span>התערבות יזומה בעולם והרצת טיק</span>
+                <span>Deliberate intervention in the world & tick run</span>
               </div>
               <button
                 type="button"
@@ -1453,13 +1453,13 @@ export const LivingWorldView: React.FC = () => {
               </button>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              הזרק אירוע חיצוני, אסון טבע, תגלית או שינוי פתאומי (למשל: <em>"רעידת אדמה מחריבה את השער הצפוני"</em> או <em>"מתגלה מכתב בגידה במועצה"</em>). הדמויות ומנוע העולם יגיבו אליו מיד בטיק הנוכחי.
+              Inject an external event, natural disaster, discovery or sudden change (e.g. <em>"an earthquake destroys the northern gate"</em> or <em>"a letter of treason is discovered in the council"</em>). The characters and the world engine will react to it immediately in the current tick.
             </p>
             <textarea
               rows={3}
               value={interventionText}
               onChange={(e) => setInterventionText(e.target.value)}
-              placeholder="תאר את ההתערבות או האירוע שאתה מזריק לעולם..."
+              placeholder="Describe the intervention or event you are injecting into the world..."
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-rose-500"
             />
             <div className="flex justify-end gap-2">
@@ -1468,20 +1468,20 @@ export const LivingWorldView: React.FC = () => {
                 onClick={() => setShowInterventionModal(false)}
                 className="px-4 py-2 rounded-xl border border-slate-800 text-xs text-slate-300 cursor-pointer"
               >
-                ביטול
+                Cancel
               </button>
               <button
                 type="submit"
                 className="px-5 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-xs cursor-pointer"
               >
-                הזרק והרץ טיק
+                Inject & Run Tick
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Fork Branch Modal ("פיצול: מה היה קורה אם...") */}
+      {/* Fork Branch Modal (what if...) */}
       {showForkModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <form
@@ -1491,7 +1491,7 @@ export const LivingWorldView: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-base">
                 <GitBranch className="w-5 h-5" />
-                <span>פיצול ענף סימולציה חדש ("מה היה קורה אם...")</span>
+                <span>Fork a new simulation branch ("what if...")</span>
               </div>
               <button
                 type="button"
@@ -1502,26 +1502,26 @@ export const LivingWorldView: React.FC = () => {
               </button>
             </div>
             <p className="text-xs text-slate-400">
-              הענף החדש יתפצל מ-<strong>{activeBranch.name}</strong> בטיק{' '}
-              <strong>{activeBranch.currentTick}</strong> וישכפל את מצב התודעה והזיכרונות של כל הדמויות עד לנקודה זו.
+              The new branch will fork from <strong>{activeBranch.name}</strong> at tick{' '}
+              <strong>{activeBranch.currentTick}</strong> and will duplicate the mental state and memories of every character up to this point.
             </p>
             <div className="space-y-2">
-              <label className="block text-xs text-slate-300 font-semibold">שם הענף החדש:</label>
+              <label className="block text-xs text-slate-300 font-semibold">New branch name:</label>
               <input
                 type="text"
                 value={forkName}
                 onChange={(e) => setForkName(e.target.value)}
-                placeholder="למשל: מה אם השערים נסגרו בזמן?"
+                placeholder="e.g. What if the gates had been closed in time?"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100"
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-xs text-slate-300 font-semibold">תיאור (אופציונלי):</label>
+              <label className="block text-xs text-slate-300 font-semibold">Description (optional):</label>
               <input
                 type="text"
                 value={forkDesc}
                 onChange={(e) => setForkDesc(e.target.value)}
-                placeholder="תיאור קצר של ההיפותזה בענף זה..."
+                placeholder="A short description of this branch's hypothesis..."
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100"
               />
             </div>
@@ -1531,13 +1531,13 @@ export const LivingWorldView: React.FC = () => {
                 onClick={() => setShowForkModal(false)}
                 className="px-4 py-2 rounded-xl border border-slate-800 text-xs text-slate-300 cursor-pointer"
               >
-                ביטול
+                Cancel
               </button>
               <button
                 type="submit"
                 className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs cursor-pointer"
               >
-                צור ענף חדש
+                Create New Branch
               </button>
             </div>
           </form>

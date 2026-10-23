@@ -60,7 +60,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
   const [newGoalText, setNewGoalText] = useState('');
   const [newGoalPriority, setNewGoalPriority] = useState<1 | 2 | 3>(1);
 
-  // Chat state ("דבר איתה")
+  // Chat state ("Talk to her")
   const [chatHistory, setChatHistory] = useState<CharacterChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [injectIntoBranchMemory, setInjectIntoBranchMemory] = useState<boolean>(true);
@@ -129,7 +129,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
       id: `msg-u-${Date.now()}`,
       characterId: entity.id,
       role: 'user',
-      speakerName: 'העורך הראשי',
+      speakerName: 'The Editor',
       content: userText,
       timestamp: new Date().toISOString(),
     };
@@ -169,8 +169,8 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
           entityId: entity.id,
           tick: activeBranch.currentTick,
           participantIds: [entity.id],
-          content: `שיחה/לחישה שהותירה בי רושם עמוק: נשאלתי "${userText}" והשבתי: "${reply.slice(0, 140)}"`,
-          innerNote: `בעקבות השיחה הזו עליי לשקול מחדש את צעדיי הקרובים.`,
+          content: `A conversation/whisper that left a deep impression on me: I was asked "${userText}" and answered: "${reply.slice(0, 140)}"`,
+          innerNote: `After this conversation I must reconsider my next steps.`,
           importance: 5,
           isWhisperFromCreator: true,
           createdAt: new Date().toISOString(),
@@ -184,7 +184,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div
-        dir="rtl"
+        dir="ltr"
         className="w-full max-w-6xl h-[88vh] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
       >
         {/* Modal Header */}
@@ -202,7 +202,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                   {temporalStatus.activeStatus}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-xs text-slate-400 bg-slate-800">
-                  ענף: {activeBranch.name} (טיק {activeBranch.currentTick})
+                  Branch: {activeBranch.name} (Tick {activeBranch.currentTick})
                 </span>
               </div>
               <p className="text-xs text-slate-400 truncate mt-0.5">
@@ -216,9 +216,9 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
             <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1 text-xs">
               {(
                 [
-                  { id: 'protagonist', label: 'גיבור (סוכן מלא)' },
-                  { id: 'secondary', label: 'משנית' },
-                  { id: 'background', label: 'רקע (קוד)' },
+                  { id: 'protagonist', label: 'Protagonist (Full Agent)' },
+                  { id: 'secondary', label: 'Secondary' },
+                  { id: 'background', label: 'Background (Code)' },
                 ] as const
               ).map((t) => (
                 <button
@@ -247,7 +247,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
               }`}
             >
               <MessageSquare className="w-4 h-4" />
-              <span>{activeTab === 'chat' ? 'חזרה לכרטיס הדו-שכבתי' : 'דבר איתה (סוכן זיכרון חי)'}</span>
+              <span>{activeTab === 'chat' ? 'Back to Dual View' : 'Talk to Her (Living Memory Agent)'}</span>
             </button>
 
             <button
@@ -263,13 +263,13 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
         {/* Main Body */}
         {activeTab === 'dual' ? (
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-800 overflow-hidden">
-            {/* RIGHT COLUMN (5 cols): Canonical Wiki Layer (קבוע) */}
+            {/* RIGHT COLUMN (5 cols): Canonical Wiki Layer (fixed) */}
             <div className="lg:col-span-5 flex flex-col h-full min-h-0 bg-slate-950/50">
               <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-amber-400" />
                   <h3 className="text-sm font-bold text-slate-100">
-                    שכבה 1: אופי קבוע וקנון (דף ה-Wiki)
+                    Layer 1: Fixed Nature & Canon (The Wiki Page)
                   </h3>
                 </div>
                 <button
@@ -277,14 +277,14 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                   onClick={() => onOpenInWiki(entity.id)}
                   className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
                 >
-                  <span>פתח בעורך ה-Wiki</span>
+                  <span>Open in Wiki Editor</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-5 space-y-4 text-sm text-slate-300">
                 <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800/80">
-                  <div className="text-xs font-semibold text-slate-400 mb-1">תקציר קנוני</div>
+                  <div className="text-xs font-semibold text-slate-400 mb-1">Canonical Summary</div>
                   <p className="text-slate-200 leading-relaxed">{entity.summary}</p>
                   {entity.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-3">
@@ -300,14 +300,14 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                   )}
                 </div>
 
-                {/* Inner Diary Highlight ("זהב לכתיבה") */}
+                {/* Inner Diary Highlight ("gold for writing") */}
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
                   <div className="flex items-center gap-2 text-amber-300 font-bold text-xs">
                     <Feather className="w-4 h-4" />
-                    <span>היומן הפנימי בענף (`inner_note` · זהב לכתיבה)</span>
+                    <span>Inner Diary on the Branch (`inner_note` · gold for writing)</span>
                   </div>
                   {mind.latestIntent?.inner_note ? (
-                    <blockquote className="text-xs text-amber-100/90 italic border-r-2 border-amber-400 pr-3 py-0.5">
+                    <blockquote className="text-xs text-amber-100/90 italic border-l-2 border-amber-400 pl-3 py-0.5">
                       "{mind.latestIntent.inner_note}"
                     </blockquote>
                   ) : null}
@@ -318,8 +318,8 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                           key={entry.id}
                           className="text-xs text-amber-200/80 bg-slate-950/60 rounded-lg px-2.5 py-1.5"
                         >
-                          <span className="text-[10px] text-amber-400/80 font-mono ml-1.5">
-                            [טיק {entry.tick}]
+                          <span className="text-[10px] text-amber-400/80 font-mono mr-1.5">
+                            [Tick {entry.tick}]
                           </span>
                           "{entry.innerNote}"
                         </div>
@@ -327,7 +327,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                     </div>
                   ) : (
                     <p className="text-xs text-amber-200/60">
-                      הרץ טיק כדי שהדמות תכתוב מחשבות פנימיות וספקות חבויים ביומנה.
+                      Run a tick so the character writes inner thoughts and hidden doubts into her diary.
                     </p>
                   )}
                 </div>
@@ -335,10 +335,10 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                 {/* Full Wiki Markdown */}
                 <div className="space-y-2">
                   <div className="text-xs font-semibold text-slate-400">
-                    תוכן דף ה-Wiki הקנוני (הסימולציה שואבת ממנו אופי ולא משנה אותו ללא אישור):
+                    Canonical Wiki page content (the simulation draws its nature from it and does not change it without approval):
                   </div>
                   <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 whitespace-pre-wrap text-xs leading-relaxed text-slate-300 font-sans">
-                    {entity.contentMd || 'אין תוכן מפורט בדף ה-Wiki.'}
+                    {entity.contentMd || 'No detailed content on the Wiki page.'}
                   </div>
                 </div>
               </div>
@@ -350,7 +350,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                 <div className="flex items-center gap-2">
                   <Brain className="w-4 h-4 text-emerald-400" />
                   <h3 className="text-sm font-bold text-slate-100">
-                    שכבה 2: תודעת הדמות בענף (`CharacterMind` ובנק זיכרונות)
+                    Layer 2: The Character's Branch Mind (`CharacterMind` and Memory Bank)
                   </h3>
                 </div>
                 <button
@@ -367,7 +367,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                   className="px-3 py-1 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 hover:bg-purple-500/25 text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>{isReflecting ? 'מבצע רפלקציה...' : 'בצע רפלקציה עכשיו'}</span>
+                  <span>{isReflecting ? 'Reflecting...' : 'Run Reflection Now'}</span>
                 </button>
               </div>
 
@@ -377,17 +377,17 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                   <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-emerald-300">
-                        כוונה אחרונה בטיק ({mind.latestIntent.action})
+                        Latest Intent at Tick ({mind.latestIntent.action})
                       </span>
                       <span className="text-[11px] text-emerald-400/80">
-                        יעדים: {mind.latestIntent.targets.join(', ') || 'ללא'}
+                        Targets: {mind.latestIntent.targets.join(', ') || 'None'}
                       </span>
                     </div>
                     <p className="text-sm font-semibold text-slate-100">
                       "{mind.latestIntent.intent}"
                     </p>
                     <p className="text-xs text-slate-300">
-                      <strong className="text-slate-400">נימוק:</strong> {mind.latestIntent.reasoning}
+                      <strong className="text-slate-400">Reasoning:</strong> {mind.latestIntent.reasoning}
                     </p>
                   </div>
                 )}
@@ -396,7 +396,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                     <Target className="w-4 h-4 text-amber-400" />
-                    <span>מטרות פעילות בענף (1–3 מטרות שמנחות את הסוכן)</span>
+                    <span>Active Goals on the Branch (1–3 goals guiding the agent)</span>
                   </div>
 
                   <div className="space-y-2">
@@ -419,7 +419,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                                   : 'bg-slate-800 text-slate-400'
                             }`}
                           >
-                            עדיפות {g.priority}
+                            Priority {g.priority}
                           </span>
                           <span className="text-xs text-slate-200 truncate">{g.description}</span>
                         </div>
@@ -427,7 +427,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                           type="button"
                           onClick={() => handleToggleGoalStatus(g.id)}
                           className="text-xs text-slate-400 hover:text-emerald-400 shrink-0 cursor-pointer"
-                          title="סמן כהושגה / פעילה"
+                          title="Mark as Achieved / Active"
                         >
                           <CheckCircle2 className="w-4 h-4" />
                         </button>
@@ -440,7 +440,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                       type="text"
                       value={newGoalText}
                       onChange={(e) => setNewGoalText(e.target.value)}
-                      placeholder="הוסף מטרה חדשה לדמות בענף זה..."
+                      placeholder="Add a new goal for this character on this branch..."
                       className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
                     />
                     <select
@@ -448,16 +448,16 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                       onChange={(e) => setNewGoalPriority(Number(e.target.value) as 1 | 2 | 3)}
                       className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200"
                     >
-                      <option value={1}>עדיפות 1</option>
-                      <option value={2}>עדיפות 2</option>
-                      <option value={3}>עדיפות 3</option>
+                      <option value={1}>Priority 1</option>
+                      <option value={2}>Priority 2</option>
+                      <option value={3}>Priority 3</option>
                     </select>
                     <button
                       type="submit"
                       className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>הוסף</span>
+                      <span>Add</span>
                     </button>
                   </form>
                 </div>
@@ -466,7 +466,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                     <HeartHandshake className="w-4 h-4 text-sky-400" />
-                    <span>יחסים פנימיים (אמון, עוינות וחוב)</span>
+                    <span>Internal Relations (Trust, Hostility & Debt)</span>
                   </div>
                   {mind.internalRelations.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -482,14 +482,14 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                             <span className="text-[10px] text-slate-400">{rel.debtOrBond}</span>
                           </div>
                           <div className="flex items-center gap-3 text-[11px]">
-                            <span className="text-emerald-400">אמון: {rel.trust}</span>
-                            <span className="text-rose-400">עוינות: {rel.hostility}</span>
+                            <span className="text-emerald-400">Trust: {rel.trust}</span>
+                            <span className="text-rose-400">Hostility: {rel.hostility}</span>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-500">אין יחסים פנימיים רשומים.</p>
+                    <p className="text-xs text-slate-500">No internal relations recorded.</p>
                   )}
                 </div>
 
@@ -498,10 +498,10 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                       <ScrollText className="w-4 h-4 text-purple-400" />
-                      <span>בנק זיכרונות אישי ({memories.length} זיכרונות מנקודת מבטה)</span>
+                      <span>Personal Memory Bank ({memories.length} memories from her point of view)</span>
                     </div>
                     <span className="text-[11px] text-slate-500">
-                      נשלף לפי רלוונטיות, טריות וחשיבות
+                      Retrieved by relevance, recency and importance
                     </span>
                   </div>
 
@@ -523,17 +523,17 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                           >
                             <div className="flex items-center justify-between text-[11px] text-slate-400">
                               <span className="font-mono">
-                                טיק {mem.tick} {mem.locationName ? `· ${mem.locationName}` : ''}
+                                Tick {mem.tick} {mem.locationName ? `· ${mem.locationName}` : ''}
                               </span>
                               <div className="flex items-center gap-2">
                                 {mem.isReflection && (
                                   <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px]">
-                                    מסקנת רפלקציה
+                                    Reflection Insight
                                   </span>
                                 )}
                                 {mem.isWhisperFromCreator && (
                                   <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px]">
-                                    הוזרק בשיחה
+                                    Injected in Chat
                                   </span>
                                 )}
                                 <span className="text-amber-400">
@@ -544,7 +544,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                             <p className="leading-relaxed">{mem.content}</p>
                             {mem.innerNote && (
                               <p className="text-[11px] text-amber-300/90 italic pt-0.5">
-                                💭 יומן פנימי: "{mem.innerNote}"
+                                💭 Inner diary: "{mem.innerNote}"
                               </p>
                             )}
                           </div>
@@ -552,7 +552,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                     </div>
                   ) : (
                     <div className="p-6 rounded-xl border border-dashed border-slate-800 text-center text-xs text-slate-500">
-                      בנק הזיכרונות של {entity.title} בענף זה עדיין ריק. הרץ טיק או דבר איתה כדי ליצור זיכרונות.
+                      {entity.title}'s memory bank on this branch is still empty. Run a tick or talk to her to create memories.
                     </div>
                   )}
                 </div>
@@ -560,13 +560,13 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
             </div>
           </div>
         ) : (
-          /* CHAT TAB ("דבר איתה") */
+          /* CHAT TAB ("Talk to her") */
           <div className="flex-1 min-h-0 flex flex-col bg-slate-950">
             <div className="px-6 py-3 bg-slate-900/80 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-slate-300">
                 <ShieldAlert className="w-4 h-4 text-emerald-400" />
                 <span>
-                  שיחה ישירה עם סוכן הדמות של <strong>{entity.title}</strong>, משולבת בזיכרונות הענף ובאופק הידיעה שלה בטיק {activeBranch.currentTick}.
+                  Direct conversation with the character agent of <strong>{entity.title}</strong>, grounded in the branch memories and her horizon of knowledge at Tick {activeBranch.currentTick}.
                 </span>
               </div>
 
@@ -577,7 +577,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                   onChange={(e) => setInjectIntoBranchMemory(e.target.checked)}
                   className="rounded accent-amber-500"
                 />
-                <span>שמור שיחה זו כזיכרון חי של הדמות בענף (ישפיע על הטיק הבא)</span>
+                <span>Save this conversation as a living memory of the character on the branch (affects the next tick)</span>
               </label>
             </div>
 
@@ -586,10 +586,10 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                 <div className="max-w-lg mx-auto my-12 text-center space-y-2">
                   <MessageSquare className="w-10 h-10 text-emerald-400/50 mx-auto" />
                   <p className="text-sm font-semibold text-slate-200">
-                    פתח שיחה עם {entity.title}
+                    Start a conversation with {entity.title}
                   </p>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    שאל אותה על כוונותיה בטיק הנוכחי, על ספקותיה ביומן הפנימי, או לחש לה שמועה שתשנה את החלטתה בטיק הבא.
+                    Ask her about her intentions at the current tick, her doubts in the inner diary, or whisper her a rumor that will change her decision at the next tick.
                   </p>
                 </div>
               )}
@@ -623,7 +623,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder={`דבר אל ${entity.title} (למשל: "מדוע אינך סומכת על המועצה?" או "שמעתי שהצבא מהצפון כבר חצה את הנהר")...`}
+                placeholder={`Talk to ${entity.title} (e.g.: "Why don't you trust the council?" or "I heard the army from the north has already crossed the river")...`}
                 className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
               />
               <button
@@ -632,7 +632,7 @@ export const ExtendedCharacterModal: React.FC<ExtendedCharacterModalProps> = ({
                 className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold text-sm flex items-center gap-2 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
-                <span>{isSendingChat ? 'חושבת...' : 'שלח'}</span>
+                <span>{isSendingChat ? 'Thinking...' : 'Send'}</span>
               </button>
             </form>
           </div>

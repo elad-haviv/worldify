@@ -157,17 +157,17 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
   };
 
   return (
-    <div dir="rtl" className="flex-1 min-h-0 flex flex-col bg-slate-950 overflow-hidden">
+    <div dir="ltr" className="flex-1 min-h-0 flex flex-col bg-slate-950 overflow-hidden">
       {/* Top Comparison Controls & Merge Bar */}
       <div className="px-6 py-4 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
             <GitCompare className="w-5 h-5" />
-            <span>השוואת ענפים ומיזוג לקנון</span>
+            <span>Branch Comparison &amp; Canon Merge</span>
           </div>
 
           <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs">
-            <span className="text-slate-400">ענף מקור (ימין):</span>
+            <span className="text-slate-400">Source branch (left):</span>
             <select
               value={leftSourceId}
               onChange={(e) => {
@@ -178,27 +178,27 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
             >
               {branches.map((b) => (
                 <option key={b.id} value={b.id} className="bg-slate-900 text-slate-100">
-                  {b.name} (טיק {b.currentTick})
+                  {b.name} (Tick {b.currentTick})
                 </option>
               ))}
             </select>
 
             <ArrowLeftRight className="w-3.5 h-3.5 text-slate-500 mx-1" />
 
-            <span className="text-slate-400">מול (שמאל):</span>
+            <span className="text-slate-400">Against (right):</span>
             <select
               value={rightSourceId}
               onChange={(e) => setRightSourceId(e.target.value)}
               className="bg-transparent text-amber-300 font-bold focus:outline-none cursor-pointer"
             >
               <option value="canon" className="bg-slate-900 text-amber-300">
-                ★ הקנון הראשי (Canon)
+                ★ Main Canon (Canon)
               </option>
               {branches
                 .filter((b) => b.id !== leftSourceId)
                 .map((b) => (
                   <option key={b.id} value={b.id} className="bg-slate-900 text-slate-100">
-                    {b.name} (טיק {b.currentTick})
+                    {b.name} (Tick {b.currentTick})
                   </option>
                 ))}
             </select>
@@ -213,8 +213,8 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
             className="px-3 py-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-xs text-slate-300 cursor-pointer"
           >
             {selectedEventIds.size === leftEvents.length && leftEvents.length > 0
-              ? 'בטל בחירת הכל'
-              : `בחר הכל (${leftEvents.length})`}
+              ? 'Deselect all'
+              : `Select all (${leftEvents.length})`}
           </button>
 
           <button
@@ -224,7 +224,7 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
             className="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-40 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
           >
             <GitMerge className="w-4 h-4" />
-            <span>מיזוג חלקי של המסומנים ({selectedEventIds.size}) לקנון</span>
+            <span>Merge selected ({selectedEventIds.size}) into canon</span>
           </button>
 
           <button
@@ -234,7 +234,7 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
             className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
-            <span>מיזוג מלא של הענף לקנון</span>
+            <span>Merge entire branch into canon</span>
           </button>
         </div>
       </div>
@@ -243,7 +243,7 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
       {characterFateDiffs.length > 0 && (
         <div className="px-6 py-3 bg-slate-900/60 border-b border-slate-800 flex items-center gap-3 overflow-x-auto">
           <span className="text-xs font-bold text-amber-300 shrink-0">
-            הבדלי מצב דמויות בין שני הענפים ({characterFateDiffs.length}):
+            Character state differences between the two branches ({characterFateDiffs.length}):
           </span>
           <div className="flex items-center gap-2">
             {characterFateDiffs.map((d) => (
@@ -269,18 +269,18 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
               <h3 className="text-sm font-bold text-slate-100">
-                אירועי הענף: {leftBranch?.name} ({leftEvents.length} אירועים)
+                Branch events: {leftBranch?.name} ({leftEvents.length} events)
               </h3>
             </div>
             <span className="text-xs text-slate-400">
-              התפצל בטיק {leftBranch?.forkedAtTick} · כעת בטיק {leftBranch?.currentTick}
+              Forked at tick {leftBranch?.forkedAtTick} · now at tick {leftBranch?.currentTick}
             </span>
           </div>
 
           <div className="flex-1 overflow-y-auto p-5 space-y-3">
             {leftEvents.length === 0 ? (
               <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center text-xs text-slate-500">
-                עדיין לא נוצרו אירועים בענף זה. לחץ על "הרץ טיק" כדי שהעולם יתקדם.
+                No events created in this branch yet. Click "Run Tick" to advance the world.
               </div>
             ) : (
               leftEvents.map((ev) => {
@@ -288,7 +288,7 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
                 const contradictions = detectCanonContradictionsForMerge(canonProject, ev);
                 const dateStr = calendar
                   ? formatTickToDate(calendar, ev.startTick).displayShort
-                  : `טיק ${ev.startTick}`;
+                  : `Tick ${ev.startTick}`;
 
                 return (
                   <div
@@ -317,7 +317,7 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
                         </div>
                       </div>
                       <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-amber-300 shrink-0">
-                        חשיבות {ev.importance}
+                        Importance {ev.importance}
                       </span>
                     </div>
 
@@ -328,7 +328,7 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
                       <div className="mr-6 p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 space-y-1">
                         <div className="flex items-center gap-1.5 text-xs font-bold text-rose-300">
                           <AlertTriangle className="w-4 h-4 shrink-0" />
-                          <span>אזהרת סתירה מול הקנון (מיזוג בודק סתירות):</span>
+                          <span>Canon contradiction warning (merge checks for conflicts):</span>
                         </div>
                         {contradictions.map((c, idx) => (
                           <p key={idx} className="text-xs text-rose-200/90 pr-5">
@@ -350,25 +350,25 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
               <h3 className="text-sm font-bold text-slate-100">
-                {rightBranch ? `ענף מקביל: ${rightBranch.name}` : '★ הקנון הראשי של Worldify'} (
-                {rightEvents.length} אירועים בטווח)
+                {rightBranch ? `Parallel branch: ${rightBranch.name}` : '★ Worldify Main Canon'} (
+                {rightEvents.length} events in range)
               </h3>
             </div>
             <span className="text-xs text-slate-400">
-              {rightBranch ? `טיק ${rightBranch.currentTick}` : 'נקודת האמת הקנונית'}
+              {rightBranch ? `Tick ${rightBranch.currentTick}` : 'The canonical source of truth'}
             </span>
           </div>
 
           <div className="flex-1 overflow-y-auto p-5 space-y-3">
             {rightEvents.length === 0 ? (
               <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center text-xs text-slate-500">
-                אין אירועים מתועדים בציר הזמן המקביל בטווח טיקים זה.
+                No documented events on the parallel timeline within this tick range.
               </div>
             ) : (
               rightEvents.map((ev) => {
                 const dateStr = calendar
                   ? formatTickToDate(calendar, ev.startTick).displayShort
-                  : `טיק ${ev.startTick}`;
+                  : `Tick ${ev.startTick}`;
                 return (
                   <div
                     key={ev.id}
@@ -381,7 +381,7 @@ export const BranchComparePanel: React.FC<BranchComparePanelProps> = ({
                         <span className="text-sm font-bold text-slate-100">{ev.title}</span>
                       </div>
                       <span className="px-2 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-300">
-                        {rightBranch ? rightBranch.name : 'קנון'}
+                        {rightBranch ? rightBranch.name : 'Canon'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-300 leading-relaxed pr-6">{ev.summary}</p>

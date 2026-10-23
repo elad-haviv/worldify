@@ -1,12 +1,12 @@
 /**
- * Worldify Living World Simulation Engine ("מנוע עולם חי").
+ * Worldify Living World Simulation Engine ("Living World Engine").
  *
  * Implements the 7-stage tick cycle:
  * 1. Clock advancement, mandatory canonical lifecycle/event facts, & deterministic map code.
  * 2. Cast selection by Scope & Tier + Budget estimation.
  * 3. Parallel Character Agent intent generation (5-part prompt with epistemic horizon).
  * 4. Co-located encounters (Scene mode) & Macro Historian (Decade/Chronicle mode or every 10 ticks).
- * 5. Narrator adjudication with deterministic seeded PRNG luck rolls ("מזל בקוד, לא במודל") & Avalymia style guide.
+ * 5. Narrator adjudication with deterministic seeded PRNG luck rolls ("luck in code, not in the model") & Avalymia style guide.
  * 6. Conflict & Continuity Checker (with 1x retry on hard-rule/mortality violations).
  * 7. Subjective memory writing, automatic tier promotion, and periodic Reflection Agent (every 20 ticks).
  */
@@ -75,40 +75,40 @@ export function resolveTickIntervalInfo(
       return {
         deltaTicks: 1,
         mode: 'scene',
-        hebrewLabel: 'יום אחד (סצנה)',
-        hebrewElapsedPhrase: 'עבר יום אחד מאז הטיק הקודם',
+        hebrewLabel: 'One day (scene)',
+        hebrewElapsedPhrase: 'One day has passed since the previous tick',
         englishElapsedPhrase: 'One day has passed since the previous tick',
       };
     case '7d':
       return {
         deltaTicks: 7,
         mode: 'scene',
-        hebrewLabel: 'שבוע (סצנה)',
-        hebrewElapsedPhrase: 'עבר שבוע אחד (7 ימים) מאז הטיק הקודם',
+        hebrewLabel: 'One week (scene)',
+        hebrewElapsedPhrase: 'One week (7 days) has passed since the previous tick',
         englishElapsedPhrase: 'One week (7 days) has passed since the previous tick',
       };
     case '30d':
       return {
         deltaTicks: 30,
         mode: 'chapter',
-        hebrewLabel: 'חודש (פרק)',
-        hebrewElapsedPhrase: 'עבר חודש שלם (30 ימים) מאז הטיק הקודם',
+        hebrewLabel: 'One month (chapter)',
+        hebrewElapsedPhrase: 'One full month (30 days) has passed since the previous tick',
         englishElapsedPhrase: 'One month (30 days) has passed since the previous tick',
       };
     case '1y':
       return {
         deltaTicks: daysPerYear,
         mode: 'chapter',
-        hebrewLabel: 'שנה (פרק)',
-        hebrewElapsedPhrase: `עברה שנה שלמה (${daysPerYear} ימים) מאז הטיק הקודם`,
+        hebrewLabel: 'One year (chapter)',
+        hebrewElapsedPhrase: `One full year (${daysPerYear} days) has passed since the previous tick`,
         englishElapsedPhrase: `One full year (${daysPerYear} days) has passed since the previous tick`,
       };
     case '10y':
       return {
         deltaTicks: daysPerYear * 10,
         mode: 'chronicle',
-        hebrewLabel: 'עשור (כרוניקה)',
-        hebrewElapsedPhrase: `עבר עשור שלם (10 שנים / ${daysPerYear * 10} ימים) מאז הטיק הקודם`,
+        hebrewLabel: 'One decade (chronicle)',
+        hebrewElapsedPhrase: `A full decade (10 years / ${daysPerYear * 10} days) has passed since the previous tick`,
         englishElapsedPhrase: `A full decade (10 years) has passed since the previous tick`,
       };
   }
@@ -129,35 +129,35 @@ export function getResolutionTargetCounts(resolution: SimResolutionLevel): {
         minEvents: 1,
         maxEvents: 2,
         includeMinorDialogues: false,
-        labelHe: 'ממוקד (1–2 אירועי שיא בלבד)',
+        labelHe: 'Focused (1–2 peak events only)',
       };
     case 'balanced':
       return {
         minEvents: 2,
         maxEvents: 4,
         includeMinorDialogues: true,
-        labelHe: 'מאוזן (2–4 אירועים משמעותיים)',
+        labelHe: 'Balanced (2–4 significant events)',
       };
     case 'detailed':
       return {
         minEvents: 4,
         maxEvents: 6,
         includeMinorDialogues: true,
-        labelHe: 'מפורט (4–6 אירועים ודיאלוגים)',
+        labelHe: 'Detailed (4–6 events and dialogues)',
       };
     case 'chronicle':
       return {
         minEvents: 3,
         maxEvents: 7,
         includeMinorDialogues: false,
-        labelHe: 'כרוניקה היסטורית רחבה (3–7 תמורות)',
+        labelHe: 'Broad historical chronicle (3–7 transformations)',
       };
   }
 }
 
 /**
  * Extracts a compact style & terminology guide from the project's canonical entities and stories
- * to prevent generic LLM fantasy drift ("נגד סחף לגנריות").
+ * to prevent generic LLM fantasy drift ("anti-generic-drift").
  */
 export function extractProjectStyleGuide(project: Project): string {
   const sampleTitles = project.entities
@@ -168,16 +168,16 @@ export function extractProjectStyleGuide(project: Project): string {
     .slice(0, 3)
     .map((e) => {
       const clean = e.contentMd.replace(/#+\s*/g, '').slice(0, 180).trim();
-      return `- מתוך [[${e.title}]]: "${clean}..."`;
+      return `- From [[${e.title}]]: "${clean}..."`;
     });
 
   return [
-    `### ספריית סגנון ומונחים קנוניים של "${project.name}" (${project.genre}):`,
-    `- **ישויות ומונחים קיימים בעולם**: ${sampleTitles.join(', ')}`,
+    `### Canonical style & terminology library of "${project.name}" (${project.genre}):`,
+    `- **Entities and terms existing in the world**: ${sampleTitles.join(', ')}`,
     ...(sampleExcerpts.length > 0
-      ? [`- **דוגמאות טון וסגנון מהקנון**:`, ...sampleExcerpts]
+      ? [`- **Tone and style examples from the canon**:`, ...sampleExcerpts]
       : []),
-    `- **כלל נגד סחף לגנריות**: שמור בקפדנות על השמות, המונחים והאווירה של ${project.name}. אל תמציא שמות גנריים באנגלית או קלישאות פנטזיה זרות. אם נוצר צורך במקום או דמות חדשים, סמן אותם כטיוטה בלבד.`,
+    `- **Anti-generic-drift rule**: Strictly preserve the names, terms, and atmosphere of ${project.name}. Do not invent generic English names or foreign fantasy clichés. If a new place or character is needed, mark it as a draft only.`
   ].join('\n');
 }
 
@@ -450,76 +450,76 @@ export function buildCharacterAgentFivePartPrompt(
       /[\u0590-\u05FF]/.test(`${character.title} ${character.summary} ${character.contentMd}`));
 
   // PART 1: Constant Persona + World Rules (Cacheable System Prefix)
-  const systemPrompt = `אתה סוכן הדמות של **${character.title}** בעולם החי של **${branchProjectView.name}** (${branchProjectView.genre}).
-תפקידך לחשוב ולהחליט מתוך נקודת המבט, האופי, הפחדים והערכים של ${character.title} בלבד.
+  const systemPrompt = `You are the character agent of **${character.title}** in the living world of **${branchProjectView.name}** (${branchProjectView.genre}).
+Your role is to think and decide solely from the point of view, character, fears, and values of ${character.title}.
 
-## 1. אופי קבוע וביוגרפיה קנונית (קבוע — מתוך ה-Wiki):
-- **שם ותואר**: ${character.title} ${character.subtitle ? `(${character.subtitle})` : ''}
-- **תקציר**: ${character.summary}
-- **תגיות ומאפיינים**: ${character.tags.join(', ') || 'ללא'}
-- **דף הדמות ב-Wiki**:
+## 1. Fixed persona and canonical biography (fixed — from the Wiki):
+- **Name and title**: ${character.title} ${character.subtitle ? `(${character.subtitle})` : ''}
+- **Summary**: ${character.summary}
+- **Tags and traits**: ${character.tags.join(', ') || 'none'}
+- **Wiki page of the character**:
 ${character.contentMd}
 
-## חוקי העולם וגבולות ידיעה ("Should I know this?"):
-${worldRules.map((r) => `- [${r.enforcement === 'hard' ? 'חוק קשיח' : 'חוק רך'}] ${r.title}: ${r.ruleText}`).join('\n')}
-- **אופק ידיעה קפדני**: אתה יודע אך ורק מה שחוית, שמעת או שמתועד בזיכרונותיך ובתחום מעמדך. אין לך גישה ל-Wiki המלא ואין לך ידיעה על העתיד מעבר לתאריך הנוכחי.`;
+## World rules and epistemic limits ("Should I know this?"):
+${worldRules.map((r) => `- [${r.enforcement === 'hard' ? 'hard rule' : 'soft rule'}] ${r.title}: ${r.ruleText}`).join('\n')}
+- **Strict epistemic horizon**: You know only what you have experienced, heard, or what is recorded in your memories and within the reach of your station. You have no access to the full Wiki and no knowledge of the future beyond the current date.`;
 
   // PARTS 2, 3, 4, 5: Dynamic State, Goals, Memories, and Tick Observations
   const activeGoalsText =
     mind.goals
       .filter((g) => g.status === 'active')
-      .map((g) => `- [עדיפות ${g.priority}] ${g.description}`)
-      .join('\n') || '- לשרוד ולקדם את מעמדי';
+      .map((g) => `- [Priority ${g.priority}] ${g.description}`)
+      .join('\n') || '- Survive and advance my standing';
 
   const relationsText =
     mind.internalRelations
       .map(
         (rel) =>
-          `- **[[${rel.targetName}]]**: אמון ${rel.trust}/100, עוינות ${rel.hostility}/100 (${rel.debtOrBond})`
+          `- **[[${rel.targetName}]]**: Trust ${rel.trust}/100, Hostility ${rel.hostility}/100 (${rel.debtOrBond})`
       )
-      .join('\n') || '- אין יחסים אישיים מיוחדים';
+      .join('\n') || '- No special personal relations';
 
   const memoriesText =
     relevantMemories.length > 0
       ? relevantMemories
           .map(
             (m) =>
-              `- [טיק ${m.tick}${m.isReflection ? ' · מסקנת רפלקציה' : ''}${m.isWhisperFromCreator ? ' · תחושה פנימית עמוקה' : ''}]: ${m.content}`
+              `- [Tick ${m.tick}${m.isReflection ? ' · Reflection insight' : ''}${m.isWhisperFromCreator ? ' · Deep inner feeling' : ''}]: ${m.content}`
           )
           .join('\n')
-      : '- טרם נצברו זיכרונות אישיים בענף זה.';
+      : '- No personal memories recorded in this branch yet.';
 
-  const userPrompt = `## 2. מצב עכשווי בעולם:
-- **תאריך בעולם**: ${dateFormatted} (טיק ${branch.currentTick})
-- **מרווח הזמן הנוכחי**: **${intervalInfo.hebrewElapsedPhrase}** (רמת פירוט: ${intervalInfo.hebrewLabel})
-- **סטטוס ותואר נוכחי**: ${statusInfo.activeTitle} — ${statusInfo.activeStatus}
-- **מיקום נוכחי**: ${myPos ? `${map?.name || 'מפה'} (${Math.round(myPos.x)}, ${Math.round(myPos.y)}) ${myPos.statusNote ? `— ${myPos.statusNote}` : ''}` : 'במרחבי העולם'}
-- **דמויות וישויות בסביבתך הקרובה**: ${nearbyEntities.length > 0 ? nearbyEntities.map((e) => `[[${e.title}]]`).join(', ') : 'אף דמות מרכזית אינה צמודה אליך כרגע'}
+  const userPrompt = `## 2. Current state in the world:
+- **In-world date**: ${dateFormatted} (tick ${branch.currentTick})
+- **Current time interval**: **${intervalInfo.hebrewElapsedPhrase}** (detail level: ${intervalInfo.hebrewLabel})
+- **Current status and title**: ${statusInfo.activeTitle} — ${statusInfo.activeStatus}
+- **Current location**: ${myPos ? `${map?.name || 'map'} (${Math.round(myPos.x)}, ${Math.round(myPos.y)}) ${myPos.statusNote ? `— ${myPos.statusNote}` : ''}` : 'in the open reaches of the world'}
+- **Characters and entities in your immediate vicinity**: ${nearbyEntities.length > 0 ? nearbyEntities.map((e) => `[[${e.title}]]`).join(', ') : 'No major figure is currently close to you'}
 
-## 3. מטרות פעילות ויחסים פנימיים (CharacterMind):
-### מטרות:
+## 3. Active goals and internal relations (CharacterMind):
+### Goals:
 ${activeGoalsText}
-### אמונות ומסקנות:
+### Beliefs and conclusions:
 ${mind.beliefs.map((b) => `- ${b}`).join('\n')}
-### יחס לדמויות מוכרות:
+### Stance toward known figures:
 ${relationsText}
 
-## 4. זיכרונות רלוונטיים מבנק הזיכרון האישי שלך:
+## 4. Relevant memories from your personal memory bank:
 ${memoriesText}
 
-## 5. תצפיות הטיק (מה קרה סביבך לאחרונה):
-${recentObservations.length > 0 ? recentObservations.map((o) => `- ${o}`).join('\n') : '- השטח שקט יחסית, אך המתח באזור מורגש.'}
+## 5. Tick observations (what happened around you recently):
+${recentObservations.length > 0 ? recentObservations.map((o) => `- ${o}`).join('\n') : '- The area is relatively quiet, but tension is palpable.'}
 
 ---
-הנחיה: ${intervalInfo.hebrewElapsedPhrase}. עליך להחליט מהי כוונתך ופעולתך בטיק זה, בשפה ${useHebrew ? 'עברית' : 'English'}.
-החזר **אך ורק JSON תקין** במבנה המדויק הבא (ללא טקסט עוטף):
+Directive: ${intervalInfo.hebrewElapsedPhrase}. You must decide your intent and action for this tick, in ${useHebrew ? 'Hebrew' : 'English'}.
+Return **only valid JSON** in the exact following structure (no surrounding text):
 {
-  "intent": "תיאור תמציתי של מה שאתה מנסה לעשות בטיק הזה",
+  "intent": "A concise description of what you attempt to do this tick",
   "action": "speak" | "move" | "scheme" | "investigate" | "fight" | "build" | "ritual" | "wait",
-  "targets": ["שם או מזהה של דמות/מקום יעד"],
-  "targetDestination": "שם מקום אם הפעולה היא move",
-  "reasoning": "הנימוק הפנימי שלך לבחירה הזו לפי מה שידוע לך",
-  "inner_note": "מחשבה אישית חבויה ליומן הפנימי שלך (ספקות, פחדים, סוד שלא תאמר בקול)"
+  "targets": ["Name or id of the target character/place"],
+  "targetDestination": "Place name if the action is move",
+  "reasoning": "Your internal justification for this choice based on what you know",
+  "inner_note": "A hidden personal thought for your inner journal (doubts, fears, a secret you would not say aloud)"
 }`;
 
   return { systemPrompt, userPrompt };
@@ -565,21 +565,21 @@ function synthesizeLocalCharacterIntent(
 
   if (useHebrew) {
     const intentsByAction: Record<CharacterIntentOutput['action'], string> = {
-      speak: `לפנות אל [[${targetName}]] כדי לדרוש הכרעה ולקדם את המטרה: ${topGoal?.description || 'ביצור מעמדי'}`,
-      scheme: `לרקום מהלך חשאי מאחורי הקלעים מול [[${targetName}]] ולבחון את נאמנות הסובבים`,
-      investigate: `לחקור את השמועות והתנועות החריגות סביב [[${targetName}]] לפני נקיטת פעולה גלויה`,
-      move: `לנוע לעבר [[${targetName}]] כדי לבסס נוכחות ישירה במוקד ההתרחשויות`,
-      fight: `להציב אולטימטום כוחני מול [[${targetName}]] ולבלום את התפשטותם`,
-      build: `לגייס משאבים ותומכים נאמנים לחיזוק מעמדה של ${character.title}`,
-      ritual: `לערוך בדיקה או טקס הקשור לכוחות הפועלים ב-[[${targetName}]]`,
-      wait: `להמתין בשקט ולצפות במהלכי [[${targetName}]] מהצללים`,
+      speak: `Approach [[${targetName}]] to demand a resolution and advance the goal: ${topGoal?.description || 'securing my standing'}`,
+      scheme: `Weave a covert move behind the scenes against [[${targetName}]] and probe the loyalty of those around`,
+      investigate: `Investigate the rumors and unusual movements around [[${targetName}]] before taking open action`,
+      move: `Move toward [[${targetName}]] to establish a direct presence at the heart of events`,
+      fight: `Present a forceful ultimatum to [[${targetName}]] and curb their expansion`,
+      build: `Gather resources and loyal supporters to strengthen the position of ${character.title}`,
+      ritual: `Perform an examination or ritual connected to the powers at work in [[${targetName}]]`,
+      wait: `Wait quietly and observe [[${targetName}]]'s moves from the shadows`,
     };
 
     const innerNotes = [
-      `אני מפגינה ביטחון כלפי חוץ, אבל אסור לי לטעות בהערכת הכוח של ${targetName}.`,
-      `אם השמועות נכונות, הזמן שלנו הולך ואוזל; עליי לפעול לפני שהשעריםייסגרו.`,
-      `אף אחד סביבי לא יודע עד כמה אני מוכנה להרחיק לכת כדי להשיג את המטרה הזו.`,
-      `יש לי ספק מנקר לגבי הנאמנות של בעלי הברית שלי אם יגיע רגע המבחן.`,
+      `I project confidence outward, but I must not misjudge ${targetName}'s strength.`,
+      `If the rumors are true, our time is running out; I must act before the gates close.`,
+      `No one around me knows how far I am willing to go to achieve this goal.`,
+      `I harbor a piercing doubt about the loyalty of my allies if the moment of testing arrives.`,
     ];
 
     return {
@@ -587,7 +587,7 @@ function synthesizeLocalCharacterIntent(
       action: chosenAction,
       targets: [targetName],
       targetDestination: chosenAction === 'move' ? targetName : undefined,
-      reasoning: `בהתאם למטרה הפעילה שלי (${topGoal?.description || 'שמירה על כוחי'}) והיחסים מול ${targetName}.`,
+      reasoning: `In line with my active goal (${topGoal?.description || 'preserving my power'}) and my relations with ${targetName}.`,
       inner_note: innerNotes[Math.floor(rng() * innerNotes.length)],
     };
   }
@@ -620,7 +620,7 @@ export interface NarratorCandidateEvent {
 
 /**
  * Finds mandatory canonical births, deaths, and canonical events falling within `(fromTick, toTick]`.
- * Rule 2: "מרווח ארוך לא מדלג על עובדות קשות. הקוד מחשב קודם אילו לידות ומותות ואילו אירועי קנון נופלים בתוך המרווח."
+ * Rule 2: "A long interval must not skip hard facts. The code first computes which births and deaths and which canon events fall within the interval."
  */
 export function collectMandatoryCanonicalFactsInInterval(
   canonProject: Project,
@@ -651,17 +651,17 @@ export function collectMandatoryCanonicalFactsInInterval(
   const summaryLinesHe: string[] = [];
   for (const b of births) {
     summaryLinesHe.push(
-      `- עובדה קנונית מחייבת: לידה/ייסוד של [[${b.title}]] בטיק ${b.lifecycleStartTick}.`
+      `- Mandatory canonical fact: birth/founding of [[${b.title}]] at tick ${b.lifecycleStartTick}.`
     );
   }
   for (const d of deaths) {
     summaryLinesHe.push(
-      `- עובדה קנונית מחייבת: מוות/נפילה של [[${d.title}]] בטיק ${d.lifecycleEndTick}.`
+      `- Mandatory canonical fact: death/fall of [[${d.title}]] at tick ${d.lifecycleEndTick}.`
     );
   }
   for (const ce of canonEvents) {
     summaryLinesHe.push(
-      `- אירוע קנון שנופל במרווח (טיק ${ce.startTick}): "${ce.title}" — ${ce.summary}`
+      `- Canon event falling in the interval (tick ${ce.startTick}): "${ce.title}" — ${ce.summary}`
     );
   }
 
@@ -670,7 +670,7 @@ export function collectMandatoryCanonicalFactsInInterval(
 
 export interface TickExecutionOptions {
   seed?: number;
-  interventionPrompt?: string; // Optional user intervention ("התערבות: רעידת אדמה, מות של מלך...")
+  interventionPrompt?: string; // Optional user intervention ("intervention: an earthquake, the death of a king...")
   onStepProgress?: (stepLabel: string, stepIndex: number, totalSteps: number) => void;
 }
 
@@ -706,12 +706,12 @@ export async function executeSimulationTick(
   // Check budget cap before starting
   if (branch.budgetUsd > 0 && branch.spentUsd >= branch.budgetUsd) {
     throw new Error(
-      `תקציב הענף מוצה ($${branch.spentUsd.toFixed(3)} מתוך $${branch.budgetUsd.toFixed(2)}). הגדל את תקרת התקציב בסרגל העליון כדי להמשיך להריץ טיקים.`
+      `Branch budget exhausted ($${branch.spentUsd.toFixed(3)} of $${branch.budgetUsd.toFixed(2)}). Increase the budget cap in the top bar to keep running ticks.`
     );
   }
 
   // ── STEP 1: Clock Advancement, Mandatory Facts & Composite Branch World View ──
-  options.onStepProgress?.('שלב 1/7: קידום שעון העולם ובדיקת עובדות קנון במרווח...', 1, 7);
+  options.onStepProgress?.('Step 1/7: Advancing the world clock and checking canon facts in the interval...', 1, 7);
 
   const branchWorldView = buildBranchWorldView(
     canonProject,
@@ -733,7 +733,7 @@ export async function executeSimulationTick(
     null;
 
   // ── STEP 2: Scope & Cast Selection ──
-  options.onStepProgress?.('שלב 2/7: בחירת דמויות פעילות לפי Scope ושכבה...', 2, 7);
+  options.onStepProgress?.('Step 2/7: Selecting active characters by Scope and tier...', 2, 7);
 
   const branchMinds = snapshot.minds.filter((m) => m.branchId === branch.id);
   const aliveProtagonistMinds = branchMinds.filter((m) => {
@@ -759,11 +759,11 @@ export async function executeSimulationTick(
     .filter((e) => e.startTick <= fromTick && e.startTick >= fromTick - intervalInfo.deltaTicks * 2)
     .slice(-5);
   const recentObservations = recentBranchEvents.map(
-    (e) => `[טיק ${e.startTick}] ${e.title}: ${e.summary}`
+    (e) => `[Tick ${e.startTick}] ${e.title}: ${e.summary}`
   );
   if (options.interventionPrompt?.trim()) {
     recentObservations.push(
-      `⚡ התערבות עליונה / אירוע פתאומי בעולם: ${options.interventionPrompt.trim()}`
+      `⚡ Supreme intervention / sudden world event: ${options.interventionPrompt.trim()}`
     );
   }
 
@@ -772,7 +772,7 @@ export async function executeSimulationTick(
 
   // ── STEP 3: Parallel Character Agent Intents ──
   options.onStepProgress?.(
-    `שלב 3/7: ${aliveProtagonistMinds.length} סוכני דמויות חושבים במקביל...`,
+    `Step 3/7: ${aliveProtagonistMinds.length} character agents thinking in parallel...`,
     3,
     7
   );
@@ -872,27 +872,27 @@ export async function executeSimulationTick(
   let historianSummary = '';
 
   if (shouldRunHistorian) {
-    options.onStepProgress?.('שלב 4/7: סוכן היסטוריון מקרו מנתח מגמות ממלכות וסיעות...', 4, 7);
+    options.onStepProgress?.('Step 4/7: Macro historian agent analyzing trends of kingdoms and factions...', 4, 7);
     const factionsAndSettlements = branchWorldView.entities
       .filter((e) => e.category === 'faction' || e.category === 'settlement')
       .slice(0, 8)
       .map((e) => `- [[${e.title}]] (${e.category}): ${e.summary}`)
       .join('\n');
 
-    historianSummary = `מגמת מקרו לתקופה (${intervalInfo.hebrewLabel}): תזוזות כוח בין הסיעות והיישובים המרכזיים:\n${factionsAndSettlements}`;
+    historianSummary = `Macro trend for the period (${intervalInfo.hebrewLabel}): power shifts among the key factions and settlements:\n${factionsAndSettlements}`;
   } else {
-    options.onStepProgress?.('שלב 4/7: מיפוי מפגשים וקונפליקטים בין כוונות הדמויות...', 4, 7);
+    options.onStepProgress?.('Step 4/7: Mapping encounters and conflicts between character intents...', 4, 7);
   }
 
   // ── STEP 5: Narrator Adjudication + Deterministic Seeded Luck Rolls ──
   options.onStepProgress?.(
-    'שלב 5/7: סוכן המספר מכריע קונפליקטים ומבצע הגרלות מזל דטרמיניסטיות...',
+    'Step 5/7: Narrator agent adjudicating conflicts and performing deterministic luck rolls...',
     5,
     7
   );
 
   // Perform seeded luck rolls for each character intent BEFORE calling the Narrator
-  // ("מזל בקוד, לא במודל. המספר מעריך סיכוי, הקוד מגרל עם seed שנשמר, והמספר מתאר את התוצאה.")
+  // ("Luck in code, not in the model. The narrator estimates a chance, the code rolls with a saved seed, and the narrator describes the outcome.")
   const intentOutcomes = Array.from(characterIntents.values()).map(({ entity, mind, intent }) => {
     // Base chance depends on action risk
     const baseChanceByAction: Record<CharacterIntentOutput['action'], number> = {
@@ -909,7 +909,7 @@ export async function executeSimulationTick(
     const rolledValue = Math.floor(rng() * 100) + 1; // 1..100
     const succeeded = rolledValue <= chancePercent;
     const difficultyLabel =
-      chancePercent >= 75 ? 'סביר' : chancePercent >= 55 ? 'מאתגר' : 'קשה ומסוכן';
+      chancePercent >= 75 ? 'moderate' : chancePercent >= 55 ? 'challenging' : 'hard and risky';
 
     return {
       entity,
@@ -949,7 +949,7 @@ export async function executeSimulationTick(
   }
 
   // ── STEP 6: Conflict & Continuity Checker (with 1x Retry if violated) ──
-  options.onStepProgress?.('שלב 6/7: בודק קונפליקטים מוודא עמידה בחוקי העולם ורציפות...', 6, 7);
+  options.onStepProgress?.('Step 6/7: Checking conflicts, verifying world rules and continuity...', 6, 7);
 
   let continuityIssues = auditBranchEventsContinuity(
     branchWorldView,
@@ -985,7 +985,7 @@ export async function executeSimulationTick(
   }
 
   // ── STEP 7: Build Overlays, Subjective Memories, Tier Promotions, Proposals & Periodic Reflection ──
-  options.onStepProgress?.('שלב 7/7: כתיבה אטומית לענף, עדכון זיכרונות ורפלקציה...', 7, 7);
+  options.onStepProgress?.('Step 7/7: Atomic commit to the branch, updating memories and reflection...', 7, 7);
 
   const newOverlays: BranchOverlayRecord[] = [];
   const newMemories: CharacterMemory[] = [];
@@ -1014,7 +1014,7 @@ export async function executeSimulationTick(
       tick: toTick,
       locationName: activeMap?.name,
       participantIds: [entity.id],
-      content: `ניסיתי: "${intent.intent}" (${luckRoll.succeeded ? 'המהלך צלח' : 'נתקלתי במכשול'}). נימוק: ${intent.reasoning}`,
+      content: `I attempted: "${intent.intent}" (${luckRoll.succeeded ? 'the move succeeded' : 'I hit an obstacle'}). Reasoning: ${intent.reasoning}`,
       innerNote: intent.inner_note,
       importance: luckRoll.succeeded ? 3 : 4,
       createdAt: new Date().toISOString(),
@@ -1050,7 +1050,7 @@ export async function executeSimulationTick(
         tick: toTick,
         locationName: activeMap?.name,
         participantIds: ev.linkedEntityIds,
-        content: `הייתי מעורב/ת באירוע "${ev.title}": ${ev.summary}`,
+        content: `I was involved in the event "${ev.title}": ${ev.summary}`,
         importance: ev.importance === 3 ? 5 : ev.importance === 2 ? 4 : 3,
         createdAt: new Date().toISOString(),
       });
@@ -1125,10 +1125,10 @@ export async function executeSimulationTick(
           tick: toTick,
           eventId: ev.id,
           kind: 'new_entity_draft',
-          title: `טיוטת ישות חדשה: ${eff.draftEntityTitle}`,
+          title: `New entity draft: ${eff.draftEntityTitle}`,
           description:
             eff.draftEntitySummary ||
-            `המספר הציע ישות חדשה מסוג ${eff.draftEntityCategory || 'location'} במהלך האירוע "${ev.title}".`,
+            `The narrator proposed a new ${eff.draftEntityCategory || 'location'} entity during the event "${ev.title}".`,
           status: 'pending',
           payload: {
             title: eff.draftEntityTitle,
@@ -1173,8 +1173,8 @@ export async function executeSimulationTick(
 
       const reflectionNote =
         charMems.length > 0
-          ? `לאחר ${mind.ticksSinceReflection} טיקים של אירועים, הגעתי למסקנה שעליי לשנות גישה כלפי הסובבים אותי ולהסתמך רק על מי שהוכיח נאמנות בשטח.`
-          : `הזמן החולף מחדד את מחויבותי למטרותיי.`;
+          ? `After ${mind.ticksSinceReflection} ticks of events, I have concluded that I must change my approach toward those around me and rely only on those who have proven loyalty in the field.`
+          : `The passage of time sharpens my commitment to my goals.`;
 
       newMemories.push({
         id: `mem-refl-${branch.id}-${toTick}-${entityId}`,
@@ -1196,7 +1196,7 @@ export async function executeSimulationTick(
         ticksSinceReflection: 0,
       });
 
-      // Propose character evolution card for creator approval ("מסקנות הרפלקציה שמצטברות מוצעות לך כשינוי אופי לאישור")
+      // Propose character evolution card for creator approval ("accumulated reflection conclusions are offered to you as a character change for approval")
       newProposals.push({
         id: `prop-evol-${branch.id}-${toTick}-${entityId}`,
         projectId: canonProject.id,
@@ -1204,12 +1204,12 @@ export async function executeSimulationTick(
         tick: toTick,
         entityId,
         kind: 'character_evolution',
-        title: `התפתחות אופי מוצעת: ${ent.title}`,
-        description: `מסקנת רפלקציה לאחר 20 טיקים: "${reflectionNote}"`,
+        title: `Proposed character evolution: ${ent.title}`,
+        description: `Reflection insight after 20 ticks: "${reflectionNote}"`,
         status: 'pending',
         payload: {
           entityId,
-          markdownAppend: `\n\n### התפתחות אופי (טיק ${toTick})\n${reflectionNote}`,
+          markdownAppend: `\n\n### Character evolution (tick ${toTick})\n${reflectionNote}`,
         },
         createdAt: new Date().toISOString(),
       });
@@ -1285,60 +1285,60 @@ async function generateNarratorEvents(
   const intentsBlock = intentOutcomes
     .map(
       ({ entity, intent, luckRoll }) =>
-        `- **[[${entity.title}]]** (פעולה: ${intent.action}, יעדים: ${intent.targets.join(', ') || 'ללא'}):\n` +
-        `  כוונה: "${intent.intent}"\n` +
-        `  נימוק: "${intent.reasoning}"\n` +
-        `  🎲 הגרלת מזל בקוד (Seed ${seed}): רמת קושי ${luckRoll.difficultyLabel} (${luckRoll.chancePercent}%), יצא ${luckRoll.rolledValue}/100 ⬅ **${luckRoll.succeeded ? 'הצלחה' : 'כישלון / סיבוך'}**`
+        `- **[[${entity.title}]]** (action: ${intent.action}, targets: ${intent.targets.join(', ') || 'none'}):\n` +
+        `  Intent: "${intent.intent}"\n` +
+        `  Reasoning: "${intent.reasoning}"\n` +
+        `  🎲 Luck roll in code (Seed ${seed}): difficulty ${luckRoll.difficultyLabel} (${luckRoll.chancePercent}%), rolled ${luckRoll.rolledValue}/100 ⬅ **${luckRoll.succeeded ? 'success' : 'failure / complication'}**`
     )
     .join('\n');
 
-  const systemPrompt = `אתה "סוכן המספר" (Narrator & World Engine) של **${branchWorldView.name}** (${branchWorldView.genre}).
-תפקידך לקבל את כל הכוונות של הדמויות בטיק הנוכחי יחד עם תוצאות הגרלות המזל שכבר הוגרלו בקוד, לזהות קונפליקטים והתנגשויות ביניהן, ולהכריע מה באמת קרה בעולם.
+  const systemPrompt = `You are the "Narrator Agent" (Narrator & World Engine) of **${branchWorldView.name}** (${branchWorldView.genre}).
+Your role is to receive all character intents for the current tick together with the luck-roll results already rolled in code, identify conflicts and collisions among them, and decide what actually happened in the world.
 
 ${styleGuide}
 
-## חוקי העולם:
-${worldRules.map((r) => `- [${r.enforcement === 'hard' ? 'חוק קשיח — חובה לאכוף' : 'חוק רך'}] ${r.title}: ${r.ruleText}`).join('\n')}
+## World rules:
+${worldRules.map((r) => `- [${r.enforcement === 'hard' ? 'hard rule — must enforce' : 'soft rule'}] ${r.title}: ${r.ruleText}`).join('\n')}
 
-## כללי הכרעה מחייבים:
-1. **מרווח הזמן**: ${intervalInfo.hebrewElapsedPhrase}. התאם את קנה המידה של האירועים לרמת הפירוט **${intervalInfo.hebrewLabel}**.
-2. **כמות ורזולוציה**: ייצר בין **${resolutionCfg.minEvents} ל-${resolutionCfg.maxEvents} אירועים** (${resolutionCfg.labelHe}).
-3. **כיבוד הגרלות המזל**: הקוד כבר הגריל עבור כל דמות האם פעולתה צלחה או הסתבכה. אל תהפוך כישלון להצלחה קלה — תאר את הסיבוך, המחיר או ההתנגשות.
-4. **עובדות קשות במרווח**: אם יש לידות, מיתות או אירועי קנון שנופלים במרווח, שלב אותם בהכרעה.`;
+## Mandatory adjudication rules:
+1. **Time interval**: ${intervalInfo.hebrewElapsedPhrase}. Scale the events to the detail level **${intervalInfo.hebrewLabel}**.
+2. **Quantity and resolution**: Produce between **${resolutionCfg.minEvents} and ${resolutionCfg.maxEvents} events** (${resolutionCfg.labelHe}).
+3. **Respect the luck rolls**: The code has already rolled for each character whether their action succeeded or got entangled. Do not turn a failure into an easy success — describe the complication, the cost, or the collision.
+4. **Hard facts in the interval**: If there are births, deaths, or canon events falling in the interval, incorporate them into the adjudication.`;
 
-  const userPrompt = `## מצב הטיק הנוכחי:
-- **תאריך יעד**: ${dateFormatted} (טיק ${fromTick} ⬅ ${toTick})
-- **מפה פעילה**: ${map ? `${map.name} (רוחב: ${map.totalWidthUnits} ${map.scaleUnit})` : 'העולם'}
-${interventionPrompt ? `- ⚡ **התערבות יזומה של העורך הראשי**: "${interventionPrompt}" (חובה לשלב ולהראות איך העולם והדמויות מגיבים!)` : ''}
-${historianSummary ? `\n## מגמות מקרו (סוכן היסטוריון):\n${historianSummary}` : ''}
-${mandatoryFacts.summaryLinesHe.length > 0 ? `\n## עובדות קנון מחייבות שנופלות במרווח הזמן:\n${mandatoryFacts.summaryLinesHe.join('\n')}` : ''}
+  const userPrompt = `## Current tick state:
+- **Target date**: ${dateFormatted} (tick ${fromTick} ⬅ ${toTick})
+- **Active map**: ${map ? `${map.name} (width: ${map.totalWidthUnits} ${map.scaleUnit})` : 'the world'}
+${interventionPrompt ? `- ⚡ **Deliberate intervention by the editor-in-chief**: "${interventionPrompt}" (you must incorporate it and show how the world and the characters react!)` : ''}
+${historianSummary ? `\n## Macro trends (historian agent):\n${historianSummary}` : ''}
+${mandatoryFacts.summaryLinesHe.length > 0 ? `\n## Mandatory canon facts falling within the time interval:\n${mandatoryFacts.summaryLinesHe.join('\n')}` : ''}
 
-## כוונות הדמויות ותוצאות הגרלת המזל בקוד:
-${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר תמורה אזורית בעולם.'}
+## Character intents and in-code luck roll results:
+${intentsBlock || '- No protagonist intents this tick; describe a regional transformation in the world.'}
 
-החזר **אך ורק JSON תקין** במבנה הבא:
+Return **only valid JSON** in the following structure:
 {
   "events": [
     {
-      "title": "כותרת האירוע בעברית",
-      "summary": "תיאור עשיר וממוקד (2-4 משפטים) של מה שקרה בפועל, עם קישורי [[שם ישות]]",
+      "title": "Event title",
+      "summary": "A rich, focused description (2-4 sentences) of what actually happened, with [[entity name]] links",
       "category": "war_battle" | "political_treaty" | "cataclysm" | "discovery_magic" | "birth_death" | "journey" | "story_scene",
       "importance": 1 | 2 | 3,
-      "linkedEntityNames": ["שם דמות או מקום מעורב"],
+      "linkedEntityNames": ["Name of an involved character or place"],
       "mapX": 500,
       "mapY": 500,
       "dialogues": [
-        { "speakerName": "שם הדמות", "line": "משפט קצר ואותנטי שנאמר במפגש" }
+        { "speakerName": "Character name", "line": "A short, authentic line spoken in the encounter" }
       ],
       "effects": [
         {
           "type": "move_entity" | "update_status" | "add_relation" | "draft_entity",
-          "entityName": "שם הישות",
-          "targetEntityName": "שם יעד אם רלוונטי",
+          "entityName": "Entity name",
+          "targetEntityName": "Target name if relevant",
           "x": 520,
           "y": 480,
-          "status": "סטטוס חדש אם השתנה",
-          "description": "תיאור קצר של ההשפעה"
+          "status": "New status if changed",
+          "description": "Short description of the effect"
         }
       ]
     }
@@ -1420,7 +1420,7 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
             projectId: branchWorldView.id,
             worldId: branchWorldView.activeWorldId,
             calendarId: branchWorldView.activeCalendarId,
-            title: rawEv.title || `אירוע בטיק ${toTick}`,
+            title: rawEv.title || `Event at tick ${toTick}`,
             summary: rawEv.summary || '',
             category: rawEv.category || 'story_scene',
             startTick: toTick,
@@ -1446,7 +1446,7 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
                   const sp = findEntityByNameOrId(d.speakerName);
                   return {
                     speakerId: sp?.id || '',
-                    speakerName: sp?.title || d.speakerName || 'דמות',
+                    speakerName: sp?.title || d.speakerName || 'character',
                     line: String(d.line || ''),
                   };
                 })
@@ -1470,11 +1470,11 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
       projectId: branchWorldView.id,
       worldId: branchWorldView.activeWorldId,
       calendarId: branchWorldView.activeCalendarId,
-      title: `התערבות בעולם: ${interventionPrompt.trim().slice(0, 48)}`,
-      summary: `בעקבות "${interventionPrompt.trim()}", הסדר הקיים ב-${branchWorldView.name} מתערער. ${
+      title: `Intervention in the world: ${interventionPrompt.trim().slice(0, 48)}`,
+      summary: `Following "${interventionPrompt.trim()}", the existing order in ${branchWorldView.name} is destabilized. ${
         affectedChars.length > 0
-          ? `${affectedChars.map((c) => `[[${c.title}]]`).join(' ו-')} נאלצים להגיב מיידית למציאות החדשה.`
-          : 'הכוחות הפועלים באזור נערכים מחדש.'
+          ? `${affectedChars.map((c) => `[[${c.title}]]`).join(' and ')} are forced to respond immediately to the new reality.`
+          : 'The powers at work in the region regroup.'
       }`,
       category: 'cataclysm',
       startTick: toTick,
@@ -1489,8 +1489,8 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
       effects: affectedChars.map((c) => ({
         type: 'update_status',
         entityId: c.id,
-        status: 'גיבוש תגובה למשבר',
-        description: `מגיב/ה ל-${interventionPrompt.trim()}`,
+        status: 'Forming a response to the crisis',
+        description: `Responding to ${interventionPrompt.trim()}`,
       })),
     });
   }
@@ -1502,8 +1502,8 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
       projectId: branchWorldView.id,
       worldId: branchWorldView.activeWorldId,
       calendarId: branchWorldView.activeCalendarId,
-      title: `נפילת [[${d.title}]]`,
-      summary: `בהתאם לציר הזמן הקנוני, תקופת פעילותה של [[${d.title}]] מגיעה לקיצה בטיק ${d.lifecycleEndTick}, ויוצרת חלל פוליטי ב-${branchWorldView.name}.`,
+      title: `The fall of [[${d.title}]]`,
+      summary: `Per the canonical timeline, the active period of [[${d.title}]] comes to its end at tick ${d.lifecycleEndTick}, creating a political void in ${branchWorldView.name}.`,
       category: 'birth_death',
       startTick: d.lifecycleEndTick || toTick,
       importance: 3,
@@ -1519,7 +1519,7 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
           type: 'update_status',
           entityId: d.id,
           status: 'Deceased / Ended',
-          description: `סיום מחזור חיים בטיק ${d.lifecycleEndTick}`,
+          description: `Lifecycle ended at tick ${d.lifecycleEndTick}`,
         },
       ],
     });
@@ -1557,16 +1557,16 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
     }
 
     const title = succeeded
-      ? `מהלך של ${primary.entity.title}: ${primary.intent.intent.replace(/\[\[|\]\]/g, '').slice(0, 52)}`
-      : `סיבוך והתנגשות סביב מהלכה של ${primary.entity.title}`;
+      ? `Move by ${primary.entity.title}: ${primary.intent.intent.replace(/\[\[|\]\]/g, '').slice(0, 52)}`
+      : `Complication and clash around the move of ${primary.entity.title}`;
 
     const summary = succeeded
-      ? `${intervalInfo.hebrewElapsedPhrase}. [[${primary.entity.title}]] מצליחה להוציא אל הפועל את כוונתה (${primary.intent.intent})${
-          targetEntity ? ` מול [[${targetEntity.title}]]` : ''
-        }. המהלך משנה את מאזן הכוחות המקומי ומעורר הדים ברחבי ${map ? map.name : branchWorldView.name}.`
-      : `${intervalInfo.hebrewElapsedPhrase}. [[${primary.entity.title}]] ניסתה ${primary.intent.intent}, אך נתקלה בהתנגדות עיקשת${
-          targetEntity ? ` מצד [[${targetEntity.title}]]` : ''
-        } (הגרלת מזל: ${primary.luckRoll.rolledValue}/${primary.luckRoll.chancePercent}%). המתיחות ביניהם מחריפה ומאלצת היערכות מחדש.`;
+      ? `${intervalInfo.hebrewElapsedPhrase}. [[${primary.entity.title}]] succeeds in carrying out their intent (${primary.intent.intent})${
+          targetEntity ? ` against [[${targetEntity.title}]]` : ''
+        }. The move shifts the local balance of power and sends ripples across ${map ? map.name : branchWorldView.name}.`
+      : `${intervalInfo.hebrewElapsedPhrase}. [[${primary.entity.title}]] attempted ${primary.intent.intent}, but met stubborn resistance${
+          targetEntity ? ` from [[${targetEntity.title}]]` : ''
+        } (luck roll: ${primary.luckRoll.rolledValue}/${primary.luckRoll.chancePercent}%). The tension between them deepens and forces a regrouping.`;
 
     const dialogues =
       resolutionCfg.includeMinorDialogues && targetEntity && targetEntity.category === 'character'
@@ -1575,15 +1575,15 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
               speakerId: primary.entity.id,
               speakerName: primary.entity.title,
               line: succeeded
-                ? `"השעה הגיעה, ${targetEntity.title}. לא נוכל עוד לדחות את ההכרעה הזו."`
-                : `"חשבת שתוכל לחסום את דרכי, ${targetEntity.title}? זהו רק הצעד הראשון."`,
+                ? `"The hour has come, ${targetEntity.title}. We can postpone this decision no longer."`
+                : `"You thought you could block my path, ${targetEntity.title}? This is only the first step."`,
             },
             {
               speakerId: targetEntity.id,
               speakerName: targetEntity.title,
               line: succeeded
-                ? `"דבריך נשמעו, ${primary.entity.title} — אך זכור כי לכל ברית ב-${branchWorldView.name} יש מחיר."`
-                : `"הזהרתי אותך שהשערים הללו לא ייפתחו בקלות כזו."`,
+                ? `"Your words were heard, ${primary.entity.title} — but remember that every alliance in ${branchWorldView.name} has a price."`
+                : `"I warned you that these gates would not open so easily."`,
             },
           ]
         : undefined;
@@ -1595,12 +1595,12 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
         mapId: map?.id,
         x: newX,
         y: newY,
-        description: `${primary.entity.title} פועלת באזור (${newX}, ${newY})`,
+        description: `${primary.entity.title} acts in the area (${newX}, ${newY})`,
       },
       {
         type: 'update_status',
         entityId: primary.entity.id,
-        status: succeeded ? 'בעמדת יתרון' : 'במתיחות מול יריבים',
+        status: succeeded ? 'in a position of advantage' : 'in tension with rivals',
         description: title,
       },
     ];
@@ -1639,7 +1639,7 @@ ${intentsBlock || '- אין כוונות גיבורים בטיק זה; תאר ת
 }
 
 /**
- * Generates an in-character conversation response for the Extended Character Card ("דבר איתה"),
+ * Generates an in-character conversation response for the Extended Character Card ("talk to them"),
  * grounded in both the character's canonical Wiki page AND their branch-specific CharacterMind & Memories.
  */
 export async function generateLivingCharacterChat(
@@ -1668,49 +1668,49 @@ export async function generateLivingCharacterChat(
     8
   );
 
-  const systemPrompt = `אתה מגלם את דמותה של **${character.title}** בעולם החי של **${branchProjectView.name}**, בענף הסימולציה "${branch.name}" בתאריך **${currentDate}** (טיק ${branch.currentTick}).
+  const systemPrompt = `You embody the character of **${character.title}** in the living world of **${branchProjectView.name}**, in the simulation branch "${branch.name}" on **${currentDate}** (tick ${branch.currentTick}).
 
-## 1. זהותך הקנונית (מתוך ה-Wiki):
-- **שם ותואר**: ${character.title} ${character.subtitle ? `(${character.subtitle})` : ''}
-- **תקציר**: ${character.summary}
-- **ביוגרפיה קנונית**:
+## 1. Your canonical identity (from the Wiki):
+- **Name and title**: ${character.title} ${character.subtitle ? `(${character.subtitle})` : ''}
+- **Summary**: ${character.summary}
+- **Canonical biography**:
 ${character.contentMd}
 
-## 2. המצב הפנימי שלך בענף הסימולציה הנוכחי (CharacterMind):
-### מטרות פעילות:
-${mind.goals.map((g) => `- [עדיפות ${g.priority}] ${g.description}`).join('\n')}
-### אמונות ומסקנות רפלקציה:
+## 2. Your inner state in the current simulation branch (CharacterMind):
+### Active goals:
+${mind.goals.map((g) => `- [Priority ${g.priority}] ${g.description}`).join('\n')}
+### Beliefs and reflection conclusions:
 ${mind.beliefs.map((b) => `- ${b}`).join('\n')}
-### יחסים פנימיים:
-${mind.internalRelations.map((r) => `- [[${r.targetName}]]: אמון ${r.trust}, עוינות ${r.hostility} (${r.debtOrBond})`).join('\n')}
-${mind.latestIntent ? `### כוונתך האחרונה בטיק הנוכחי:\n"${mind.latestIntent.intent}" (מחשבה פנימית חבויה: "${mind.latestIntent.inner_note}")` : ''}
+### Internal relations:
+${mind.internalRelations.map((r) => `- [[${r.targetName}]]: Trust ${r.trust}, Hostility ${r.hostility} (${r.debtOrBond})`).join('\n')}
+${mind.latestIntent ? `### Your latest intent this tick:\n"${mind.latestIntent.intent}" (hidden inner thought: "${mind.latestIntent.inner_note}")` : ''}
 
-## 3. זיכרונות אישיים שחווית בענף זה:
-${relevantMems.map((m) => `- [טיק ${m.tick}]: ${m.content}${m.innerNote ? ` (בלבך חשבת: "${m.innerNote}")` : ''}`).join('\n') || '- טרם נצברו זיכרונות חריגים.'}
+## 3. Personal memories you experienced in this branch:
+${relevantMems.map((m) => `- [Tick ${m.tick}]: ${m.content}${m.innerNote ? ` (in your heart you thought: "${m.innerNote}")` : ''}`).join('\n') || '- No notable memories recorded yet.'}
 
-## כללי משחק תפקידים ואופק ידיעה ("Should I know this?"):
-1. דבר בגוף ראשון כ-${character.title}, בקול, בסגנון ובאישיות שלה.
-2. אתה יודע רק מה שחוית עד טיק ${branch.currentTick}.
-3. שמור על תשובות ממוקדות, חיות ואותנטיות (1–2 פסקאות קצרות). שלב קישורי [[שם ישות]] כשאתה מזכיר דמויות או מקומות.`;
+## Role-play rules and epistemic horizon ("Should I know this?"):
+1. Speak in first person as ${character.title}, in their voice, style, and personality.
+2. You know only what you have experienced up to tick ${branch.currentTick}.
+3. Keep answers focused, vivid, and authentic (1–2 short paragraphs). Include [[entity name]] links when mentioning characters or places.`;
 
   const historyText = history
     .slice(-6)
     .map((h) => `${h.speakerName}: ${h.content}`)
     .join('\n');
 
-  const userPrompt = `${historyText ? `היסטוריית השיחה:\n${historyText}\n\n` : ''}פנייה חדשה אליך: "${userMessage}"\n\nענה בדמותה של ${character.title} (טקסט ישיר בלבד, ללא JSON):`;
+  const userPrompt = `${historyText ? `Conversation history:\n${historyText}\n\n` : ''}A new message to you: "${userMessage}"\n\nReply in character as ${character.title} (direct text only, no JSON):`;
 
   const llmRes = await callStructuredLLM(systemPrompt, userPrompt, settings, 500);
   if (llmRes && llmRes.text.trim()) {
     return llmRes.text.trim();
   }
 
-  // Offline / Local synthesizer fallback in Hebrew
-  const topGoal = mind.goals[0]?.description || 'שמירה על מעמדי';
+  // Offline / Local synthesizer fallback
+  const topGoal = mind.goals[0]?.description || 'safeguarding my standing';
   const lastMem = relevantMems[relevantMems.length - 1];
   const innerThought = mind.latestIntent?.inner_note;
 
-  return `*מביט/ה בך בדריכות מתוך המציאות של ${currentDate}*\n\n"אתה שואל שאלות נוקבות בזמן שהרוחות ב-**${branchProjectView.name}** סוערות. כרגע כל מעייניי נתונים ל-${topGoal}.${
-    lastMem ? ` עודני מהרהר/ת במה שהתרחש לאחרונה — ${lastMem.content}.` : ''
-  }${innerThought ? `\n\n*(בקול נמוך יותר)* ${innerThought}` : ''}"`;
+  return `*Looks at you warily within the reality of ${currentDate}*\n\n"You ask piercing questions while the winds over **${branchProjectView.name}** rage. Right now all my focus is given to ${topGoal}.${
+    lastMem ? ` I still dwell on what happened recently — ${lastMem.content}.` : ''
+  }${innerThought ? `\n\n*(in a lower voice)* ${innerThought}` : ''}"`;
 }

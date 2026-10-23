@@ -1,5 +1,5 @@
 /**
- * IndexedDB Storage Engine for Worldify Living World ("עולם חי").
+ * IndexedDB Storage Engine for Worldify Living World.
  *
  * Keeps all simulation branches, events, spatial/temporal overlays, character minds,
  * subjective memory banks, proposals, and LLM agent telemetry in IndexedDB so the
@@ -154,10 +154,6 @@ export function buildInitialCharacterMind(
   branchId: string,
   tier: CharacterTier
 ): CharacterMind {
-  const isHebrew = /[\u0590-\u05FF]/.test(
-    `${character.title} ${character.summary} ${character.contentMd}`
-  );
-
   // Extract Relations for this character
   const internalRelations: CharacterInternalRelation[] = [];
   for (const r of project.relations) {
@@ -194,9 +190,7 @@ export function buildInitialCharacterMind(
   const goals: CharacterGoal[] = [
     {
       id: `goal-${character.id}-1`,
-      description: isHebrew
-        ? `לקדם את מעמדה ומטרותיה של ${character.title} (${character.subtitle || character.summary.slice(0, 60)})`
-        : `Advance ${character.title}'s core ambition: ${character.subtitle || character.summary.slice(0, 70)}`,
+      description: `Advance ${character.title}'s core ambition: ${character.subtitle || character.summary.slice(0, 70)}`,
       priority: 1,
       status: 'active',
       createdAtTick: project.currentTick,
@@ -206,9 +200,7 @@ export function buildInitialCharacterMind(
   if (rival) {
     goals.push({
       id: `goal-${character.id}-2`,
-      description: isHebrew
-        ? `לסכל את מהלכי היריב/ה [[${rival.targetName}]] ולהגן על בעלי הברית`
-        : `Counter the moves of rival [[${rival.targetName}]] and safeguard key interests`,
+      description: `Counter the moves of rival [[${rival.targetName}]] and safeguard key interests`,
       priority: 2,
       status: 'active',
       createdAtTick: project.currentTick,
@@ -216,9 +208,7 @@ export function buildInitialCharacterMind(
   } else if (ally) {
     goals.push({
       id: `goal-${character.id}-2`,
-      description: isHebrew
-        ? `לחזק את הברית עם [[${ally.targetName}]] מול האיומים המתקרבים`
-        : `Strengthen the alliance with [[${ally.targetName}]] against emerging threats`,
+      description: `Strengthen the alliance with [[${ally.targetName}]] against emerging threats`,
       priority: 2,
       status: 'active',
       createdAtTick: project.currentTick,
@@ -226,9 +216,7 @@ export function buildInitialCharacterMind(
   } else {
     goals.push({
       id: `goal-${character.id}-2`,
-      description: isHebrew
-        ? `לאסוף מידע ולהבטיח השפעה באזור הנוכחי`
-        : `Gather intelligence and secure leverage in the current region`,
+      description: `Gather intelligence and secure leverage in the current region`,
       priority: 2,
       status: 'active',
       createdAtTick: project.currentTick,
@@ -236,9 +224,7 @@ export function buildInitialCharacterMind(
   }
 
   const beliefs: string[] = [
-    isHebrew
-      ? `${character.summary || character.title}`
-      : `${character.summary || character.title}`,
+    `${character.summary || character.title}`,
   ];
 
   return {
@@ -258,7 +244,7 @@ export function buildInitialCharacterMind(
 }
 
 /**
- * Parses `World.magicOrPhysicsRules` and any "חוקי העולם / World Rules" wiki page into structured rules.
+ * Parses `World.magicOrPhysicsRules` and any "World Rules / חוקי העולם" wiki page into structured rules.
  */
 export function buildInitialWorldRules(project: Project): WorldRuleEntry[] {
   const rules: WorldRuleEntry[] = [];
@@ -277,7 +263,7 @@ export function buildInitialWorldRules(project: Project): WorldRuleEntry[] {
       rules.push({
         id: `wrule-${project.id}-${idx}`,
         projectId: project.id,
-        title: isHard ? `חוק קשיח #${idx + 1}` : `עקרון עולם #${idx + 1}`,
+        title: isHard ? `Hard law #${idx + 1}` : `World principle #${idx + 1}`,
         ruleText: s,
         enforcement: isHard ? 'hard' : 'soft',
         category: /magic|קסם|spell|mana|resonance|ley/i.test(s) ? 'magic' : 'physics',
@@ -290,16 +276,16 @@ export function buildInitialWorldRules(project: Project): WorldRuleEntry[] {
     {
       id: `wrule-${project.id}-mortality`,
       projectId: project.id,
-      title: 'מוות סופי (ללא תחייה ללא אישור)',
-      ruleText: 'דמויות שמתו אינן יכולות לדבר, לנוע או לפעול באירועים מאוחרים יותר.',
+      title: 'Final death (no resurrection without approval)',
+      ruleText: 'Characters who have died cannot speak, move, or act in later events.',
       enforcement: 'hard',
       category: 'mortality',
     },
     {
       id: `wrule-${project.id}-spatial`,
       projectId: project.id,
-      title: 'רציפות מרחבית ומהירות מסע',
-      ruleText: 'דמות אינה יכולה להימצא בשני מקומות מרוחקים באותו טיק או לחצות יבשת ביום אחד ללא שער קסם מפורש.',
+      title: 'Spatial continuity and travel speed',
+      ruleText: 'A character cannot be in two distant places in the same tick, or cross a continent in a single day, without an explicit magic gate.',
       enforcement: 'hard',
       category: 'travel',
     }
@@ -343,8 +329,8 @@ export async function ensureInitialSimulationState(
   const initialBranch: SimBranch = {
     id: branchId,
     projectId: project.id,
-    name: 'ענף ראשי · אלטרנטיבה 1',
-    description: 'ענף הסימולציה הראשון שהתפצל מהקנון',
+    name: 'Main branch · Alternative 1',
+    description: 'The first simulation branch forked from the canon',
     parentBranchId: null,
     forkedAtTick: project.currentTick,
     currentTick: project.currentTick,
@@ -444,7 +430,7 @@ export async function commitTickBundleAtomically(
 }
 
 /**
- * Rolls back a branch by one tick ("בטל טיק"), removing all events, overlays, memories,
+ * Rolls back a branch by one tick ("Undo tick"), removing all events, overlays, memories,
  * and proposals created after the previous tick in `branch.tickHistory`.
  */
 export async function rollbackBranchLastTick(

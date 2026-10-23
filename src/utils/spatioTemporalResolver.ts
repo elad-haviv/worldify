@@ -113,6 +113,8 @@ export function buildBranchWorldView(
         s.status &&
         (s.status.toLowerCase().includes('dead') ||
           s.status.toLowerCase().includes('deceased') ||
+          s.status.toLowerCase().includes('killed') ||
+          s.status.toLowerCase().includes('fallen') ||
           s.status.includes('מת') ||
           s.status.includes('נהרג') ||
           s.status.includes('נפל'))
@@ -255,6 +257,8 @@ export function resolveEntityTemporalStatus(
     activeState?.status &&
     (activeState.status.toLowerCase().includes('dead') ||
       activeState.status.toLowerCase().includes('deceased') ||
+      activeState.status.toLowerCase().includes('killed') ||
+      activeState.status.toLowerCase().includes('fallen') ||
       activeState.status.includes('מת') ||
       activeState.status.includes('נהרג'))
   ) {
@@ -575,8 +579,8 @@ export function auditBranchEventsContinuity(
             severity: 'error',
             sceneId: ev.id,
             sceneTitle: ev.title,
-            message: `הפרת חוק עולם קשיח (${rule.title})`,
-            detail: `האירוע "${ev.title}" מפר את החוק הקשיח: "${rule.ruleText}".`,
+            message: `Hard world-law violation (${rule.title})`,
+            detail: `The event "${ev.title}" violates the hard law: "${rule.ruleText}".`,
           });
         }
       }
@@ -598,8 +602,8 @@ export function auditBranchEventsContinuity(
           sceneTitle: ev.title,
           entityId: entity.id,
           entityTitle: entity.title,
-          message: `דמות שאינה בחיים (${entity.title}) פועלת או מדברת באירוע.`,
-          detail: `${entity.title} כבר אינה בחיים בטיק ${ev.startTick}${spoke ? ' (מופיעה בדיאלוג)' : ''}. מתים לא מדברים או פועלים.`,
+          message: `A deceased character (${entity.title}) acts or speaks in the event.`,
+          detail: `${entity.title} is already dead at tick ${ev.startTick}${spoke ? ' (appears in dialogue)' : ''}. The dead do not speak or act.`,
         });
       }
 
@@ -612,8 +616,8 @@ export function auditBranchEventsContinuity(
           sceneTitle: ev.title,
           entityId: entity.id,
           entityTitle: entity.title,
-          message: `${entity.title} טרם נולדה/נוצרה בטיק ${ev.startTick}.`,
-          detail: `תאריך לידה/יצירה קנוני הוא טיק ${entity.lifecycleStartTick}.`,
+          message: `${entity.title} is not yet born/created at tick ${ev.startTick}.`,
+          detail: `The canonical birth/creation date is tick ${entity.lifecycleStartTick}.`,
         });
       }
 
@@ -629,8 +633,8 @@ export function auditBranchEventsContinuity(
             sceneTitle: ev.title,
             entityId: entity.id,
             entityTitle: entity.title,
-            message: `${entity.title} נמצאת בשני מקומות מרוחקים בו-זמנית.`,
-            detail: `מופיעה גם ב-"${existingLoc.eventTitle}" וגם ב-"${ev.title}" באותו טיק.`,
+            message: `${entity.title} is in two distant places at the same time.`,
+            detail: `Appears both in "${existingLoc.eventTitle}" and in "${ev.title}" at the same tick.`,
           });
         } else {
           tickEntityLocation.set(locKey, { eventTitle: ev.title, x: ev.mapX, y: ev.mapY });
@@ -655,8 +659,8 @@ export function auditBranchEventsContinuity(
                 sceneTitle: ev.title,
                 entityId: entity.id,
                 entityTitle: entity.title,
-                message: `מהירות מסע חריגה עבור ${entity.title} (${Math.round(distUnits)} ${map.scaleUnit} ב-${days} ימים).`,
-                detail: `נדרש הסבר או תיקון מיקום (למשל שער קסם או קיצור מרחק).`,
+                message: `Excessive travel speed for ${entity.title} (${Math.round(distUnits)} ${map.scaleUnit} in ${days} days).`,
+                detail: `An explanation or a location fix is required (e.g. a magic portal or shorter distance).`,
               });
             }
           }
@@ -686,6 +690,8 @@ export function detectCanonContradictionsForMerge(
       ef.status &&
       (ef.status.toLowerCase().includes('dead') ||
         ef.status.toLowerCase().includes('deceased') ||
+        ef.status.toLowerCase().includes('killed') ||
+        ef.status.toLowerCase().includes('fallen') ||
         ef.status.includes('מת') ||
         ef.status.includes('נהרג'))
   );
@@ -704,7 +710,7 @@ export function detectCanonContradictionsForMerge(
         ? formatTickToDate(calendar, ent.lifecycleEndTick).displayShort
         : `Tick ${ent.lifecycleEndTick}`;
       contradictions.push(
-        `דף ה-Wiki של [[${ent.title}]] קובע מוות/סיום קנוני ב-${canonDeath}, בעוד האירוע בענף ממית אותה בטיק ${branchEvent.startTick}.`
+        `The wiki page of [[${ent.title}]] sets the canonical death/end at ${canonDeath}, while the branch event kills them at tick ${branchEvent.startTick}.`
       );
     }
 
@@ -717,7 +723,7 @@ export function detectCanonContradictionsForMerge(
     );
     for (const lce of laterCanonEvents) {
       contradictions.push(
-        `[[${ent.title}]] מתה באירוע זה, אך מופיעה באירוע קנוני מאוחר יותר: "${lce.title}" (טיק ${lce.startTick}).`
+        `[[${ent.title}]] dies in this event, but appears in a later canonical event: "${lce.title}" (tick ${lce.startTick}).`
       );
     }
 
@@ -730,7 +736,7 @@ export function detectCanonContradictionsForMerge(
             (sc.participatingEntityIds.includes(ent.id) || sc.povEntityId === ent.id)
           ) {
             contradictions.push(
-              `[[${ent.title}]] מתה באירוע זה, אך משתתפת בסצנה קנונית מאוחרת יותר: "${sc.title}" בסיפור "${story.title}" (טיק ${sc.startTick}).`
+              `[[${ent.title}]] dies in this event, but participates in a later canonical scene: "${sc.title}" in the story "${story.title}" (tick ${sc.startTick}).`
             );
           }
         }
@@ -744,12 +750,12 @@ export function detectCanonContradictionsForMerge(
     if (!ent) continue;
     if (ent.lifecycleEndTick !== undefined && branchEvent.startTick > ent.lifecycleEndTick) {
       contradictions.push(
-        `[[${ent.title}]] כבר מתה בקנון (טיק ${ent.lifecycleEndTick}) לפני מועד האירוע (${branchEvent.startTick}).`
+        `[[${ent.title}]] is already dead in canon (tick ${ent.lifecycleEndTick}) before the event's time (${branchEvent.startTick}).`
       );
     }
     if (ent.lifecycleStartTick !== undefined && branchEvent.startTick < ent.lifecycleStartTick) {
       contradictions.push(
-        `[[${ent.title}]] טרם נולדה בקנון (טיק לידה ${ent.lifecycleStartTick}) במועד האירוע (${branchEvent.startTick}).`
+        `[[${ent.title}]] is not yet born in canon (birth tick ${ent.lifecycleStartTick}) at the event's time (${branchEvent.startTick}).`
       );
     }
   }

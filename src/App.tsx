@@ -58,7 +58,7 @@ const NAV_GROUPS: Array<{ label: string | null; items: NavItem[] }> = [
   {
     label: 'Explore',
     items: [
-      { id: 'simulation', label: 'Living World · עולם חי', icon: Activity },
+      { id: 'simulation', label: 'Living World', icon: Activity },
       { id: 'travel', label: 'Travel', icon: Footprints },
       { id: 'maps', label: 'Maps', icon: MapIcon },
       { id: 'timeline', label: 'Timeline', icon: Clock },
