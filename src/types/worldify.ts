@@ -869,6 +869,7 @@ export interface BranchOverlayRecord {
 }
 
 export type ActiveModule =
+  | 'projects'
   | 'dashboard'
   | 'wiki'
   | 'graph'

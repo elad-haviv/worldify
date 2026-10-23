@@ -4,6 +4,7 @@ import { ActiveModule } from './types/worldify';
 import { formatTickToDate } from './utils/calendarEngine';
 import { syncBundledVaults } from './utils/bundledVaults';
 import { ProjectDashboardView } from './modules/projects/ProjectDashboardView';
+import { ProjectsWorkspaceView } from './modules/projects/ProjectsWorkspaceView';
 import { CosmologyWorldsView } from './modules/projects/CosmologyWorldsView';
 import { WikiView } from './modules/wiki/WikiView';
 import { TemplatesView } from './modules/wiki/TemplatesView';
@@ -35,6 +36,8 @@ import {
   PanelLeftOpen,
   ChevronDown,
   Download,
+  FolderKanban,
+  Settings2,
 } from 'lucide-react';
 import { ExportModal } from './components/ExportModal';
 
@@ -104,7 +107,6 @@ export const App: React.FC = () => {
     activeModule,
     isAICopilotOpen,
     setActiveModule,
-    setActiveProject,
     setActiveWorld,
     toggleAICopilot,
     toggleQuickSearch,
@@ -141,7 +143,10 @@ export const App: React.FC = () => {
     project && calendar
       ? formatTickToDate(calendar, project.currentTick).displayShort
       : null;
-  const activeLabel = ALL_ITEMS.find((i) => i.id === activeModule)?.label ?? '';
+  const activeLabel =
+    activeModule === 'projects'
+      ? 'Projects Workspace'
+      : ALL_ITEMS.find((i) => i.id === activeModule)?.label ?? '';
 
   return (
     <div className="h-screen w-screen flex bg-slate-950 text-slate-100 overflow-hidden">
@@ -180,25 +185,68 @@ export const App: React.FC = () => {
           )}
         </div>
 
-        {/* Project switcher */}
+        {/* Project Workspace Entry Card */}
         {project && !collapsed && (
           <div className="px-3 pb-3">
-            <label className="block px-2 pb-1 text-xs text-slate-500">Project</label>
-            <div className="relative">
-              <select
-                value={project.id}
-                onChange={(e) => setActiveProject(e.target.value)}
-                className="w-full appearance-none bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm font-medium text-slate-100 focus:outline-none focus:border-amber-500 cursor-pointer truncate"
-                title={project.name}
+            <div className="flex items-center justify-between px-2 pb-1">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
+                Active Project
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveModule('projects')}
+                className="text-[11px] text-amber-400/90 hover:text-amber-300 font-medium cursor-pointer"
               >
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                Manage ({projects.length})
+              </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setActiveModule('projects')}
+              className={`w-full text-left rounded-xl p-2.5 border transition-all cursor-pointer group ${
+                activeModule === 'projects'
+                  ? 'bg-amber-500/15 border-amber-500/50 shadow-sm'
+                  : 'bg-slate-950/90 border-slate-800 hover:border-slate-700 hover:bg-slate-950'
+              }`}
+              title="Open Projects Workspace — switch, create, rename, configure, or delete projects"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-slate-100 truncate group-hover:text-amber-200 transition-colors">
+                    {project.name}
+                  </div>
+                  <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                    {project.genre || 'Universe'} · {project.entities.length} entries
+                  </div>
+                </div>
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                    activeModule === 'projects'
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-slate-900 text-slate-400 group-hover:text-amber-300 group-hover:bg-slate-800'
+                  }`}
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {project && collapsed && (
+          <div className="px-3 pb-2">
+            <button
+              type="button"
+              onClick={() => setActiveModule('projects')}
+              title={`Projects Workspace — ${project.name}`}
+              className={`w-full h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer border ${
+                activeModule === 'projects'
+                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-amber-300 hover:border-slate-700'
+              }`}
+            >
+              <FolderKanban className="w-[18px] h-[18px]" />
+            </button>
           </div>
         )}
 
@@ -348,12 +396,13 @@ export const App: React.FC = () => {
         <div className="flex-1 flex min-h-0 h-full overflow-hidden relative">
           <main
             className={`flex-1 min-w-0 h-full min-h-0 relative ${
-              activeModule === 'dashboard'
+              activeModule === 'dashboard' || activeModule === 'projects'
                 ? 'overflow-y-auto'
                 : 'overflow-hidden flex flex-col'
             }`}
           >
             {activeModule === 'dashboard' && <ProjectDashboardView />}
+            {activeModule === 'projects' && <ProjectsWorkspaceView />}
             {activeModule === 'simulation' && <LivingWorldView />}
             {activeModule === 'travel' && <WorldTravelView />}
             {activeModule === 'wiki' && <WikiView />}

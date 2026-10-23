@@ -211,6 +211,23 @@ export interface WorldifyStoreState {
 
   // Project & World CRUD
   createProject: (name: string, genre: string, tagline: string, description: string) => void;
+  updateProject: (
+    projectId: string,
+    patch: Partial<
+      Pick<
+        Project,
+        | 'name'
+        | 'genre'
+        | 'tagline'
+        | 'description'
+        | 'currentTick'
+        | 'activeWorldId'
+        | 'activeCalendarId'
+      >
+    >
+  ) => void;
+  deleteProject: (projectId: string) => void;
+  duplicateProject: (projectId: string, customName?: string) => Project | null;
   addWorld: (world: Omit<World, 'id' | 'projectId'>) => void;
   updateWorld: (worldId: string, patch: Partial<World>) => void;
   addWorldConnection: (conn: Omit<WorldConnection, 'id' | 'projectId'>) => void;
@@ -554,6 +571,66 @@ export const useWorldifyStore = create<WorldifyStoreState>((set, get) => {
           selectedSceneId: null,
         };
       });
+    },
+
+    updateProject: (projectId, patch) =>
+      set((state) => {
+        const projects = state.projects.map((p) =>
+          p.id === projectId
+            ? { ...p, ...patch, updatedAt: new Date().toISOString() }
+            : p
+        );
+        saveProjectsToStorage(projects);
+        return { projects };
+      }),
+
+    deleteProject: (projectId) =>
+      set((state) => {
+        if (state.projects.length <= 1) return state;
+        const remaining = state.projects.filter((p) => p.id !== projectId);
+        saveProjectsToStorage(remaining);
+        if (state.activeProjectId === projectId) {
+          const nextActive = remaining[0];
+          saveActiveProjectId(nextActive.id);
+          return {
+            projects: remaining,
+            activeProjectId: nextActive.id,
+            selectedEntityId: nextActive.entities[0]?.id || null,
+            selectedMapId: nextActive.maps[0]?.id || null,
+            selectedStoryId: nextActive.stories[0]?.id || null,
+            selectedSceneId: nextActive.stories[0]?.chapters[0]?.scenes[0]?.id || null,
+          };
+        }
+        return { projects: remaining };
+      }),
+
+    duplicateProject: (projectId, customName) => {
+      const state = get();
+      const source = state.projects.find((p) => p.id === projectId);
+      if (!source) return null;
+
+      const newId = `proj-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const cloned: Project = JSON.parse(JSON.stringify(source));
+      cloned.id = newId;
+      cloned.name = customName?.trim() || `${source.name} (Copy)`;
+      cloned.updatedAt = new Date().toISOString();
+      delete cloned.importedFrom;
+
+      set((s) => {
+        const projects = [...s.projects, cloned];
+        saveProjectsToStorage(projects);
+        return {
+          projects,
+          activeProjectId: newId,
+          selectedEntityId: cloned.entities[0]?.id || null,
+          selectedMapId: cloned.maps[0]?.id || null,
+          selectedStoryId: cloned.stories[0]?.id || null,
+          selectedSceneId: cloned.stories[0]?.chapters[0]?.scenes[0]?.id || null,
+        };
+      });
+
+      saveActiveProjectId(newId);
+      return cloned;
     },
 
     addWorld: (worldData) =>
